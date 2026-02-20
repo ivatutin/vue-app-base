@@ -1,0 +1,31 @@
+<template>
+  <v-footer app height="40" class="justify-end">
+    <div class="text-caption">
+      <router-link :to="{ name: '/' }">home</router-link>
+      |
+      <router-link :to="{ name: '/systesm/forbidden' }">forbidden</router-link>
+      |
+      <router-link :to="{ name: 'not-found' }">not-found</router-link>
+      |
+      <router-link :to="{ name: '/ui-kit/typography' }">/ui-kit/typography</router-link>
+      |
+      <router-link :to="{ name: '/ui-kit/buttons' }">/ui-kit/buttons</router-link>
+    </div>
+    <div class="text-caption">
+      {{ now.toLocaleTimeString() }}
+    </div>
+  </v-footer>
+</template>
+
+<script setup lang="ts">
+import { shallowRef } from 'vue'
+
+const now = shallowRef(new Date)
+
+
+const timer = setInterval(() => now.value = new Date, 1000)
+
+onBeforeUnmount(() => {
+  clearInterval(timer)
+})
+</script>

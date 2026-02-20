@@ -1,0 +1,3 @@
+<template>
+    typography
+</template>
