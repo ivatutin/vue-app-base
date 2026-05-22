@@ -1,0 +1,200 @@
+# ROADMAP
+
+Живой документ. Приоритезированный план развития архитектуры и инфраструктуры. Делится на 4 фазы по убыванию срочности. Известные баги — отдельно в [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+
+Статусы: `proposed` (предложение, ждёт обсуждения) · `planned` (принято, ждёт реализации) · `in-progress` · `done`.
+
+---
+
+## Фаза 0 — Стабилизация
+
+Закрыть ломающие баги и привести проект к рабочему минимуму. Все пункты — обязательны до начала Фазы 1. Детали по каждому см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+
+### [P0] Привести схему `User` и стор к единой конвенции `planned`
+**Зачем:** в схеме `is_active`, в сторе `isActive` → `isAuthorized` всегда false → бесконечный редирект на login.
+**Что:** перейти на camelCase в `entities/user/schema/user.schema.ts` (либо вынести `.transform()` DTO → Model).
+**Trade-off:** при подключении реального backend появится потребность в маппере (см. Фазу 1, «DTO ↔ Domain»).
+**Триггер:** немедленно.
+
+### [P0] Создать `entities/permission/` и починить сломанные импорты `planned`
+**Зачем:** `entities/user/lib/can.ts` импортирует несуществующий `../model/types`; `widgets/app-sidebar/model/sidebar-items.ts` — несуществующий `@/entities/permission`.
+**Что:** создать `entities/permission/` с типами `PermissionCode`, перенести `permissionSchema` туда или экспортировать из `entities/user`.
+**Trade-off:** требует ADR — где живёт RBAC: внутри `user` или отдельно.
+**Триггер:** немедленно.
+
+### [P0] Доделать `entities/auth/auth.store.ts` `planned`
+**Зачем:** setup-функция стора не имеет `return` → `useAuthStore()` возвращает `undefined`. Опечатка `emaiil_or_phone`. `isLoaded` → `isLoading`.
+**Что:** вернуть state/actions из setup, реализовать `login`/`logout`/`refresh`, заполнить `entities/auth/index.ts`.
+**Триггер:** немедленно.
+
+### [P0] Починить auth-guard `planned`
+**Зачем:** `useUserStore()` вызывается на верхнем уровне `setupRouter` до bootstrap → стор всегда пустой → любой переход редиректит на login.
+**Что:** перенести вызов внутрь `beforeEach`, использовать `storeToRefs`.
+**Триггер:** немедленно.
+
+### [P0] Заменить `sleep(3000)` в bootstrap на реальный pipeline `planned`
+**Зачем:** сейчас заглушка, нет восстановления сессии.
+**Что:** `env → auth.init() → user.fetchCurrentUser() → router.isReady()`.
+**Триггер:** после починки auth и guard.
+
+### [P1] Удалить отладочный мусор `planned`
+**Зачем:** `console.log` в проде, отладочный текст в `default.vue`, `prepend-gap` (несуществующий атрибут), `stroke="green"` игнорирующий тему.
+**Что:** см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md), раздел «Code quality».
+**Триггер:** в первом же фикс-PR.
+
+---
+
+## Фаза 1 — Инфраструктура
+
+Закладка фундамента, без которого нельзя растить продакшен-проект.
+
+### [P1] HTTP-клиент `shared/api/http-client.ts` `proposed`
+**Зачем:** сейчас `getCurrentUser` — мок. На реальном backend без единого клиента не обойтись: auth-interceptor, обработка 401 + refresh, timeout/retry, типизированный парсинг ответа.
+**Что:** fetch-wrapper или axios + interceptors + класс ошибок `HttpError`.
+**Trade-off:** axios = ~14KB, fetch = 0KB; выбор фиксируется ADR.
+**Триггер:** первый реальный API-вызов к backend.
+
+### [P1] Валидация env через Zod `proposed`
+**Зачем:** `import.meta.env.VITE_*` сейчас типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
+**Что:** `shared/config/env.ts` с `envSchema.parse(import.meta.env)`. Падать на старте с понятной ошибкой.
+**Доп:** убрать дубль с `src/assets/config.json`.
+**Триггер:** второй env-параметр.
+
+### [P1] Глобальная обработка ошибок `proposed`
+**Зачем:** нет `app.config.errorHandler`, нет `window.unhandledrejection`, нет точки подключения Sentry.
+**Что:** `shared/lib/error/` + `app/providers/setup-error-handler.ts`.
+**Триггер:** до выхода на staging.
+
+### [P1] Snackbar / notification store `proposed`
+**Зачем:** без глобального уведомлятора каждый разработчик слепит свой `v-snackbar` в каждой странице.
+**Что:** `entities/notification` или `shared/ui/feedback/notify` + `widgets/app-notifications` (хост в layout).
+**Триггер:** второе место в коде, где нужно «показать тост».
+
+### [P1] AuthLayout `proposed`
+**Зачем:** `LoginPage` сейчас рендерится внутри default-layout с сайдбаром и хедером.
+**Что:** `src/app/layouts/auth.vue` (центрированная карточка, без навигации) + `definePage({ meta: { layout: 'auth' } })` в auth-страницах.
+**Триггер:** редизайн логина.
+
+### [P1] RBAC в guard `proposed`
+**Зачем:** сейчас `can()` фильтрует только sidebar. По прямой ссылке можно попасть на запрещённый маршрут.
+**Что:** `meta.permissions: PermissionCode[]` + проверка в `router.beforeEach`. Редирект на `/system/forbidden`.
+**Триггер:** появление второго permission-зависимого маршрута.
+
+---
+
+## Фаза 2 — DX и расширяемость
+
+Когда фундамент стоит — закладываем масштабируемость и культуру.
+
+### [P2] DTO ↔ Domain model `proposed`
+**Зачем:** Zod-схема одновременно описывает API-контракт и domain-модель — баг с `is_active` родом отсюда. На масштабе любая правка backend-поля бьёт по всему фронту.
+**Что:** разделить `entities/<x>/api/x.dto.ts` (snake_case backend), `model/x.model.ts` (camelCase domain), `api/x.mapper.ts` (DTO → Model).
+**Trade-off:** +1-2 файла на сущность.
+**Триггер:** реальный backend.
+
+### [P2] Route data-loaders `proposed`
+**Зачем:** `unplugin-vue-router/data-loaders` уже в `optimizeDeps` (см. `vite.config.mts`), но не используется. Это убирает 80% «store + fetch + isLoading» boilerplate'а на list-страницах.
+**Что:** перевести list-страницы на `defineBasicLoader`/`defineLoader`.
+**Trade-off:** API ещё стабилизируется. Не подходит для глобального state.
+**Триггер:** появление 3+ list-страниц.
+
+### [P2] TanStack Query для серверного state `proposed`
+**Зачем:** дедупликация, кэш, фоновое обновление, инвалидация, optimistic updates. Окупается к 10-й API-странице.
+**Что:** `@tanstack/vue-query`, оставить Pinia только для клиентского state.
+**Trade-off:** +библиотека, +mental model.
+**Триггер:** в 3 местах один и тот же endpoint, или запрос «обновлять каждые N секунд».
+
+### [P2] Декларативная RBAC `proposed`
+**Зачем:** `v-if="can('user.delete')"` на 50 кнопках — нечитаемо и не грепается.
+**Что:** компонент `<Can permission="...">` или директива `v-can`.
+**Триггер:** 5+ permission-зависимых UI-элементов.
+
+### [P2] `usePageMeta` composable `proposed`
+**Зачем:** текущий хак с `route.meta.title.value = ...` (см. `DashboardPage.vue`) опасен и плохо реактивен.
+**Что:** composable + стор `pageMetaStore` (title, breadcrumbs, actions). Layout рендерит из него.
+**Триггер:** 3-я страница с динамическим title.
+
+### [P2] Form architecture `proposed`
+**Зачем:** будут десятки форм. Без общего паттерна — копипаста и боль валидации.
+**Что:** VeeValidate + Zod-resolver (рекомендую) либо собственный `useForm`.
+**Триггер:** второй CRUD-экран.
+
+### [P2] Vuetify-обёртка в `shared/ui/base/` `proposed`
+**Зачем:** прямое использование `<v-btn>` в widgets/pages = vendor lock-in. Vuetify 4 → переписывать сотни мест.
+**Что:** тонкие обёртки с доменным API (`<Button variant="primary" loading>`).
+**Триггер:** 50+ кнопок в проекте.
+
+### [P2] `processes/` для cross-entity сценариев `proposed`
+**Зачем:** auth-flow (login → fetch user → fetch permissions → navigate) не помещается ни в один стор. Сторы, зовущие друг друга, — антипаттерн.
+**Что:** `processes/auth-flow`, `processes/logout-flow`, `processes/session-refresh`.
+**Триггер:** второй cross-entity сценарий.
+
+### [P2] i18n (vue-i18n) `proposed`
+**Зачем:** UI уже на русском, тексты вшиты в шаблоны. Перевести через год — невозможно.
+**Что:** vue-i18n + словари `shared/i18n/locales/{ru,en}.json` + setup-провайдер.
+**Триггер:** до того, как накопится 50+ страниц.
+
+### [P2] ESLint-boundaries для FSD `proposed`
+**Зачем:** без автомата человеческая дисциплина проседает на 3-й месяц. FSD ломается тихо.
+**Что:** `eslint-plugin-boundaries` или `@feature-sliced/eslint-config`. Запрет нарушения слоёв + запрет импорта в обход barrel.
+**Триггер:** в команде появился 3-й разработчик.
+
+### [P2] Husky + lint-staged + commitlint `proposed`
+**Зачем:** pre-commit lint + Conventional Commits.
+**Что:** husky, lint-staged, @commitlint/config-conventional.
+**Триггер:** появление PR-review-флоу.
+
+### [P2] Vitest для shared/lib и сторов `proposed`
+**Зачем:** в проекте 0 тестов. Утилиты типа `plural`, `normalizePhone`, `formatBytes` — идеальные кандидаты unit-тестов.
+**Что:** vitest + @vue/test-utils.
+**Триггер:** второй критический баг в логике.
+
+### [P2] `useAsyncStatus` или Query вместо разных loading-флагов `proposed`
+**Зачем:** сейчас `bootstrap` — FSM, `auth` — `isLoaded`, `user` — нет вообще. К 20-му стору — зоопарк.
+**Что:** общий composable `useAsyncStatus()` ИЛИ переход на TanStack Query (взаимоисключающие).
+**Триггер:** третий стор с асинхронной загрузкой.
+
+---
+
+## Фаза 3 — Observability и масштабирование
+
+Когда продукт пошёл в прод и появились пользователи.
+
+### [P3] Sentry / observability `proposed`
+**Что:** `@sentry/vue` + source maps в CI. Замена `console.error` на структурированный логгер.
+
+### [P3] Storybook для `shared/ui/base/` `proposed`
+**Что:** живой reference для компонентов с props/slots/состояниями.
+**Триггер:** 10+ компонентов в `shared/ui/`.
+
+### [P3] CI (lint + type-check + test + build) `proposed`
+**Что:** GitHub Actions или эквивалент. Превью PR — опционально.
+
+### [P3] Design tokens `proposed`
+**Зачем:** Vuetify-theme — vendor-specific. Дизайн-токены отделяют бренд от UI-фреймворка.
+**Что:** `shared/assets/tokens/` (SCSS-переменные или CSS-vars), Vuetify-тема собирается из них.
+
+### [P3] Code-splitting аудит `proposed`
+**Что:** проверить чанки Vite. Тяжёлые widgets/features через `defineAsyncComponent`.
+
+### [P3] Типизированный event-bus для cross-cutting событий `proposed`
+**Зачем:** `auth:logged-in`, `session:expired` — события, на которые нужно реагировать из разных мест.
+**Что:** `mitt` + типизированный контракт. Только cross-cutting; обычная коммуникация — через provide/inject или сторы.
+**Trade-off:** легко превращается в свалку — нужна дисциплина.
+
+### [P3] PWA / Service Worker `proposed`
+**Что:** `vite-plugin-pwa`. Полезно для частичного offline и push.
+
+### [P3] Вынос `shared/` в npm-пакет `proposed`
+**Зачем:** если будет 2+ SPA — переиспользовать. FSD уже готова к этому структурно.
+**Триггер:** появление второго SPA-проекта.
+
+---
+
+## Как добавлять пункты
+
+1. Опиши в формате выше (Зачем / Что / Trade-off / Триггер).
+2. Поставь статус `proposed`.
+3. Помести в подходящую фазу.
+4. Поднимай в обсуждение командой.
+5. Принимаешь — создаёшь ADR в [docs/adr/](docs/adr/), меняешь статус на `planned`.
