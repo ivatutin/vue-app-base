@@ -51,7 +51,7 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 - Внутри страницы meta задаётся через макрос `definePage({ meta: { ... } })` (авто-импорт), а не правкой записей маршрутов.
 - Auth-guard ([app/providers/setup-router.ts](src/app/providers/setup-router.ts)) работает как **whitelist по `meta.noAuth`** — любой маршрут без `noAuth: true` требует `useUserStore().isAuthorized`.
-- Сгенерированные типы маршрутов лежат в `src/typed-router.d.ts` (закоммичено). Тонкий момент: путь к системным страницам написан с опечаткой как `pages/systesm/` — совпадающая директория существует, не «исправляй» её без обновления маршрутов и ссылок.
+- Сгенерированные типы маршрутов лежат в `src/typed-router.d.ts` (закоммичено, регенерируется при `dev`/`build` — руками не редактируй). `RouteMeta` расширен в `src/router-meta.d.ts` (`title?`, `noAuth?`, `permissions?`).
 - Лэйауты подключает `vite-plugin-vue-layouts-next` из `src/app/layouts/`; `default.vue` — это оболочка (sidebar + header + `<router-view/>` + footer).
 
 ### Управление состоянием — Pinia setup-стoры

@@ -36,13 +36,18 @@ sequenceDiagram
     Process->>Bootstrap: start()
     Note over Bootstrap: status = 'initializing'
 
-    par async tasks
-        Process->>Process: sleep(3000)  ⚠ placeholder
-        Note right of Process: TODO: env-валидация,<br/>auth.init(),<br/>user.fetchCurrentUser()<br/>(ROADMAP, Фаза 0)
+    Process->>Process: auth.init()
+    Note right of Process: чтение токенов из tokenStorage<br/>в state стора auth (sync)
+
+    alt isSessionActive
+        Process->>Process: await user.fetchCurrentUser()
+        Note right of Process: тянет профиль; внутри ловит<br/>ошибки и обнуляет user
     end
 
     Process->>Router: await isReady()
     Router-->>Process: ✓
+
+    Note right of Process: env-валидация (Zod) и session-refresh<br/>при 401 — ROADMAP, Фаза 1
 
     alt success
         Process->>Bootstrap: finish()
@@ -73,13 +78,17 @@ stateDiagram-v2
 
 ## Точки расширения
 
-В порядке выполнения внутри `runBootstrapProcess` будут добавляться шаги:
+Текущий порядок шагов внутри `runBootstrapProcess`:
 
-1. **Валидация env** — `envSchema.parse(import.meta.env)` ([ROADMAP](../../ROADMAP.md), Фаза 1). Падать с понятной ошибкой, если переменные отсутствуют.
-2. **Init auth** — `auth.init()`: чтение токена из storage, попытка `refresh` если истёк ([ROADMAP](../../ROADMAP.md), Фаза 0).
-3. **Fetch current user** — `user.fetchCurrentUser()` если есть валидный токен.
-4. **Prefetch критичных справочников** — справочники, без которых не работает UI (роли, типы и т.п.). Только то, что **действительно** нужно сразу — остальное лениво.
-5. **`router.isReady()`** — последний шаг, после него можно переключать `App.vue` в `<v-app>`.
+1. **Init auth** — `auth.init()`: sync-чтение токенов из `tokenStorage` в state стора. **Реализовано.**
+2. **Fetch current user** — `user.fetchCurrentUser()` если `auth.isSessionActive`. **Реализовано.**
+3. **`router.isReady()`** — последний шаг, после него `App.vue` переключается в `<v-app>`. **Реализовано.**
+
+Запланированные расширения ([ROADMAP](../../ROADMAP.md)):
+
+- **Валидация env** — `envSchema.parse(import.meta.env)`, падать с понятной ошибкой на старте (Фаза 1).
+- **Session-refresh при 401** — interceptor HTTP-клиента + попытка `refresh` (Фаза 1).
+- **Prefetch критичных справочников** — добавлять по необходимости, осторожно: всё, что блокирует splash, тормозит первый рендер.
 
 ## Анти-паттерны
 

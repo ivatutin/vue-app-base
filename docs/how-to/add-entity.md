@@ -162,7 +162,7 @@ export const useOrderStore = defineStore('order', () => {
 })
 ```
 
-**Не забудь `return`!** Setup без `return` = пустой стор (типичный баг — см. [KNOWN-ISSUES.md](../../KNOWN-ISSUES.md), пункт 4).
+**Не забудь `return`!** Setup без `return` = пустой стор (типичная ошибка composition-style, обсуждается в [ADR-0002](../adr/0002-pinia-setup-stores.md) § Consequences).
 
 `defineStore`, `ref`, `computed` — авто-импортируются ([../reference/auto-imports.md](../reference/auto-imports.md)).
 

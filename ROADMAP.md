@@ -6,52 +6,33 @@
 
 ---
 
-## Фаза 0 — Стабилизация
+## Фаза 0 — Стабилизация `done` (2026-05-22)
 
-Закрыть ломающие баги и привести проект к рабочему минимуму. Все пункты — обязательны до начала Фазы 1. Детали по каждому см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+Закрыты ломающие баги, baseline `npm run type-check` green. Цепочка из 8 коммитов от `f4a3421` до `e0b5bb6`. Детали по каждому пункту — в git-логе и в свёрнутом ниже журнале.
 
-### [P0] Привести схему `User` и стор к единой конвенции `planned`
-**Зачем:** в схеме `is_active`, в сторе `isActive` → `isAuthorized` всегда false → бесконечный редирект на login.
-**Что:** перейти на camelCase в `entities/user/schema/user.schema.ts` (либо вынести `.transform()` DTO → Model).
-**Trade-off:** при подключении реального backend появится потребность в маппере (см. Фазу 1, «DTO ↔ Domain»).
-**Триггер:** немедленно.
+### [P0] Привести схему `User` и стор к единой конвенции `done`
+Закрыто разделением DTO ↔ Domain ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `userDtoSchema` (snake_case) + `userSchema` (camelCase) + `toUser` mapper. `isAuthorized` теперь работает, бесконечный редирект на login снят.
 
-### [P0] Создать `shared/model/permission/` и починить сломанные импорты `planned`
-**Зачем:** `entities/user/lib/can.ts` импортирует несуществующий `../model/types`; `widgets/app-sidebar/model/sidebar-items.ts` — несуществующий `@/entities/permission`.
-**Что:** создать `shared/model/permission/` (схема + тип `PermissionCode`), импортировать оттуда в `entities/user/schema/user.schema.ts`, починить импорты в `can.ts` и `sidebar-items.ts` на `@/shared/model/permission`.
-**ADR:** [docs/adr/0004-rbac-vocabulary-in-shared.md](docs/adr/0004-rbac-vocabulary-in-shared.md) — решение принято: vocabulary в `shared/`, `can()` остаётся в `entities/user/lib/`.
-**Триггер:** немедленно.
+### [P0] Создать `shared/model/permission/` и починить сломанные импорты `done`
+Vocabulary прав вынесено в `shared/model/permission/` ([ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)). Импорты `PermissionCode` в `can.ts`, `sidebar-items.ts` и `user.schema.ts` переведены на `@/shared/model/permission`.
 
-### [P0] Разделить DTO ↔ Domain для `entities/user/` `planned`
-**Зачем:** баг с `is_active` vs `isActive` (см. п. выше) — следствие смешения API-контракта и domain-модели. Без разделения фикс пришлось бы переделывать при первом реальном backend.
-**Что:** для `entities/user/` ввести трёхфайловый паттерн: `api/user.dto.ts` (snake_case контракт), `schema/user.schema.ts` (camelCase Domain), `api/user.mapper.ts` (`toUser(dto)`). `api/index.ts` парсит DTO и гонит через mapper.
-**ADR:** [docs/adr/0005-dto-domain-mapping.md](docs/adr/0005-dto-domain-mapping.md) — паттерн обязателен для всех новых сущностей с API.
-**Триггер:** немедленно, в одном PR с фиксом схемы `User`.
+### [P0] Разделить DTO ↔ Domain для `entities/user/` `done`
+Реализован трёхфайловый паттерн `api/user.dto.ts` + `schema/user.schema.ts` + `api/user.mapper.ts`. `api/index.ts` парсит DTO и гонит через mapper, `UserDto` за пределы `api/`-сегмента не выходит.
 
-### [P0] Доделать `entities/auth/auth.store.ts` `planned`
-**Зачем:** setup-функция стора не имеет `return` → `useAuthStore()` возвращает `undefined`. Опечатка `emaiil_or_phone`. `isLoaded` → `isLoading`.
-**Что:** вернуть state/actions из setup, реализовать `login`/`logout`/`refresh`, заполнить `entities/auth/index.ts`.
-**Триггер:** немедленно.
+### [P0] Доделать `entities/auth/auth.store.ts` `done`
+Возвращён `return` из setup, реализован `init()` (явное чтение токенов из storage), `login`/`refresh` как чёткие заглушки `throw Error('not implemented yet')` с TODO на HTTP-клиент (Фаза 1), `logout` чистит state + storage. Опечатка `emaiil_or_phone` → `emailOrPhone`, `isLoaded` → `isLoading`. `entities/auth/index.ts` заполнен.
 
-### [P0] Починить auth-guard `planned`
-**Зачем:** `useUserStore()` вызывается на верхнем уровне `setupRouter` до bootstrap → стор всегда пустой → любой переход редиректит на login.
-**Что:** перенести вызов внутрь `beforeEach`, использовать `storeToRefs`.
-**Триггер:** немедленно.
+### [P0] Починить auth-guard `done`
+`useUserStore()` перенесён внутрь `router.beforeEach`, обёрнут в `storeToRefs` — реактивность восстановлена, ref'ы обновляются по мере наполнения стора bootstrap'ом.
 
-### [P0] Заменить `sleep(3000)` в bootstrap на реальный pipeline `planned`
-**Зачем:** сейчас заглушка, нет восстановления сессии.
-**Что:** `env → auth.init() → user.fetchCurrentUser() → router.isReady()`.
-**Триггер:** после починки auth и guard.
+### [P0] Заменить `sleep(3000)` в bootstrap на реальный pipeline `done`
+Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurrentUser()` → `router.isReady()`. Env-валидация остаётся на Фазу 1.
 
-### [P1] Починить типизацию в `shared/lib/utils` `planned`
-**Зачем:** `npm run type-check` выдаёт 6 ошибок в `plural.ts` и `format-time-interval.ts` — baseline не green, CONTRIBUTING.md-чек перед PR не проходит.
-**Что:** см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md), пункт 11 — расширить сигнатуру `plural()` до `readonly string[]`, застраховать индекс, заодно поправить копипасту с `units.y[0]` в `formatTimeInterval`.
-**Триггер:** в первом же фикс-PR Фазы 0.
+### [P1] Починить типизацию в `shared/lib/utils` `done`
+`plural()`: сигнатура `readonly string[]` + страховка индекса. `formatTimeInterval`: исправлена копипаста `units.y[0]` во всех short-ветках, опечатка `shortFromat` → `shortFormat`. `npm run type-check` стал green.
 
-### [P1] Удалить отладочный мусор `planned`
-**Зачем:** `console.log` в проде, отладочный текст в `default.vue`, `prepend-gap` (несуществующий атрибут), `stroke="green"` игнорирующий тему.
-**Что:** см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md), раздел «Code quality».
-**Триггер:** в первом же фикс-PR.
+### [P1] Удалить отладочный мусор `done`
+Удалены `console.log` в `setup-router.ts`/`default.vue`/`user/api/index.ts`; убраны несуществующий `prepend-gap` и копипастный `theme.toggle()` в `AppHeader.vue`; убран дубль `import { shallowRef }` в `AppFooter.vue`; `stroke="green"` → `currentColor` в `AppPreloader.vue`; удалён хак `route.meta.title.value` в `DashboardPage.vue` + расширение `RouteMeta` в `src/router-meta.d.ts`; переименован `pages/systesm/` → `pages/system/` с регенерацией `typed-router.d.ts`. Оставшиеся P2-мелочи (`pages/index.vue`, `vite.config.mts:108`, naming-convention, `config.json`↔`.env` дубль) — не блокирующие, остаются в [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
 ---
 

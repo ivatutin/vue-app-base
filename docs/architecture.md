@@ -186,11 +186,12 @@ definePage({
 
 ```ts
 router.beforeEach((to) => {
+  const { isAuthorized } = storeToRefs(useUserStore())
   if (!to.meta.noAuth && !isAuthorized.value) return { name: '/auth/login' }
 })
 ```
 
-> ⚠️ Текущая реализация guard'а содержит ошибку — см. [KNOWN-ISSUES.md](../KNOWN-ISSUES.md), пункт 5.
+`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `storeToRefs` сохраняет реактивность — стор может быть пустым на момент регистрации guard'а и наполниться bootstrap'ом до первого реального перехода.
 
 ### Layouts
 
