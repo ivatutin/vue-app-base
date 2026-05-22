@@ -28,20 +28,46 @@
 ```
 src/entities/order/
 ├── schema/
-│   └── order.schema.ts        ← начни отсюда
+│   └── order.schema.ts        ← Domain-схема (camelCase)
 ├── api/
-│   └── index.ts
+│   ├── order.dto.ts           ← DTO-схема (контракт backend)
+│   ├── order.mapper.ts        ← toOrder(dto): Order
+│   └── index.ts               ← async-функции запросов
 ├── model/
 │   └── order.store.ts
 ├── lib/                       ← опц.
 └── index.ts                   ← публичный API
 ```
 
-Создавай только нужные сегменты. Если у сущности нет UI — нет `ui/`. Если нет хелперов — нет `lib/`.
+Создавай только нужные сегменты. Если у сущности нет UI — нет `ui/`. Если нет хелперов — нет `lib/`. Файлы `api/<x>.dto.ts` + `api/<x>.mapper.ts` обязательны для любой сущности с API ([ADR-0005](../adr/0005-dto-domain-mapping.md)).
 
-### 2. Описать схему (Zod-first)
+### 2. Описать DTO-схему (контракт backend)
 
-Схема — **источник истины** для типов ([ADR-0003](../adr/0003-zod-as-source-of-truth.md)).
+DTO — то, что приходит **снаружи**. Со всеми особенностями контракта (snake_case, форматы дат строками и т.п.). Тип `<X>Dto` **не выходит** за пределы `api/`-сегмента.
+
+```ts
+// src/entities/order/api/order.dto.ts
+import { z } from 'zod'
+
+export const orderStatusDtoSchema = z.enum(['draft', 'placed', 'paid', 'shipped', 'cancelled'])
+
+export const orderDtoSchema = z.object({
+  id: z.uuid(),
+  customer_id: z.uuid(),
+  total: z.number().nonnegative(),
+  currency: z.string().length(3),
+  status: orderStatusDtoSchema,
+  created_at: z.coerce.date(),
+})
+
+export type OrderDto = z.infer<typeof orderDtoSchema>
+```
+
+Если контракт уже в camelCase — DTO-схема всё равно создаётся (декларация: «здесь граница, здесь конвертируется контракт»).
+
+### 3. Описать Domain-схему (то, с чем работает приложение)
+
+Schema-first для типов ([ADR-0003](../adr/0003-zod-as-source-of-truth.md)). Domain — всегда camelCase, «правильные» типы.
 
 ```ts
 // src/entities/order/schema/order.schema.ts
@@ -55,7 +81,7 @@ export const orderSchema = z.object({
   total: z.number().nonnegative(),
   currency: z.string().length(3),
   status: orderStatusSchema,
-  createdAt: z.coerce.date(),
+  createdAt: z.date(),
 })
 
 export type Order = z.infer<typeof orderSchema>
@@ -64,26 +90,50 @@ export type OrderStatus = z.infer<typeof orderStatusSchema>
 
 **Не объявляй параллельный `interface Order`.** Только `z.infer`.
 
-### 3. API с валидацией ответа
+### 4. Mapper DTO → Domain
+
+Чистая функция, единственная точка преобразования. Tривиальный mapper тоже создаётся — пусть будет.
+
+```ts
+// src/entities/order/api/order.mapper.ts
+import type { OrderDto } from './order.dto'
+import type { Order } from '../schema/order.schema'
+
+export function toOrder(dto: OrderDto): Order {
+  return {
+    id: dto.id,
+    customerId: dto.customer_id,
+    total: dto.total,
+    currency: dto.currency,
+    status: dto.status,
+    createdAt: dto.created_at,
+  }
+}
+```
+
+Обратный mapper (`fromOrder(model): OrderDto`) — создавай только когда нужен (PUT/POST). Не делай «на будущее».
+
+### 5. API с валидацией ответа
 
 ```ts
 // src/entities/order/api/index.ts
-import { orderSchema } from '../schema/order.schema'
+import { orderDtoSchema } from './order.dto'
+import { toOrder } from './order.mapper'
 import type { Order } from '../schema/order.schema'
 
 export async function getOrder(id: string): Promise<Order> {
   // TODO: заменить на shared/api/http-client (ROADMAP, Фаза 1)
   const raw = await fetch(`/api/orders/${id}`).then((r) => r.json())
 
-  const parsed = orderSchema.safeParse(raw)
+  const parsed = orderDtoSchema.safeParse(raw)
   if (!parsed.success) return Promise.reject(parsed.error)
-  return parsed.data
+  return toOrder(parsed.data)
 }
 ```
 
-Любой ответ от backend **обязан** пройти `safeParse`. Это контракт.
+Любой ответ от backend **обязан** пройти `safeParse` через DTO-схему и затем через mapper. UI и сторы получают только `Order` — `OrderDto` **наружу не уходит**.
 
-### 4. Стор (setup-style)
+### 6. Стор (setup-style)
 
 [ADR-0002](../adr/0002-pinia-setup-stores.md).
 
@@ -116,7 +166,7 @@ export const useOrderStore = defineStore('order', () => {
 
 `defineStore`, `ref`, `computed` — авто-импортируются ([../reference/auto-imports.md](../reference/auto-imports.md)).
 
-### 5. Lib — чистые функции (опц.)
+### 7. Lib — чистые функции (опц.)
 
 ```ts
 // src/entities/order/lib/format-order-number.ts
@@ -129,7 +179,7 @@ export function formatOrderNumber(order: Order): string {
 
 Чистые функции без side effects. Если функции нужен Pinia-стор — это **не** lib, это часть model.
 
-### 6. Публичный API
+### 8. Публичный API
 
 ```ts
 // src/entities/order/index.ts
@@ -139,9 +189,9 @@ export { orderSchema, orderStatusSchema } from './schema/order.schema'
 export type { Order, OrderStatus } from './schema/order.schema'
 ```
 
-Экспортируй **только то, что нужно снаружи**. Внутренности слайса (API-функции, утилиты) — приватны.
+Экспортируй **только то, что нужно снаружи**. Внутренности слайса (DTO-схемы, mapper, API-функции, утилиты) — приватны. `OrderDto` снаружи не виден.
 
-### 7. Использовать в коде
+### 9. Использовать в коде
 
 ```ts
 // в widget / page / feature
@@ -159,8 +209,11 @@ import { useOrderStore } from '@/entities/order/model/order.store'
 
 ## Чек-лист
 
-- [ ] Схема в `schema/`, тип через `z.infer`.
-- [ ] API использует `safeParse` для всех ответов backend.
+- [ ] DTO-схема в `api/<x>.dto.ts`, тип `<X>Dto` через `z.infer`.
+- [ ] Domain-схема в `schema/<x>.schema.ts`, тип `<X>` через `z.infer`, всегда camelCase.
+- [ ] Mapper `to<X>(dto)` в `api/<x>.mapper.ts` — чистая функция.
+- [ ] API использует `safeParse` через DTO-схему и mapper для всех ответов backend.
+- [ ] DTO-тип **не** экспортируется из `index.ts` слайса.
 - [ ] Стор в `model/`, setup-style, **есть `return`**.
 - [ ] Lib — только чистые функции.
 - [ ] `index.ts` экспортирует только публичную часть.
@@ -174,7 +227,9 @@ import { useOrderStore } from '@/entities/order/model/order.store'
 | ❌ Плохо | ✅ Хорошо |
 |---------|----------|
 | `interface Order { ... }` параллельно со схемой | `type Order = z.infer<typeof orderSchema>` |
-| API возвращает `any`, без `safeParse` | Все ответы валидируются Zod |
+| Одна схема описывает и контракт, и domain (snake_case в `user.value.is_active`) | DTO-схема + Domain-схема + mapper |
+| API возвращает `any`, без `safeParse` | Все ответы валидируются через DTO-схему |
+| `OrderDto` экспортируется из `index.ts` и попадает в стор | DTO живёт в `api/`, наружу выходит только `Order` |
 | Стор без `return` | Setup-функция явно возвращает state/actions |
 | Импорт из `entities/order/model/...` | Импорт из `@/entities/order` |
 | Стор `order` импортирует стор `user` напрямую | Cross-entity логика в `processes/` или `features/` |
@@ -188,3 +243,4 @@ import { useOrderStore } from '@/entities/order/model/order.store'
 - [../architecture.md](../architecture.md) — слои и сегменты
 - [../adr/0001-feature-sliced-design.md](../adr/0001-feature-sliced-design.md) — про FSD
 - [../adr/0003-zod-as-source-of-truth.md](../adr/0003-zod-as-source-of-truth.md) — про Zod
+- [../adr/0005-dto-domain-mapping.md](../adr/0005-dto-domain-mapping.md) — про разделение DTO/Domain/Mapper

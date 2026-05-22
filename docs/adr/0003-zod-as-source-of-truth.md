@@ -67,11 +67,11 @@ export const phoneSchema = z.string()
 
 - **Накладной расход на runtime-валидацию.** Минимальный, но не нулевой. Для горячих путей (большие списки на 10k+ элементов) — стоит измерять.
 - **Привязка к Zod.** Миграция на другой validator (если потребуется) — переписывание всех схем. Митигация: схемы изолированы в `schema/`-сегменте, миграция остаётся локальной.
-- **Соблазн смешать API-контракт и domain-модель.** Если backend возвращает snake_case, а UI хочет camelCase — нельзя описывать это одной схемой. Решение: см. предложенный пункт «DTO ↔ Domain mapping» в [ROADMAP](../../ROADMAP.md), Фаза 2.
+- **Соблазн смешать API-контракт и domain-модель.** Если backend возвращает snake_case, а UI хочет camelCase — нельзя описывать это одной схемой. Решение зафиксировано в [ADR-0005](0005-dto-domain-mapping.md): для каждой сущности с API — три файла (`<x>.dto.ts` + `<x>.schema.ts` + `<x>.mapper.ts`), DTO дальше `api/`-сегмента не выходит.
 
 ### Что меняется в коде
 
-- `entities/user/schema/user.schema.ts` — уже использует подход (требует только camelCase-фикса по [KNOWN-ISSUES.md](../../KNOWN-ISSUES.md), пункт 1).
+- `entities/user/schema/user.schema.ts` — уже использует подход; камелКейс-фикс выполняется в рамках [ADR-0005](0005-dto-domain-mapping.md) (см. также [KNOWN-ISSUES.md](../../KNOWN-ISSUES.md), пункт 1).
 - `shared/model/phone/phone.schema.ts` — пример brand-type.
 - Новые сущности — обязательно через Zod.
 

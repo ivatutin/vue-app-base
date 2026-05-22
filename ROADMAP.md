@@ -16,11 +16,17 @@
 **Trade-off:** при подключении реального backend появится потребность в маппере (см. Фазу 1, «DTO ↔ Domain»).
 **Триггер:** немедленно.
 
-### [P0] Создать `entities/permission/` и починить сломанные импорты `planned`
+### [P0] Создать `shared/model/permission/` и починить сломанные импорты `planned`
 **Зачем:** `entities/user/lib/can.ts` импортирует несуществующий `../model/types`; `widgets/app-sidebar/model/sidebar-items.ts` — несуществующий `@/entities/permission`.
-**Что:** создать `entities/permission/` с типами `PermissionCode`, перенести `permissionSchema` туда или экспортировать из `entities/user`.
-**Trade-off:** требует ADR — где живёт RBAC: внутри `user` или отдельно.
+**Что:** создать `shared/model/permission/` (схема + тип `PermissionCode`), импортировать оттуда в `entities/user/schema/user.schema.ts`, починить импорты в `can.ts` и `sidebar-items.ts` на `@/shared/model/permission`.
+**ADR:** [docs/adr/0004-rbac-vocabulary-in-shared.md](docs/adr/0004-rbac-vocabulary-in-shared.md) — решение принято: vocabulary в `shared/`, `can()` остаётся в `entities/user/lib/`.
 **Триггер:** немедленно.
+
+### [P0] Разделить DTO ↔ Domain для `entities/user/` `planned`
+**Зачем:** баг с `is_active` vs `isActive` (см. п. выше) — следствие смешения API-контракта и domain-модели. Без разделения фикс пришлось бы переделывать при первом реальном backend.
+**Что:** для `entities/user/` ввести трёхфайловый паттерн: `api/user.dto.ts` (snake_case контракт), `schema/user.schema.ts` (camelCase Domain), `api/user.mapper.ts` (`toUser(dto)`). `api/index.ts` парсит DTO и гонит через mapper.
+**ADR:** [docs/adr/0005-dto-domain-mapping.md](docs/adr/0005-dto-domain-mapping.md) — паттерн обязателен для всех новых сущностей с API.
+**Триггер:** немедленно, в одном PR с фиксом схемы `User`.
 
 ### [P0] Доделать `entities/auth/auth.store.ts` `planned`
 **Зачем:** setup-функция стора не имеет `return` → `useAuthStore()` возвращает `undefined`. Опечатка `emaiil_or_phone`. `isLoaded` → `isLoading`.
@@ -86,11 +92,7 @@
 
 Когда фундамент стоит — закладываем масштабируемость и культуру.
 
-### [P2] DTO ↔ Domain model `proposed`
-**Зачем:** Zod-схема одновременно описывает API-контракт и domain-модель — баг с `is_active` родом отсюда. На масштабе любая правка backend-поля бьёт по всему фронту.
-**Что:** разделить `entities/<x>/api/x.dto.ts` (snake_case backend), `model/x.model.ts` (camelCase domain), `api/x.mapper.ts` (DTO → Model).
-**Trade-off:** +1-2 файла на сущность.
-**Триггер:** реальный backend.
+> Пункт «DTO ↔ Domain model» перенесён в Фазу 0 и зафиксирован в [docs/adr/0005-dto-domain-mapping.md](docs/adr/0005-dto-domain-mapping.md). Паттерн обязателен для всех сущностей с API, не только для новых после реального backend.
 
 ### [P2] Route data-loaders `proposed`
 **Зачем:** `unplugin-vue-router/data-loaders` уже в `optimizeDeps` (см. `vite.config.mts`), но не используется. Это убирает 80% «store + fetch + isLoading» boilerplate'а на list-страницах.

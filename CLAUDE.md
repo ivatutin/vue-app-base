@@ -59,8 +59,8 @@ shared/     переиспользуемая инфраструктура: lib/u
 Все сторы — в композиционном стиле `defineStore('name', () => { ... })` с `ref/computed/function` (не Options API). `defineStore`, `storeToRefs`, `ref`, `computed` и т. д. **авто-импортируются** — не добавляй явных `import` для них.
 
 Модель авторизации живёт в [entities/user](src/entities/user/):
-- Типы выводятся из схемы: `User` — это `z.infer<typeof userSchema>` из [schema/user.schema.ts](src/entities/user/schema/user.schema.ts). Ответы API валидируются через `userSchema.safeParse(...)` в [api/index.ts](src/entities/user/api/index.ts) ещё до попадания в стор.
-- Проверки прав идут через хелпер `can(permission)` ([lib/can.ts](src/entities/user/lib/can.ts)); сайдбар фильтрует пункты с его помощью ([widgets/app-sidebar/ui/AppSidebar.vue](src/widgets/app-sidebar/ui/AppSidebar.vue)).
+- **DTO ↔ Domain.** Контракт backend и domain-модель разделены ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `api/user.dto.ts` описывает форму ответа (snake_case), `schema/user.schema.ts` — domain-модель `User = z.infer<typeof userSchema>` (camelCase), `api/user.mapper.ts` — `toUser(dto)`. В [api/index.ts](src/entities/user/api/index.ts) ответ парсится через `userDtoSchema.safeParse`, прогоняется через mapper, наружу уходит только `User`. `UserDto` за пределы `api/`-сегмента **не выходит**.
+- **RBAC.** Vocabulary прав живёт в [shared/model/permission/](src/shared/model/permission/) ([ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)) — `permissionSchema` и тип `PermissionCode`. Хелпер `can(permission)` ([lib/can.ts](src/entities/user/lib/can.ts)) остаётся в `entities/user/lib/`, потому что зависит от `useUserStore()`. Сайдбар фильтрует пункты с его помощью ([widgets/app-sidebar/ui/AppSidebar.vue](src/widgets/app-sidebar/ui/AppSidebar.vue)).
 
 ### Конвенции, заданные тулчейном
 

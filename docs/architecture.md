@@ -232,18 +232,30 @@ export type User = z.infer<typeof userSchema>
 
 Параллельный `interface User { ... }` **запрещён** — только `z.infer`. Подробнее — [ADR-0003](adr/0003-zod-as-source-of-truth.md).
 
-### Валидация ответов API
+### Валидация ответов API + разделение DTO ↔ Domain
 
-Любой ответ от backend проходит через `safeParse` ещё до попадания в стор:
+Контракт backend и domain-модель **разделены** ([ADR-0005](adr/0005-dto-domain-mapping.md)). Для каждой сущности с API — три файла:
+
+```
+entities/<x>/
+├── api/
+│   ├── <x>.dto.ts      ← Zod-схема DTO: контракт backend «как есть» (snake_case, если backend snake_case)
+│   ├── <x>.mapper.ts   ← to<X>(dto): <X>  — единственная точка преобразования
+│   └── index.ts        ← async-функции запросов, возвращают Domain
+└── schema/
+    └── <x>.schema.ts   ← Zod-схема Domain: всегда camelCase, «правильные» типы
+```
+
+API-функция парсит raw-ответ через DTO-схему, гонит через mapper, возвращает Domain. **DTO дальше `api/`-сегмента не выходит** — сторы, UI, composables оперируют только Domain.
 
 ```ts
 // src/entities/user/api/index.ts
-const res = userSchema.safeParse(rawResponse)
-if (!res.success) return Promise.reject(res.error)
-return Promise.resolve(res.data)
+const parsed = userDtoSchema.safeParse(rawResponse)
+if (!parsed.success) return Promise.reject(parsed.error)
+return toUser(parsed.data)
 ```
 
-Это защита от грязного контракта: если backend сломает поле, фронт упадёт **в одном месте** с понятной ошибкой, а не размажет undefined по UI.
+Это защита от грязного контракта (баг в одном понятном месте) плюс изоляция UI от изменений backend (правка поля backend → правка mapper, остальной код не трогается).
 
 ### Brand-types
 
@@ -265,11 +277,11 @@ export type Phone = z.infer<typeof phoneSchema>
 
 ## RBAC
 
-Модель прав живёт в [src/entities/user/](../src/entities/user/):
+Модель прав разнесена по двум слоям ([ADR-0004](adr/0004-rbac-vocabulary-in-shared.md)):
 
-- **Роли** — `roles: string[]` в схеме пользователя.
-- **Разрешения** — `permissions: PermissionCode[]`, где `PermissionCode` — `z.enum` с фиксированным списком.
-- **Проверка** — функция `can(permission)` из [src/entities/user/lib/can.ts](../src/entities/user/lib/can.ts).
+- **Vocabulary прав** — `permissionSchema` (`z.enum` с фиксированным списком) и тип `PermissionCode` — живёт в [src/shared/model/permission/](../src/shared/model/permission/). Это словарное знание без бизнес-поведения, доступное любому слою (sidebar, guard, формы).
+- **Бизнес-логика проверки** — функция `can(permission)` — в [src/entities/user/lib/can.ts](../src/entities/user/lib/can.ts). Завязана на `useUserStore()`, поэтому не может жить ниже `entities/user/`.
+- **Роли и разрешения пользователя** — поля `roles: string[]` и `permissions: PermissionCode[]` в схеме `User` (`entities/user/schema/user.schema.ts`). Схема импортирует `permissionSchema` из `@/shared/model/permission`.
 
 UI-фильтрация — пример в [src/widgets/app-sidebar/ui/AppSidebar.vue](../src/widgets/app-sidebar/ui/AppSidebar.vue):
 
@@ -280,8 +292,6 @@ const visibleItems = computed(() =>
 ```
 
 > ⚠️ Проверка `meta.permissions` в guard'е **ещё не реализована** — её надо добавить, иначе по прямой ссылке можно попасть на запрещённый маршрут. См. [ROADMAP](../ROADMAP.md), Фаза 1.
-
-> ⚠️ Файл `src/entities/permission/` упоминается в импортах, но не существует. См. [KNOWN-ISSUES.md](../KNOWN-ISSUES.md), пункты 2-3.
 
 Декларативный вариант (`<Can permission="...">`) — в [ROADMAP](../ROADMAP.md), Фаза 2.
 

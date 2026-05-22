@@ -25,7 +25,7 @@
 
 **Почему TS молчит:** `User` выводится из `z.infer<typeof userSchema>`, но обращение к несуществующему полю отдаёт `any` через структурный вывод. Под `strict: true` без `noUncheckedIndexedAccess` это допустимо.
 
-**Чинить:** перейти на camelCase в схеме целиком (см. ADR-кандидат «DTO ↔ Domain mapping» в [ROADMAP.md](ROADMAP.md)).
+**Чинить:** разделить контракт и domain согласно [ADR-0005](docs/adr/0005-dto-domain-mapping.md): создать `entities/user/api/user.dto.ts` (snake_case), переписать `entities/user/schema/user.schema.ts` под camelCase, создать `entities/user/api/user.mapper.ts` с `toUser(dto)`. `api/index.ts` парсит DTO и гонит через mapper.
 
 ### 2. Сломанный импорт `entities/user/lib/can.ts`
 
@@ -35,7 +35,7 @@
 
 **Симптом:** type-only импорт компилируется (TS вычёркивает несуществующие type-only при `verbatimModuleSyntax: false`), но `PermissionCode` фактически `any`.
 
-**Чинить:** создать `entities/permission/` (см. п.3) либо экспортировать `PermissionCode` из `entities/user/schema/user.schema.ts`.
+**Чинить:** создать `shared/model/permission/` (см. [ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)), импортировать `PermissionCode` оттуда.
 
 ### 3. Сломанный импорт `widgets/app-sidebar/model/sidebar-items.ts`
 
@@ -45,7 +45,7 @@
 
 **Симптом:** аналогично п.2.
 
-**Чинить:** создать `entities/permission/`.
+**Чинить:** заменить импорт на `@/shared/model/permission` (см. [ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)).
 
 ### 4. `entities/auth/auth.store.ts` — setup-функция без `return`
 

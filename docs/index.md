@@ -17,6 +17,8 @@
 - [adr/0001-feature-sliced-design.md](adr/0001-feature-sliced-design.md) — выбор FSD как primary архитектуры
 - [adr/0002-pinia-setup-stores.md](adr/0002-pinia-setup-stores.md) — composition-style сторов
 - [adr/0003-zod-as-source-of-truth.md](adr/0003-zod-as-source-of-truth.md) — Zod как источник типов
+- [adr/0004-rbac-vocabulary-in-shared.md](adr/0004-rbac-vocabulary-in-shared.md) — vocabulary прав в `shared/model/permission/`, `can()` в `entities/user/lib/`
+- [adr/0005-dto-domain-mapping.md](adr/0005-dto-domain-mapping.md) — разделение DTO/Domain/Mapper для всех сущностей с API
 
 ## Сделать конкретную задачу (How-to)
 
