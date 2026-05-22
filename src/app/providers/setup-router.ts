@@ -14,8 +14,6 @@ export function setupRouter(app: App): Router {
         routes: setupLayouts(routes),
     })
 
-    const { user, isAuthorized } = useUserStore()
-
     // Workaround for https://github.com/vitejs/vite/issues/11804
     router.onError((err, to) => {
         if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
@@ -31,7 +29,8 @@ export function setupRouter(app: App): Router {
         }
     })
 
-    router.beforeEach((to, from) => {
+    router.beforeEach((to) => {
+        const { isAuthorized } = storeToRefs(useUserStore())
         if (!to.meta.noAuth && !isAuthorized.value) {
             return { name: '/auth/login' }
         }
