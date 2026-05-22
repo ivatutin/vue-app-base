@@ -3,7 +3,7 @@ import { useTheme } from 'vuetify'
 
 const theme = useTheme();
 const $props = defineProps({
-  title: String 
+  title: String
 })
 </script>
 <template>
@@ -15,11 +15,13 @@ const $props = defineProps({
             </template>
 
             <v-list density="compact">
-              <v-list-item  @click="theme.toggle()" prepend-icon="mdi-account-edit-outline" title="Мой профиль" density="compact" prepend-gap="8" />
-              <v-list-item v-if="'light' == theme.name.value" @click="theme.toggle()" prepend-icon="mdi-weather-night" title="Темная тема" density="compact" prepend-gap="8" />
-              <v-list-item v-if="'dark' == theme.name.value" @click="theme.toggle()" prepend-icon="mdi-white-balance-sunny" title="Светлая тема" density="compact" prepend-gap="8" />
+              <!-- TODO: profile action (ROADMAP, Фаза 1 — auth flow) -->
+              <v-list-item prepend-icon="mdi-account-edit-outline" title="Мой профиль" density="compact" />
+              <v-list-item v-if="'light' == theme.name.value" @click="theme.toggle()" prepend-icon="mdi-weather-night" title="Темная тема" density="compact" />
+              <v-list-item v-if="'dark' == theme.name.value" @click="theme.toggle()" prepend-icon="mdi-white-balance-sunny" title="Светлая тема" density="compact" />
               <v-divider />
-              <v-list-item  @click="theme.toggle()" prepend-icon="mdi-exit-run" title="Выйти" density="compact" prepend-gap="8" />
+              <!-- TODO: logout action (ROADMAP, Фаза 1 — auth flow) -->
+              <v-list-item prepend-icon="mdi-exit-run" title="Выйти" density="compact" />
             </v-list>
           </v-menu>
       </template>

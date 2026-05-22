@@ -3,7 +3,6 @@ import { toUser } from './user.mapper'
 import type { User } from '../schema/user.schema'
 
 export async function getCurrentUser(): Promise<User> {
-    console.log('getCurrentUser')
     const parsed = userDtoSchema.safeParse({
         id: '1',
         email: 'zx@zx.sz',

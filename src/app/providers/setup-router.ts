@@ -7,8 +7,6 @@ import { useUserStore } from '@/entities/user'
 
 export function setupRouter(app: App): Router {
 
-    console.log('import.meta', import.meta)
-
     const router = createRouter({
         history: createWebHistory(import.meta.env.BASE_URL),
         routes: setupLayouts(routes),

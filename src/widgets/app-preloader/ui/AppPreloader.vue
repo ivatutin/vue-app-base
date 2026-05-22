@@ -15,7 +15,7 @@
                 C 150 40, 250 40, 250 100
                 "
                 fill="none"
-                stroke="green"
+                stroke="currentColor"
                 stroke-width="8"
                 stroke-linecap="round"
                 stroke-linejoin="round"
