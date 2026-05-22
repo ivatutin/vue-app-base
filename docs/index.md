@@ -11,6 +11,7 @@
 
 - [architecture.md](architecture.md) — FSD-слои, bootstrap-flow, routing, state, RBAC, auto-imports
 - [diagrams/bootstrap-flow.md](diagrams/bootstrap-flow.md) — sequence-диаграмма потока загрузки
+- [integration-backend.md](integration-backend.md) — контракт API `njs-server` (NestJS), auth-механика, формат ошибок, endpoints
 
 ## Принятые решения (ADR)
 

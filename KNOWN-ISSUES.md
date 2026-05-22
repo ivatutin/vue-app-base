@@ -15,23 +15,36 @@
 
 ## P1 — Существенные
 
-### 1. Хранение токенов в `localStorage`
-
-**Файл:** [src/entities/auth/lib/token-storage.ts](src/entities/auth/lib/token-storage.ts)
-
-**Что:** токены в `localStorage`, имена ключей `__Secure_*` (имя не делает их secure).
-
-**Симптом:** уязвимость к XSS.
-
-**Чинить:** перейти на httpOnly-cookie со стороны backend; зафиксировать решение в ADR. Завязано на появление HTTP-клиента ([ROADMAP](ROADMAP.md), Фаза 1).
-
-### 2. Отсутствие AuthLayout
+### 1. Отсутствие AuthLayout
 
 **Файлы:** [src/pages/auth/login/ui/LoginPage.vue](src/pages/auth/login/ui/LoginPage.vue), [src/pages/auth/logout/ui/LogoutPage.vue](src/pages/auth/logout/ui/LogoutPage.vue)
 
 **Что:** auth-страницы рендерятся внутри `default.vue` вместе с сайдбаром.
 
 **Чинить:** создать `src/app/layouts/auth.vue` + `definePage({ meta: { layout: 'auth' } })`.
+
+---
+
+## Принятые компромиссы
+
+Не баги. То, что выглядит как проблема, но не наша по природе — продиктовано внешним контекстом и не подлежит «исправлению» здесь.
+
+### Хранение refresh-токена в `localStorage`
+
+**Файл:** [src/entities/auth/lib/token-storage.ts](src/entities/auth/lib/token-storage.ts)
+
+**Контекст:** backend (`njs-server`) построен вокруг JSON-токенов в теле/header — отдаёт `refreshToken` в ответе `POST /auth/sign-in`, ожидает его в body для `POST /auth/refresh` и `POST /auth/sign-out`. httpOnly-cookie не используется (см. [docs/integration-backend.md](docs/integration-backend.md) § Auth-механика).
+
+**Что это значит для нас:** клиент **обязан** хранить refresh локально (`localStorage` / `IndexedDB`). XSS-риск реален и снимается не выбором storage, а митигациями уровня приложения:
+
+- Strict CSP (Фаза 3).
+- Запрет `eval` / `new Function` (lint-правило).
+- Sanitization user-generated content.
+- Минимизация сторонних скриптов в `index.html`.
+
+Имена ключей `__Secure_*` в текущем `tokenStorage` остались от другого контекста (cookie с одноимённым префиксом) — это просто строки, ничего «secure» они не делают. Стоит переименовать в нейтральные при первом удобном случае, но это косметика.
+
+**Не баг — фиксируем как принятую цену архитектуры бэка.**
 
 ---
 

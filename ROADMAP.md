@@ -36,40 +36,54 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 
 ---
 
-## Фаза 1 — Инфраструктура
+## Фаза 1 — Инфраструктура и интеграция с backend
 
-Закладка фундамента, без которого нельзя растить продакшен-проект.
+Закладка фундамента + первое реальное подключение к `njs-server`. Порядок согласован с тем, что мы знаем о контракте (см. [docs/integration-backend.md](docs/integration-backend.md)).
 
-### [P1] HTTP-клиент `shared/api/http-client.ts` `proposed`
-**Зачем:** сейчас `getCurrentUser` — мок. На реальном backend без единого клиента не обойтись: auth-interceptor, обработка 401 + refresh, timeout/retry, типизированный парсинг ответа.
-**Что:** fetch-wrapper или axios + interceptors + класс ошибок `HttpError`.
-**Trade-off:** axios = ~14KB, fetch = 0KB; выбор фиксируется ADR.
-**Триггер:** первый реальный API-вызов к backend.
+### [P1] Vite proxy для dev `planned`
+**Зачем:** CORS на бэке (`njs-server`) не настроен. Без proxy браузер режет запросы фронта с `:3000` на `:3001`.
+**Что:** `server.proxy` в `vite.config.mts`: `/api → http://localhost:3001`. Параллельно обновить `.env`: `VITE_API_URL=/api/v1`, убрать `VITE_WS_HOST` (бэк не предоставляет WS).
+**Триггер:** перед первым реальным запросом к бэку.
+
+### [P1] HTTP-клиент `shared/api/http-client.ts` `planned`
+**Зачем:** см. [integration-backend.md](docs/integration-backend.md). Нужен auth-interceptor (Bearer JWT), 401→refresh-flow с защитой от race (mutex), типизированный `HttpError` с `status`/`error`/`message`/`details`, поддержка query/signal.
+**Что:** ADR-0006 + `class HttpClient` (fetch) + `HttpError` + DI через коллбэки (`getAccessToken`, `onUnauthorized`) + provider `app/providers/setup-http-client.ts`, который связывает клиент с `useAuthStore()`. Singleton-инстанс через `shared/api/instance.ts` (set/get) — без cross-entity import из shared в entities.
+**Триггер:** немедленно после Vite proxy.
+
+### [P1] User-схема под реальный `UserResponseDto` `planned`
+**Зачем:** текущая `userDtoSchema` декларирует snake_case и поле `fullName`, реальный бэк отдаёт camelCase с раздельными `firstName`/`lastName`, `emailVerified`/`phoneVerified`, `status` enum, `updatedAt`. Без переделки клиент не пройдёт `safeParse` на реальном ответе.
+**Что:** переписать `entities/user/api/user.dto.ts` под `UserResponseDto`, переписать `entities/user/schema/user.schema.ts` (Domain: `status: UserStatusType`, `isActive` как computed, `fullName` как computed `firstName + lastName`, добавить `emailVerified`/`phoneVerified`/`updatedAt`). Mapper становится почти тривиальным (контракт уже в camelCase). Удалить устаревшие мок-данные с snake_case.
+**Триггер:** после HTTP-клиента, до подключения реального `/users/me`.
+
+### [P1] auth.store: real login/refresh/logout `planned`
+**Зачем:** сейчас заглушки. После HTTP-клиента можно вызывать реальные endpoints.
+**Что:** `login(email, password)` → `httpClient.post('/auth/sign-in', { email, password })` → сохранить токены через `tokenStorage.setTokens()`. `refresh()` → `POST /auth/refresh` с rotation (новый refresh кладётся в storage). `logout()` → `POST /auth/sign-out` с двумя токенами + `tokenStorage.clear()`. Заменить `emailOrPhone` на `email` (бэк принимает только email).
+**Триггер:** после User-схемы.
+
+### [P1] Подключить `getCurrentUser` к `/users/me` `planned`
+**Зачем:** убрать мок-данные, проверить весь pipeline целиком.
+**Что:** `httpClient.get('/users/me')` → `userDtoSchema.safeParse` → `toUser` mapper. Обработать 404 (после первого sign-in local user создаётся асинхронно — retry с backoff или явное состояние «настраиваем профиль» в bootstrap).
+**Триггер:** после auth.store.
 
 ### [P1] Валидация env через Zod `proposed`
-**Зачем:** `import.meta.env.VITE_*` сейчас типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
-**Что:** `shared/config/env.ts` с `envSchema.parse(import.meta.env)`. Падать на старте с понятной ошибкой.
-**Триггер:** второй env-параметр.
-
-### [P1] Глобальная обработка ошибок `proposed`
-**Зачем:** нет `app.config.errorHandler`, нет `window.unhandledrejection`, нет точки подключения Sentry.
-**Что:** `shared/lib/error/` + `app/providers/setup-error-handler.ts`.
-**Триггер:** до выхода на staging.
-
-### [P1] Snackbar / notification store `proposed`
-**Зачем:** без глобального уведомлятора каждый разработчик слепит свой `v-snackbar` в каждой странице.
-**Что:** `entities/notification` или `shared/ui/feedback/notify` + `widgets/app-notifications` (хост в layout).
-**Триггер:** второе место в коде, где нужно «показать тост».
+**Зачем:** `import.meta.env.VITE_*` типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
+**Что:** `shared/config/env.ts` с `envSchema.parse(import.meta.env)`. Падать на старте с понятной ошибкой. Использовать env через `env.VITE_API_URL` вместо прямого `import.meta.env.X`.
+**Триггер:** второй env-параметр или перед staging.
 
 ### [P1] AuthLayout `proposed`
 **Зачем:** `LoginPage` сейчас рендерится внутри default-layout с сайдбаром и хедером.
-**Что:** `src/app/layouts/auth.vue` (центрированная карточка, без навигации) + `definePage({ meta: { layout: 'auth' } })` в auth-страницах.
-**Триггер:** редизайн логина.
+**Что:** `src/app/layouts/auth.vue` (центрированная карточка, без навигации) + `definePage({ meta: { layout: 'auth' } })` в auth-страницах. Параллельно: переделать `LoginPage` под реальный flow (email + password → `auth.login()` → redirect).
+**Триггер:** редизайн логина / первый реальный login.
 
-### [P1] RBAC в guard `proposed`
-**Зачем:** сейчас `can()` фильтрует только sidebar. По прямой ссылке можно попасть на запрещённый маршрут.
-**Что:** `meta.permissions: PermissionCode[]` + проверка в `router.beforeEach`. Редирект на `/system/forbidden`.
-**Триггер:** появление второго permission-зависимого маршрута.
+### [P1] Глобальная обработка ошибок + Snackbar `proposed`
+**Зачем:** нет `app.config.errorHandler`, нет `window.unhandledrejection`, нет точки подключения Sentry. Нужен общий способ показывать пользователю фейлы запросов (формат ошибки `{ statusCode, error, message }` от бэка).
+**Что:** `shared/lib/error/` (адаптер ошибок бэка → user-friendly текст) + `app/providers/setup-error-handler.ts` + `shared/ui/feedback/notify` или `entities/notification` + `widgets/app-notifications` (хост в layout). HTTP-клиент бросает `HttpError` → handler показывает snackbar.
+**Триггер:** второе место, где нужно «показать тост», либо staging.
+
+### [P1] RBAC в guard + roles→permissions mapping `proposed`
+**Зачем:** бэк отдаёт `roles: string[]`, фронту удобнее работать с granular `PermissionCode` (см. [ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)). Сейчас `can()` фильтрует только sidebar — по прямой ссылке можно попасть на запрещённый маршрут.
+**Что:** добавить `shared/model/permission/role-permissions.ts` со статической таблицей `roles → PermissionCode[]`. Расширить `useUserStore` derived-полем `permissions` (computed из `user.roles`). Расширить router-guard: `meta.permissions: PermissionCode[]` → редирект на `/system/forbidden` если не хватает прав.
+**Триггер:** появление второго permission-зависимого маршрута, либо после первого реального user.
 
 ---
 

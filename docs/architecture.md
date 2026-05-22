@@ -347,6 +347,10 @@ import { CodeViewer } from '@/shared/ui/base/code-viewer'
 
 Zod-валидация env-переменных на старте — [ROADMAP](../ROADMAP.md), Фаза 1. До неё типы есть, runtime-проверки нет.
 
+### Backend
+
+Контракт API живёт отдельно — см. [integration-backend.md](integration-backend.md). Кратко: NestJS на `http://localhost:3001/api/v1`, Bearer JWT через `Authorization` header, refresh через `POST /auth/refresh`, CORS на бэке не настроен (для dev нужен Vite proxy — [ROADMAP](../ROADMAP.md), Фаза 1).
+
 ---
 
 ## Дальше
