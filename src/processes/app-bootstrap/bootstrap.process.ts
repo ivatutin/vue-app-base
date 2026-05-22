@@ -1,7 +1,6 @@
 import { useBootstrapStore } from '@/entities/bootstrap'
-// import { useConfigStore } from '@/entities/config'
-// import { useAuthStore } from '@/entities/auth'
-import { sleep } from '@/shared/lib/utils'
+import { useAuthStore } from '@/entities/auth'
+import { useUserStore } from '@/entities/user'
 import type { Router } from 'vue-router'
 
 interface BootstrapContext {
@@ -10,20 +9,22 @@ interface BootstrapContext {
 
 export async function runBootstrapProcess(context?: BootstrapContext) {
   const bootstrap = useBootstrapStore()
-//   const config = useConfigStore()
-//   const auth = useAuthStore()
+  const auth = useAuthStore()
+  const user = useUserStore()
 
   bootstrap.start()
 
   try {
-    await Promise.all([
-        sleep(3000),
-        // config.loadConfig(),
-        // auth.init(),
-    ])
-    if (context?.router) {
-      await context?.router.isReady()
+    auth.init()
+
+    if (auth.isSessionActive) {
+      await user.fetchCurrentUser()
     }
+
+    if (context?.router) {
+      await context.router.isReady()
+    }
+
     bootstrap.finish()
   } catch (error) {
     bootstrap.fail(error)
