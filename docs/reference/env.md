@@ -16,16 +16,19 @@
 
 | Переменная | Тип | Назначение | Пример |
 |------------|-----|-----------|--------|
-| `VITE_API_URL` | `string` | URL backend API | `http://localhost/api/` |
-| `VITE_WS_HOST` | `string` | Хост WebSocket | `localhost` |
+| `VITE_API_URL` | `string` | URL backend API. В dev — путь через [Vite proxy](#dev-proxy), в prod — полный URL | `/api/v1` |
 
 ## Доступ из кода
 
+Используй runtime-валидированный singleton:
+
 ```ts
-const apiUrl = import.meta.env.VITE_API_URL
+import { env } from '@/shared/config'
+
+const apiUrl = env.VITE_API_URL
 ```
 
-Тип `ImportMetaEnv` объявлен в [env.d.ts](../../env.d.ts) — добавляй новые переменные **одновременно туда и в `.env`**, иначе TypeScript будет считать значение `undefined`.
+`import.meta.env.VITE_*` напрямую — только внутри [src/shared/config/env.ts](../../src/shared/config/env.ts) (точка валидации Zod-схемы).
 
 ## Добавление новой переменной
 
@@ -36,7 +39,21 @@ const apiUrl = import.meta.env.VITE_API_URL
      readonly VITE_FEATURE_X: string
    }
    ```
-3. (Будущее) Добавь поле в `envSchema` в `shared/config/env.ts` — Zod-валидация env-переменных запланирована в [ROADMAP](../../ROADMAP.md), Фаза 1.
+3. Добавь поле в `envSchema` в [src/shared/config/env.ts](../../src/shared/config/env.ts) — иначе приложение упадёт на старте с понятной ошибкой.
+
+## Dev proxy
+
+В [vite.config.mts](../../vite.config.mts) объявлен `server.proxy`:
+
+```ts
+proxy: {
+  '/api': { target: 'http://localhost:3001', changeOrigin: true },
+}
+```
+
+Это пробрасывает запросы фронта с `/api/...` на `http://localhost:3001/api/...` (бэк [njs-server](../integration-backend.md)). Без proxy браузер режет cross-origin запросы (CORS на бэке не настроен).
+
+В prod-сборке этого proxy нет — `VITE_API_URL` должен быть **полным URL** (например, `https://api.example.com/api/v1`), задаётся через `.env.production` или CI-config.
 
 ## Безопасность
 
