@@ -43,6 +43,11 @@
 **Что:** `env → auth.init() → user.fetchCurrentUser() → router.isReady()`.
 **Триггер:** после починки auth и guard.
 
+### [P1] Починить типизацию в `shared/lib/utils` `planned`
+**Зачем:** `npm run type-check` выдаёт 6 ошибок в `plural.ts` и `format-time-interval.ts` — baseline не green, CONTRIBUTING.md-чек перед PR не проходит.
+**Что:** см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md), пункт 11 — расширить сигнатуру `plural()` до `readonly string[]`, застраховать индекс, заодно поправить копипасту с `units.y[0]` в `formatTimeInterval`.
+**Триггер:** в первом же фикс-PR Фазы 0.
+
 ### [P1] Удалить отладочный мусор `planned`
 **Зачем:** `console.log` в проде, отладочный текст в `default.vue`, `prepend-gap` (несуществующий атрибут), `stroke="green"` игнорирующий тему.
 **Что:** см. [KNOWN-ISSUES.md](KNOWN-ISSUES.md), раздел «Code quality».

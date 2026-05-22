@@ -1,6 +1,5 @@
-// entities/permission/lib/can.ts
 import { useUserStore } from '@/entities/user'
-import type { PermissionCode } from '../model/types'
+import type { PermissionCode } from '@/shared/model/permission'
 
 export function can(permission: PermissionCode): boolean {
   const userStore = useUserStore()

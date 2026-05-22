@@ -120,6 +120,24 @@
 
 **Чинить:** создать `src/app/layouts/auth.vue` + `definePage({ meta: { layout: 'auth' } })`.
 
+### 11. `shared/lib/utils` ломает `npm run type-check`
+
+**Файлы:**
+- [src/shared/lib/utils/plural.ts:4](src/shared/lib/utils/plural.ts#L4)
+- [src/shared/lib/utils/format-time-interval.ts:16-20](src/shared/lib/utils/format-time-interval.ts#L16-L20)
+
+**Что:**
+- `plural.ts:4` — `cases[…]` под `noUncheckedIndexedAccess` возвращает `number | undefined`, попытка использовать как индекс `titles[…]` падает с `TS2538: Type 'undefined' cannot be used as an index type`.
+- `format-time-interval.ts:16-20` — `units` объявлен `as const`, поэтому `units.y[1]` имеет тип `readonly [...]`. `plural(titles: string[])` ожидает mutable `string[]` → `TS2345` × 5.
+
+**Симптом:** `npm run type-check` выдаёт 6 ошибок только из этого слайса — CONTRIBUTING.md-чек перед PR не проходит, baseline не green.
+
+**Чинить:**
+- В `plural()` — расширить сигнатуру до `titles: readonly string[]` и страховать индекс: `titles[cases[…] ?? 0]` либо вынести `cases` как `as const` с точным numeric-tuple-типом.
+- В `format-time-interval.ts` — параллельное расширение сигнатуры `plural` уберёт обе ошибки за один заход.
+
+Дополнительно (не type-check, но рядом): `formatTimeInterval` использует `units.y[0]` во всех short-ветках (строки 16-20) — копипаста, нужны соответствующие `units.d[0]`, `units.h[0]`, `units.m[0]`, `units.s[0]`. Фиксить вместе с типами.
+
 ---
 
 ## P2 — Code quality

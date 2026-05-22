@@ -1,5 +1,6 @@
 import { getCurrentUser, logoutRequest } from '../api'
 import type { User } from '../index'
+import type { PermissionCode } from '@/shared/model/permission'
 
 export const useUserStore = defineStore('user', () => {
   /**
@@ -20,7 +21,7 @@ export const useUserStore = defineStore('user', () => {
   const hasRole = (role: string): boolean =>
     roles.value.includes(role)
 
-  const hasPermission = (permission: string): boolean =>
+  const hasPermission = (permission: PermissionCode): boolean =>
     permissions.value.includes(permission)
 
   

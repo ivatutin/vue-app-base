@@ -1,4 +1,4 @@
-import type { PermissionCode } from "@/entities/permission"
+import type { PermissionCode } from '@/shared/model/permission'
 
 export type SidebarItem = {
   label: string

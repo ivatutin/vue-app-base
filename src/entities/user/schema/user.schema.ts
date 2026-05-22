@@ -1,12 +1,6 @@
 import { z } from 'zod'
 import { phoneSchema } from '@/shared/model/phone'
-
-export const permissionSchema = z.enum([
-  'user.read',
-  'user.update',
-  'user.delete',
-  'role.manage'
-])
+import { permissionSchema } from '@/shared/model/permission'
 
 export const userSchema = z.object({
   id: z.uuid(),
@@ -20,4 +14,3 @@ export const userSchema = z.object({
 })
 
 export type User = z.infer<typeof userSchema>
-export type Permission = z.infer<typeof permissionSchema>
