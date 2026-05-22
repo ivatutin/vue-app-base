@@ -1,9 +1,10 @@
-import { userSchema } from "../schema/user.schema"
-import type { User } from "../index"
+import { userDtoSchema } from './user.dto'
+import { toUser } from './user.mapper'
+import type { User } from '../schema/user.schema'
 
 export async function getCurrentUser(): Promise<User> {
     console.log('getCurrentUser')
-    const res = userSchema.safeParse({
+    const parsed = userDtoSchema.safeParse({
         id: '1',
         email: 'zx@zx.sz',
         phone: '+79991234567',
@@ -13,11 +14,10 @@ export async function getCurrentUser(): Promise<User> {
         is_active: true,
         created_at: new Date()
     })
-    if (!res.success) {
-        return Promise.reject(res.error);
-    } else {
-        return Promise.resolve(res.data);
+    if (!parsed.success) {
+        return Promise.reject(parsed.error);
     }
+    return toUser(parsed.data);
 }
 
 export async function logoutRequest(): Promise<void> {
