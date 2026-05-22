@@ -22,8 +22,8 @@ declare module 'vue-router/auto-routes' {
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/logout': RouteRecordInfo<'/auth/logout', '/auth/logout', Record<never, never>, Record<never, never>>,
     '/dashboard': RouteRecordInfo<'/dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
-    '/systesm/forbidden': RouteRecordInfo<'/systesm/forbidden', '/systesm/forbidden', Record<never, never>, Record<never, never>>,
-    'not-found': RouteRecordInfo<'not-found', '/systesm/not-found', Record<never, never>, Record<never, never>>,
+    '/system/forbidden': RouteRecordInfo<'/system/forbidden', '/system/forbidden', Record<never, never>, Record<never, never>>,
+    'not-found': RouteRecordInfo<'not-found', '/system/not-found', Record<never, never>, Record<never, never>>,
     '/ui-kit/': RouteRecordInfo<'/ui-kit/', '/ui-kit', Record<never, never>, Record<never, never>>,
     '/ui-kit/buttons': RouteRecordInfo<'/ui-kit/buttons', '/ui-kit/buttons', Record<never, never>, Record<never, never>>,
     '/ui-kit/typography': RouteRecordInfo<'/ui-kit/typography', '/ui-kit/typography', Record<never, never>, Record<never, never>>,
@@ -56,11 +56,11 @@ declare module 'vue-router/auto-routes' {
       routes: '/dashboard'
       views: never
     }
-    'src/pages/systesm/forbidden/ui/ForbiddenPage.vue': {
-      routes: '/systesm/forbidden'
+    'src/pages/system/forbidden/ui/ForbiddenPage.vue': {
+      routes: '/system/forbidden'
       views: never
     }
-    'src/pages/systesm/not-found/ui/NotFoundPage.vue': {
+    'src/pages/system/not-found/ui/NotFoundPage.vue': {
       routes: 'not-found'
       views: never
     }

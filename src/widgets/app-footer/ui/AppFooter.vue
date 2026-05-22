@@ -3,7 +3,7 @@
     <div class="text-caption">
       <router-link :to="{ name: '/' }">home</router-link>
       |
-      <router-link :to="{ name: '/systesm/forbidden' }">forbidden</router-link>
+      <router-link :to="{ name: '/system/forbidden' }">forbidden</router-link>
       |
       <router-link :to="{ name: 'not-found' }">not-found</router-link>
       |
