@@ -345,11 +345,7 @@ import { CodeViewer } from '@/shared/ui/base/code-viewer'
 
 [env.d.ts](../env.d.ts) объявляет типы для `import.meta.env.VITE_*`. Значения — в [.env](../.env). Полный список переменных и значений — [reference/env.md](reference/env.md).
 
-### Дубль с `config.json`
-
-В проекте параллельно существует [src/assets/config.json](../src/assets/config.json) с теми же ключами (`API_URL`, `WS_HOST`), что и в `.env`. Это **тех-долг** — см. [KNOWN-ISSUES.md](../KNOWN-ISSUES.md), раздел «Code quality».
-
-Решение: схема валидации env через Zod (в [ROADMAP](../ROADMAP.md), Фаза 1) и единый источник.
+Zod-валидация env-переменных на старте — [ROADMAP](../ROADMAP.md), Фаза 1. До неё типы есть, runtime-проверки нет.
 
 ---
 

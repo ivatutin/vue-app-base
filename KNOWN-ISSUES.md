@@ -35,17 +35,6 @@
 
 ---
 
-## P2 — Code quality
-
-| Файл:строка | Проблема |
-|-------------|----------|
-| [src/pages/index.vue](src/pages/index.vue) | Главная — `HelloWorld` из Vuetify-стартера |
-| [vite.config.mts:108](vite.config.mts#L108) | `define: { 'process.env': {} }` — устаревший workaround |
-| Имена файлов | Где-то `<Name>Page.vue` (в `ui/`), где-то плоский `<name>.vue` (`buttons.vue`, `typography.vue`) — конвенция зафиксирована в [CONTRIBUTING.md](CONTRIBUTING.md), требует приведения существующих файлов |
-| `src/assets/config.json` ↔ `.env` | Два источника конфигурации одних и тех же значений |
-
----
-
 ## Архитектурные пустоты (не баги, но фиксируем)
 
 Не баги, но «отсутствующая инфраструктура» проявится на масштабе. Все вынесены в [ROADMAP.md](ROADMAP.md):

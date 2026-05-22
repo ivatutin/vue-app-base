@@ -1,12 +1,7 @@
-<script lang="ts" setup>
-import { HelloWorld } from '@/widgets/hello-world';
+<script setup lang="ts">
 definePage({
-  meta: {
-    noAuth: true,
-  },
+  redirect: { name: '/dashboard' },
 })
 </script>
 
-<template>
-  <HelloWorld />
-</template>
+<template></template>

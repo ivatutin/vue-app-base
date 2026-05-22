@@ -49,7 +49,6 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] Валидация env через Zod `proposed`
 **Зачем:** `import.meta.env.VITE_*` сейчас типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
 **Что:** `shared/config/env.ts` с `envSchema.parse(import.meta.env)`. Падать на старте с понятной ошибкой.
-**Доп:** убрать дубль с `src/assets/config.json`.
 **Триггер:** второй env-параметр.
 
 ### [P1] Глобальная обработка ошибок `proposed`
