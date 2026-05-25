@@ -1,15 +1,24 @@
 import { z } from 'zod'
-import { permissionSchema } from '@/shared/model/permission'
+
+export const userStatusDtoSchema = z.enum([
+  'pending_verification',
+  'active',
+  'suspended',
+  'deleted',
+])
 
 export const userDtoSchema = z.object({
   id: z.uuid(),
-  full_name: z.string().max(31).trim(),
-  phone: z.string(),
-  email: z.email(),
+  email: z.email().nullable(),
+  phone: z.string().nullable(),
+  emailVerified: z.boolean(),
+  phoneVerified: z.boolean(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
   roles: z.array(z.string()).default([]),
-  permissions: z.array(permissionSchema).default([]),
-  is_active: z.boolean(),
-  created_at: z.coerce.date(),
+  status: userStatusDtoSchema,
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 })
 
 export type UserDto = z.infer<typeof userDtoSchema>
