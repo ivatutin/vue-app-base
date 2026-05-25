@@ -1,6 +1,7 @@
 import { useBootstrapStore } from '@/entities/bootstrap'
 import { useAuthStore } from '@/entities/auth'
 import { useUserStore } from '@/entities/user'
+import { retryOn404 } from '@/shared/lib/async'
 import type { Router } from 'vue-router'
 
 interface BootstrapContext {
@@ -18,7 +19,10 @@ export async function runBootstrapProcess(context?: BootstrapContext) {
     auth.init()
 
     if (auth.isSessionActive) {
-      await user.fetchCurrentUser()
+      // /users/me может вернуть 404 сразу после первого sign-in
+      // (local user создаётся асинхронно через UserSignedInEvent
+      // на стороне njs-server). Ретраим до ~1.5s, дальше bootstrap.fail.
+      await retryOn404(() => user.fetchCurrentUser(), { attempts: 3, delay: 500 })
     }
 
     if (context?.router) {

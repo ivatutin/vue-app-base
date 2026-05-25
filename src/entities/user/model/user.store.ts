@@ -1,4 +1,4 @@
-import { getCurrentUser, logoutRequest } from '../api'
+import { getCurrentUser } from '../api'
 import type { User } from '../index'
 
 export const useUserStore = defineStore('user', () => {
@@ -26,14 +26,10 @@ export const useUserStore = defineStore('user', () => {
   async function fetchCurrentUser() {
     try {
       user.value = await getCurrentUser()
-    } catch {
+    } catch (err) {
       user.value = null
+      throw err
     }
-  }
-
-  async function logout() {
-    await logoutRequest()
-    reset()
   }
 
   function reset() {
@@ -53,7 +49,6 @@ export const useUserStore = defineStore('user', () => {
 
     /** actions */
     fetchCurrentUser,
-    logout,
     reset,
   }
 })

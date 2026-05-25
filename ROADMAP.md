@@ -56,10 +56,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] auth.store: real login/refresh/logout `done`
 Реализовано через `entities/auth/api/` (signIn, refreshTokens, signOut) поверх HTTP-клиента. `login(email, password)` парсит `tokenPairDtoSchema`, кладёт токены в `tokenStorage`. `refresh()` бросает при отсутствии refresh, делает rotation. `logout()` пытается sign-out на бэке, локальную очистку делает всегда (даже при 401 / сетевой ошибке).
 
-### [P1] Подключить `getCurrentUser` к `/users/me` `planned`
-**Зачем:** убрать мок-данные, проверить весь pipeline целиком.
-**Что:** `httpClient.get('/users/me')` → `userDtoSchema.safeParse` → `toUser` mapper. Обработать 404 (после первого sign-in local user создаётся асинхронно — retry с backoff или явное состояние «настраиваем профиль» в bootstrap).
-**Триггер:** после auth.store.
+### [P1] Подключить `getCurrentUser` к `/users/me` `done`
+`entities/user/api/getCurrentUser` теперь делает реальный `GET /users/me` через HTTP-клиент, парсит через `userDtoSchema`, гонит через `toUser`. `fetchCurrentUser` пробрасывает ошибку наверх (state в `null`), bootstrap-процесс оборачивает в `retryOn404` из `shared/lib/async` (3 попытки × 500ms — гонка с async-созданием local user после первого sign-in). `entities/user/api/logoutRequest` удалён — sign-out живёт в `entities/auth/api/`.
 
 ### [P1] Валидация env через Zod `proposed`
 **Зачем:** `import.meta.env.VITE_*` типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
