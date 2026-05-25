@@ -65,10 +65,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] AuthLayout `done`
 Создан `src/app/layouts/auth.vue` (центрированная карточка, без `<v-app-bar>`/sidebar/footer). LoginPage переписан под реальный flow (`auth.login` → `user.fetchCurrentUser` → redirect на `/dashboard`), показывает loading и ошибки `HttpError`. LogoutPage зовёт `auth.logout` + `user.reset` в `onMounted`.
 
-### [P1] Глобальная обработка ошибок + Snackbar `proposed`
-**Зачем:** нет `app.config.errorHandler`, нет `window.unhandledrejection`, нет точки подключения Sentry. Нужен общий способ показывать пользователю фейлы запросов (формат ошибки `{ statusCode, error, message }` от бэка).
-**Что:** `shared/lib/error/` (адаптер ошибок бэка → user-friendly текст) + `app/providers/setup-error-handler.ts` + `shared/ui/feedback/notify` или `entities/notification` + `widgets/app-notifications` (хост в layout). HTTP-клиент бросает `HttpError` → handler показывает snackbar.
-**Триггер:** второе место, где нужно «показать тост», либо staging.
+### [P1] Глобальная обработка ошибок + Snackbar `done`
+Создан `entities/notification` (setup-store с очередью + push / dismiss / clear), хост-widget `widgets/app-notifications` (рендерит `<v-snackbar>` стек, кнопка close, авто-dismiss по timeout) подключён в оба layout'а (default, auth). Provider `setup-error-handler.ts` ловит `app.config.errorHandler`, `unhandledrejection` и `window.error`, конвертирует через `humanize(err)` (HttpError → message, Error → message, иначе generic) и кладёт в notification-store.
 
 ### [P1] RBAC в guard + roles→permissions mapping `proposed`
 **Зачем:** бэк отдаёт `roles: string[]`, фронту удобнее работать с granular `PermissionCode` (см. [ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)). Сейчас `can()` фильтрует только sidebar — по прямой ссылке можно попасть на запрещённый маршрут.

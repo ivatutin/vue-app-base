@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { AppNotifications } from '@/widgets/app-notifications'
+</script>
+
 <template>
   <v-app>
     <v-main class="d-flex align-center justify-center">
@@ -5,5 +9,6 @@
         <router-view />
       </v-container>
     </v-main>
+    <AppNotifications />
   </v-app>
 </template>

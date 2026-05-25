@@ -8,6 +8,7 @@
       </v-container>
     </v-main>
     <AppFooter />
+    <AppNotifications />
   </v-layout>
 </template>
 
@@ -15,4 +16,5 @@
 import { AppHeader } from '@/widgets/app-header';
 import { AppSidebar } from '@/widgets/app-sidebar';
 import { AppFooter } from '@/widgets/app-footer';
+import { AppNotifications } from '@/widgets/app-notifications';
 </script>
