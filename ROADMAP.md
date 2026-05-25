@@ -68,10 +68,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] Глобальная обработка ошибок + Snackbar `done`
 Создан `entities/notification` (setup-store с очередью + push / dismiss / clear), хост-widget `widgets/app-notifications` (рендерит `<v-snackbar>` стек, кнопка close, авто-dismiss по timeout) подключён в оба layout'а (default, auth). Provider `setup-error-handler.ts` ловит `app.config.errorHandler`, `unhandledrejection` и `window.error`, конвертирует через `humanize(err)` (HttpError → message, Error → message, иначе generic) и кладёт в notification-store.
 
-### [P1] RBAC в guard + roles→permissions mapping `proposed`
-**Зачем:** бэк отдаёт `roles: string[]`, фронту удобнее работать с granular `PermissionCode` (см. [ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)). Сейчас `can()` фильтрует только sidebar — по прямой ссылке можно попасть на запрещённый маршрут.
-**Что:** добавить `shared/model/permission/role-permissions.ts` со статической таблицей `roles → PermissionCode[]`. Расширить `useUserStore` derived-полем `permissions` (computed из `user.roles`). Расширить router-guard: `meta.permissions: PermissionCode[]` → редирект на `/system/forbidden` если не хватает прав.
-**Триггер:** появление второго permission-зависимого маршрута, либо после первого реального user.
+### [P1] RBAC в guard + roles→permissions mapping `done`
+`shared/model/permission/role-permissions.ts` — статическая таблица `ROLE_PERMISSIONS` (admin/manager/user) + `rolesToPermissions(roles)`. `useUserStore` снова экспортирует `permissions` (computed) и `hasPermission(p)`. `can()` восстановлен. Router-guard расширен: после auth-check проверяет `meta.permissions`, при нехватке прав — редирект на `/system/forbidden`.
 
 ---
 

@@ -1,5 +1,6 @@
 import { getCurrentUser } from '../api'
 import type { User } from '../index'
+import { rolesToPermissions, type PermissionCode } from '@/shared/model/permission'
 
 export const useUserStore = defineStore('user', () => {
   /**
@@ -14,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   const isAuthorized = computed(() => user.value !== null && user.value.status === 'active')
 
   const roles = computed(() => user.value?.roles ?? [])
+  const permissions = computed<PermissionCode[]>(() => rolesToPermissions(roles.value))
 
   const fullName = computed<string | null>(() => {
     if (!user.value) return null
@@ -22,6 +24,8 @@ export const useUserStore = defineStore('user', () => {
   })
 
   const hasRole = (role: string): boolean => roles.value.includes(role)
+  const hasPermission = (permission: PermissionCode): boolean =>
+    permissions.value.includes(permission)
 
   async function fetchCurrentUser() {
     try {
@@ -44,8 +48,10 @@ export const useUserStore = defineStore('user', () => {
     isAuthenticated,
     isAuthorized,
     roles,
+    permissions,
     fullName,
     hasRole,
+    hasPermission,
 
     /** actions */
     fetchCurrentUser,

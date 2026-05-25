@@ -28,9 +28,17 @@ export function setupRouter(app: App): Router {
     })
 
     router.beforeEach((to) => {
-        const { isAuthorized } = storeToRefs(useUserStore())
+        const userStore = useUserStore()
+        const { isAuthorized } = storeToRefs(userStore)
+
         if (!to.meta.noAuth && !isAuthorized.value) {
             return { name: '/auth/login' }
+        }
+
+        const required = to.meta.permissions
+        if (required?.length) {
+            const ok = required.every((p) => userStore.hasPermission(p))
+            if (!ok) return { name: '/system/forbidden' }
         }
     })
 
