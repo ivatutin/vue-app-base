@@ -62,10 +62,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] Валидация env через Zod `done`
 `shared/config/env.ts` парсит `import.meta.env` через `envSchema` на момент первого импорта; при невалидном env бросает ошибку со списком issues. Экспортирован singleton `env` (типизирован Zod-inference). `setup-http-client.ts` использует `env.VITE_API_URL`; прямой доступ к `import.meta.env.VITE_*` теперь только внутри `shared/config/env.ts`.
 
-### [P1] AuthLayout `proposed`
-**Зачем:** `LoginPage` сейчас рендерится внутри default-layout с сайдбаром и хедером.
-**Что:** `src/app/layouts/auth.vue` (центрированная карточка, без навигации) + `definePage({ meta: { layout: 'auth' } })` в auth-страницах. Параллельно: переделать `LoginPage` под реальный flow (email + password → `auth.login()` → redirect).
-**Триггер:** редизайн логина / первый реальный login.
+### [P1] AuthLayout `done`
+Создан `src/app/layouts/auth.vue` (центрированная карточка, без `<v-app-bar>`/sidebar/footer). LoginPage переписан под реальный flow (`auth.login` → `user.fetchCurrentUser` → redirect на `/dashboard`), показывает loading и ошибки `HttpError`. LogoutPage зовёт `auth.logout` + `user.reset` в `onMounted`.
 
 ### [P1] Глобальная обработка ошибок + Snackbar `proposed`
 **Зачем:** нет `app.config.errorHandler`, нет `window.unhandledrejection`, нет точки подключения Sentry. Нужен общий способ показывать пользователю фейлы запросов (формат ошибки `{ statusCode, error, message }` от бэка).

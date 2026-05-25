@@ -13,18 +13,6 @@
 
 ---
 
-## P1 — Существенные
-
-### 1. Отсутствие AuthLayout
-
-**Файлы:** [src/pages/auth/login/ui/LoginPage.vue](src/pages/auth/login/ui/LoginPage.vue), [src/pages/auth/logout/ui/LogoutPage.vue](src/pages/auth/logout/ui/LogoutPage.vue)
-
-**Что:** auth-страницы рендерятся внутри `default.vue` вместе с сайдбаром.
-
-**Чинить:** создать `src/app/layouts/auth.vue` + `definePage({ meta: { layout: 'auth' } })`.
-
----
-
 ## Принятые компромиссы
 
 Не баги. То, что выглядит как проблема, но не наша по природе — продиктовано внешним контекстом и не подлежит «исправлению» здесь.
