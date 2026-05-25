@@ -53,10 +53,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** переписать `entities/user/api/user.dto.ts` под `UserResponseDto`, переписать `entities/user/schema/user.schema.ts` (Domain: `status: UserStatusType`, `isActive` как computed, `fullName` как computed `firstName + lastName`, добавить `emailVerified`/`phoneVerified`/`updatedAt`). Mapper становится почти тривиальным (контракт уже в camelCase). Удалить устаревшие мок-данные с snake_case.
 **Триггер:** после HTTP-клиента, до подключения реального `/users/me`.
 
-### [P1] auth.store: real login/refresh/logout `planned`
-**Зачем:** сейчас заглушки. После HTTP-клиента можно вызывать реальные endpoints.
-**Что:** `login(email, password)` → `httpClient.post('/auth/sign-in', { email, password })` → сохранить токены через `tokenStorage.setTokens()`. `refresh()` → `POST /auth/refresh` с rotation (новый refresh кладётся в storage). `logout()` → `POST /auth/sign-out` с двумя токенами + `tokenStorage.clear()`. Заменить `emailOrPhone` на `email` (бэк принимает только email).
-**Триггер:** после User-схемы.
+### [P1] auth.store: real login/refresh/logout `done`
+Реализовано через `entities/auth/api/` (signIn, refreshTokens, signOut) поверх HTTP-клиента. `login(email, password)` парсит `tokenPairDtoSchema`, кладёт токены в `tokenStorage`. `refresh()` бросает при отсутствии refresh, делает rotation. `logout()` пытается sign-out на бэке, локальную очистку делает всегда (даже при 401 / сетевой ошибке).
 
 ### [P1] Подключить `getCurrentUser` к `/users/me` `planned`
 **Зачем:** убрать мок-данные, проверить весь pipeline целиком.
