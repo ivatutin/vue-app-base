@@ -17,7 +17,7 @@
 | Сборка | Vite 7 + TypeScript 5.9 + `vue-tsc` | |
 | DX | `unplugin-auto-import`, `unplugin-vue-components` | |
 
-Псевдоним `@/` → `src/` ([tsconfig.app.json:11](../tsconfig.app.json#L11), [vite.config.mts:110-112](../vite.config.mts#L110-L112)).
+Псевдоним `@/` → `src/` ([tsconfig.app.json:11](../tsconfig.app.json#L11), [vite.config.mts:108-111](../vite.config.mts#L108-L111)).
 
 ### Главные принципы
 
