@@ -59,10 +59,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P1] Подключить `getCurrentUser` к `/users/me` `done`
 `entities/user/api/getCurrentUser` теперь делает реальный `GET /users/me` через HTTP-клиент, парсит через `userDtoSchema`, гонит через `toUser`. `fetchCurrentUser` пробрасывает ошибку наверх (state в `null`), bootstrap-процесс оборачивает в `retryOn404` из `shared/lib/async` (3 попытки × 500ms — гонка с async-созданием local user после первого sign-in). `entities/user/api/logoutRequest` удалён — sign-out живёт в `entities/auth/api/`.
 
-### [P1] Валидация env через Zod `proposed`
-**Зачем:** `import.meta.env.VITE_*` типизирован, но не валидируется. Отсутствующая переменная → ошибка глубоко в рантайме.
-**Что:** `shared/config/env.ts` с `envSchema.parse(import.meta.env)`. Падать на старте с понятной ошибкой. Использовать env через `env.VITE_API_URL` вместо прямого `import.meta.env.X`.
-**Триггер:** второй env-параметр или перед staging.
+### [P1] Валидация env через Zod `done`
+`shared/config/env.ts` парсит `import.meta.env` через `envSchema` на момент первого импорта; при невалидном env бросает ошибку со списком issues. Экспортирован singleton `env` (типизирован Zod-inference). `setup-http-client.ts` использует `env.VITE_API_URL`; прямой доступ к `import.meta.env.VITE_*` теперь только внутри `shared/config/env.ts`.
 
 ### [P1] AuthLayout `proposed`
 **Зачем:** `LoginPage` сейчас рендерится внутри default-layout с сайдбаром и хедером.
