@@ -3,11 +3,11 @@ export interface BootstrapError {
   code?: string
 }
 
-export type BootstrapStatus =
-  | 'idle'
-  | 'initializing'
-  | 'ready'
-  | 'failed'
+export type BootstrapStatus
+  = | 'idle'
+    | 'initializing'
+    | 'ready'
+    | 'failed'
 
 export const useBootstrapStore = defineStore('bootstrap', () => {
   // state
@@ -22,22 +22,22 @@ export const useBootstrapStore = defineStore('bootstrap', () => {
   const hasError = computed(() => error.value !== null)
 
   // actions
-  function start(): void {
+  function start (): void {
     status.value = 'initializing'
     error.value = null
   }
 
-  function finish(): void {
+  function finish (): void {
     status.value = 'ready'
     error.value = null
   }
 
-  function fail(e: unknown): void {
+  function fail (e: unknown): void {
     status.value = 'failed'
     error.value = normalizeError(e)
   }
 
-  function reset(): void {
+  function reset (): void {
     status.value = 'idle'
     error.value = null
   }
@@ -62,7 +62,7 @@ export const useBootstrapStore = defineStore('bootstrap', () => {
   }
 })
 
-function normalizeError(e: unknown): BootstrapError {
+function normalizeError (e: unknown): BootstrapError {
   if (e instanceof Error) {
     return { message: e.message }
   }

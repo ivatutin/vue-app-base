@@ -1,1 +1,1 @@
-export  { default as AppSidebar } from "./ui/AppSidebar.vue"
+export { default as AppSidebar } from './ui/AppSidebar.vue'

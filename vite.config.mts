@@ -20,17 +20,17 @@ export default defineConfig({
         {
           src: 'src/pages',
           path: (file: string) => {
-             const reg =  /.+\/src\/pages\/(.+)\/ui\/\w+Page\.vue$/
-             const matches = file.match(reg)
-             if (matches) {
+            const reg = /.+\/src\/pages\/(.+)\/ui\/\w+Page\.vue$/
+            const matches = file.match(reg)
+            if (matches) {
               return matches[1]
-             } else {
+            } else {
               const prefix = 'src/pages'
               return file.slice(file.lastIndexOf(prefix) + prefix.length + 1)
-             }
+            }
           },
-        }
-        //'src/pages',
+        },
+        // 'src/pages',
         // {
         //   src: 'src/features',
         //   filePatterns: (filePatterns) => ['**/pages/**/*'],
@@ -51,7 +51,7 @@ export default defineConfig({
     }),
     Layouts({
       layoutsDirs: 'src/app/layouts',
-      defaultLayout: 'default'
+      defaultLayout: 'default',
     }),
     AutoImport({
       imports: [

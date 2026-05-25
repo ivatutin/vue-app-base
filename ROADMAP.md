@@ -36,22 +36,18 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 
 ---
 
-## Фаза 1 — Инфраструктура и интеграция с backend
+## Фаза 1 — Инфраструктура и интеграция с backend `done` (2026-05-25)
 
-Закладка фундамента + первое реальное подключение к `njs-server`. Порядок согласован с тем, что мы знаем о контракте (см. [docs/integration-backend.md](docs/integration-backend.md)).
+Закладка фундамента + первое реальное подключение к `njs-server`. Порядок согласован с тем, что мы знаем о контракте (см. [docs/integration-backend.md](docs/integration-backend.md)). Атомарные коммиты от `4ae1e3a` до `f1a245e`.
 
-### [P1] Vite proxy для dev `planned`
-**Зачем:** CORS на бэке (`njs-server`) не настроен. Без proxy браузер режет запросы фронта с `:3000` на `:3001`.
-**Что:** `server.proxy` в `vite.config.mts`: `/api → http://localhost:3001`. Параллельно обновить `.env`: `VITE_API_URL=/api/v1`, убрать `VITE_WS_HOST` (бэк не предоставляет WS).
-**Триггер:** перед первым реальным запросом к бэку.
+### [P1] Vite proxy для dev `done`
+В `vite.config.mts` добавлен `server.proxy '/api' → http://localhost:3001`. `.env` приведён к `VITE_API_URL=/api/v1`, `VITE_WS_HOST` удалён (WS на бэке не реализован). Документация в `docs/reference/env.md`.
 
 ### [P1] HTTP-клиент `shared/api/http-client.ts` `done`
 Реализовано: `class HttpClient` + `HttpError` + singleton-инстанс через `shared/api/instance.ts`, провайдер `setup-http-client.ts` с DI auth-interceptor (`getAccessToken` + `onUnauthorized → auth.refresh()`), single-flight refresh-mutex. Архитектурное решение в [ADR-0006](docs/adr/0006-fetch-based-http-client.md).
 
-### [P1] User-схема под реальный `UserResponseDto` `planned`
-**Зачем:** текущая `userDtoSchema` декларирует snake_case и поле `fullName`, реальный бэк отдаёт camelCase с раздельными `firstName`/`lastName`, `emailVerified`/`phoneVerified`, `status` enum, `updatedAt`. Без переделки клиент не пройдёт `safeParse` на реальном ответе.
-**Что:** переписать `entities/user/api/user.dto.ts` под `UserResponseDto`, переписать `entities/user/schema/user.schema.ts` (Domain: `status: UserStatusType`, `isActive` как computed, `fullName` как computed `firstName + lastName`, добавить `emailVerified`/`phoneVerified`/`updatedAt`). Mapper становится почти тривиальным (контракт уже в camelCase). Удалить устаревшие мок-данные с snake_case.
-**Триггер:** после HTTP-клиента, до подключения реального `/users/me`.
+### [P1] User-схема под реальный `UserResponseDto` `done`
+`userDtoSchema` и Domain `userSchema` приведены к контракту бэка: camelCase, раздельные `firstName/lastName`, `emailVerified/phoneVerified`, `status` enum (`pending_verification | active | suspended | deleted`), `createdAt/updatedAt`. `userStore.isAuthorized` = `status === 'active'`, `fullName` — computed с fallback на email/phone. Мок временно отдаёт корректный camelCase-payload до подключения `/users/me`.
 
 ### [P1] auth.store: real login/refresh/logout `done`
 Реализовано через `entities/auth/api/` (signIn, refreshTokens, signOut) поверх HTTP-клиента. `login(email, password)` парсит `tokenPairDtoSchema`, кладёт токены в `tokenStorage`. `refresh()` бросает при отсутствии refresh, делает rotation. `logout()` пытается sign-out на бэке, локальную очистку делает всегда (даже при 401 / сетевой ошибке).

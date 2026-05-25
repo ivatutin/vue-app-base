@@ -12,11 +12,9 @@ export const phoneSchema = z
   .trim()
   .min(1, 'Phone is required')
   .transform(normalizePhone)
-  .refine((value) => E164_REGEX.test(value), {
+  .refine(value => E164_REGEX.test(value), {
     message: 'Invalid phone format',
   })
   .brand<'Phone'>()
 
-
 export type Phone = z.infer<typeof phoneSchema>
-

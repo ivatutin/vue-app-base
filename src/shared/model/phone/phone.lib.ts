@@ -2,7 +2,7 @@
  * 8 (999) 123-45-67 -> +79991234567
  * +7 999 123 45 67 -> +79991234567
  */
-export function normalizePhone(raw: string): string {
+export function normalizePhone (raw: string): string {
   const digits = raw.replace(/\D/g, '')
 
   if (digits.length === 11 && digits.startsWith('8')) {

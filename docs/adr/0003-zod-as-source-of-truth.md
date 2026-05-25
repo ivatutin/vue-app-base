@@ -29,7 +29,7 @@ Domain-модели в SPA нужны в трёх контекстах одно�
 // src/entities/user/schema/user.schema.ts
 export const userSchema = z.object({
   id: z.uuid(),
-  fullName: z.string().max(31).trim(),
+  firstName: z.string().nullable(),
   // ...
 })
 

@@ -39,7 +39,7 @@ processes/  ←  длительные многошаговые сценарии 
 pages/      ←  маршрутные страницы
 widgets/    ←  самостоятельные UI-блоки (sidebar, header, footer, ...)
 features/   ←  пользовательские сценарии (зарезервирован, пока пуст)
-entities/   ←  бизнес-сущности (user, auth, bootstrap)
+entities/   ←  бизнес-сущности (user, auth, bootstrap, notification)
 shared/     ←  переиспользуемая инфраструктура (utils, ui, схемы)
 ```
 
@@ -171,31 +171,39 @@ Inside страницы meta задаётся через макрос (auto-impo
 definePage({
   meta: {
     title: 'Dashboard',
-    noAuth: true,           // не требует аутентификации
-    permissions: ['user.read'],  // ⚠ проверка пока не реализована, см. ROADMAP
+    noAuth: true,                // не требует аутентификации
+    permissions: ['user.read'],  // требуемые permissions, проверка в guard
+    layout: 'auth',              // альтернативный layout (см. § Layouts)
   },
 })
 </script>
 ```
 
-Типы маршрутов генерируются в [src/typed-router.d.ts](../src/typed-router.d.ts) — это закоммиченный файл, **не редактируется руками**.
+Типы маршрутов генерируются в [src/typed-router.d.ts](../src/typed-router.d.ts) — это закоммиченный файл, **не редактируется руками**. Поля `meta` (`title`, `noAuth`, `permissions`) типизированы через [src/router-meta.d.ts](../src/router-meta.d.ts) (extend `RouteMeta`).
 
 ### Auth-guard
 
-[src/app/providers/setup-router.ts:34-38](../src/app/providers/setup-router.ts#L34-L38) — whitelist-guard по `meta.noAuth`:
+[src/app/providers/setup-router.ts](../src/app/providers/setup-router.ts) — `router.beforeEach`:
 
 ```ts
 router.beforeEach((to) => {
-  const { isAuthorized } = storeToRefs(useUserStore())
+  const userStore = useUserStore()
+  const { isAuthorized } = storeToRefs(userStore)
   if (!to.meta.noAuth && !isAuthorized.value) return { name: '/auth/login' }
+  if (to.meta.permissions?.length && !to.meta.permissions.every(userStore.hasPermission)) {
+    return { name: '/system/forbidden' }
+  }
 })
 ```
 
-`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `storeToRefs` сохраняет реактивность — стор может быть пустым на момент регистрации guard'а и наполниться bootstrap'ом до первого реального перехода.
+`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `storeToRefs` сохраняет реактивность state — стор может быть пустым на момент регистрации guard'а и наполниться bootstrap'ом до первого реального перехода. `hasPermission` — метод, безопасно деструктурировать без `storeToRefs`.
 
 ### Layouts
 
-Подключает `vite-plugin-vue-layouts-next`, читая [src/app/layouts/](../src/app/layouts/). Текущий единственный layout — `default.vue` (sidebar + header + `<router-view/>` + footer).
+Подключает `vite-plugin-vue-layouts-next`, читая [src/app/layouts/](../src/app/layouts/). Доступны два layout'а:
+
+- **`default.vue`** — sidebar + header + `<router-view/>` + footer + `<AppNotifications/>`. Используется для всех страниц по умолчанию.
+- **`auth.vue`** — центрированная карточка без навигации + `<AppNotifications/>`. Подключается через `definePage({ meta: { layout: 'auth' } })` (login/logout страницы).
 
 Указать другой layout: `definePage({ meta: { layout: 'auth' } })`. Сейчас существует только `default`; `auth` — в [ROADMAP](../ROADMAP.md), Фаза 1.
 
@@ -210,7 +218,7 @@ router.beforeEach((to) => {
 ```ts
 export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
-  const isAuthorized = computed(() => user.value?.isActive ?? false)
+  const isAuthorized = computed(() => user.value !== null && user.value.status === 'active')
 
   async function fetchCurrentUser() {
     user.value = await getCurrentUser()
@@ -282,7 +290,8 @@ export type Phone = z.infer<typeof phoneSchema>
 
 - **Vocabulary прав** — `permissionSchema` (`z.enum` с фиксированным списком) и тип `PermissionCode` — живёт в [src/shared/model/permission/](../src/shared/model/permission/). Это словарное знание без бизнес-поведения, доступное любому слою (sidebar, guard, формы).
 - **Бизнес-логика проверки** — функция `can(permission)` — в [src/entities/user/lib/can.ts](../src/entities/user/lib/can.ts). Завязана на `useUserStore()`, поэтому не может жить ниже `entities/user/`.
-- **Роли и разрешения пользователя** — поля `roles: string[]` и `permissions: PermissionCode[]` в схеме `User` (`entities/user/schema/user.schema.ts`). Схема импортирует `permissionSchema` из `@/shared/model/permission`.
+- **Роли пользователя** — `roles: string[]` в схеме `User`. Backend (`njs-server`) отдаёт только roles, без permissions.
+- **Permissions — frontend-абстракция.** Считаются из ролей через `rolesToPermissions(roles)` (`shared/model/permission/role-permissions.ts`). `userStore.permissions` — computed-проекция. Расширение таблицы — добавление новой роли в `ROLE_PERMISSIONS`.
 
 UI-фильтрация — пример в [src/widgets/app-sidebar/ui/AppSidebar.vue](../src/widgets/app-sidebar/ui/AppSidebar.vue):
 
@@ -292,7 +301,20 @@ const visibleItems = computed(() =>
 )
 ```
 
-> ⚠️ Проверка `meta.permissions` в guard'е **ещё не реализована** — её надо добавить, иначе по прямой ссылке можно попасть на запрещённый маршрут. См. [ROADMAP](../ROADMAP.md), Фаза 1.
+Защита маршрутов — [src/app/providers/setup-router.ts](../src/app/providers/setup-router.ts):
+
+```ts
+router.beforeEach((to) => {
+  const userStore = useUserStore()
+  const { isAuthorized } = storeToRefs(userStore)
+  if (!to.meta.noAuth && !isAuthorized.value) return { name: '/auth/login' }
+  if (to.meta.permissions?.length && !to.meta.permissions.every(userStore.hasPermission)) {
+    return { name: '/system/forbidden' }
+  }
+})
+```
+
+`meta.permissions: PermissionCode[]` типизирован в [src/router-meta.d.ts](../src/router-meta.d.ts) (extend `RouteMeta`).
 
 Декларативный вариант (`<Can permission="...">`) — в [ROADMAP](../ROADMAP.md), Фаза 2.
 
@@ -322,7 +344,31 @@ export async function getX(): Promise<X> {
 - **HttpError** — типизированный класс ошибки со `status`, `statusText`, `errorName`, `message`, `details` (формат бэка `njs-server`, см. [integration-backend.md](integration-backend.md) § Формат ошибок).
 - **Public endpoints** — передавать `{ auth: false }` (sign-in, refresh не нуждаются в access-token).
 
-Инстанс собирается в [src/app/providers/setup-http-client.ts](../src/app/providers/setup-http-client.ts), который связывает клиент с `useAuthStore()` (`getAccessToken` и `onUnauthorized → auth.refresh()`). Порядок провайдеров: pinia → http-client → vuetify → router.
+Инстанс собирается в [src/app/providers/setup-http-client.ts](../src/app/providers/setup-http-client.ts), который связывает клиент с `useAuthStore()` (`getAccessToken` и `onUnauthorized → auth.refresh()`). Порядок провайдеров: pinia → http-client → error-handler → vuetify → router.
+
+---
+
+## Error handling
+
+Глобальный отлов — [src/app/providers/setup-error-handler.ts](../src/app/providers/setup-error-handler.ts):
+
+- `app.config.errorHandler` — Vue-ошибки в шаблонах/setup.
+- `window.unhandledrejection` — необработанные promise-rejection (типичный кейс — async-вызовы из template без try/catch).
+- `window.error` — runtime-ошибки.
+
+Все три события идут в `report(err, source)` → `console.error` + `useNotificationStore().notifyError(humanize(err))`. `humanize` для `HttpError` берёт `message` (от бэка), для `Error` — `message`, иначе `'Что-то пошло не так'`.
+
+Notification-store — [src/entities/notification](../src/entities/notification/): простой setup-store с очередью. Default-timeout по kind (info/success — 4s, warning — 6s, error — sticky). Хост — [src/widgets/app-notifications/](../src/widgets/app-notifications/), `<v-snackbar>` стек, подключён в оба layout'а.
+
+Дополнительно: ошибки внутри **бизнес-flow** (например, login form) ловятся **локально** через `try/catch` и показываются inline (например, `v-alert`). Глобальный handler нужен для не-обработанного: программных багов, выпавших promise'ов.
+
+---
+
+## Environment
+
+Конфигурация рантайма читается из `import.meta.env.VITE_*` (объявлено в [env.d.ts](../env.d.ts), значения в [.env](../.env)). Валидация — Zod-схема в [src/shared/config/env.ts](../src/shared/config/env.ts), парсится при первом импорте, бросает Error со списком issues если что-то не так. Прямой `import.meta.env.VITE_*` использовать только внутри `shared/config/env.ts`; в коде — `env.VITE_API_URL`.
+
+Полный список переменных и порядок добавления — [reference/env.md](reference/env.md).
 
 ---
 
@@ -367,17 +413,9 @@ import { CodeViewer } from '@/shared/ui/base/code-viewer'
 
 ---
 
-## Environment
+## Backend
 
-### `.env` файлы
-
-[env.d.ts](../env.d.ts) объявляет типы для `import.meta.env.VITE_*`. Значения — в [.env](../.env). Полный список переменных и значений — [reference/env.md](reference/env.md).
-
-Zod-валидация env-переменных на старте — [ROADMAP](../ROADMAP.md), Фаза 1. До неё типы есть, runtime-проверки нет.
-
-### Backend
-
-Контракт API живёт отдельно — см. [integration-backend.md](integration-backend.md). Кратко: NestJS на `http://localhost:3001/api/v1`, Bearer JWT через `Authorization` header, refresh через `POST /auth/refresh`, CORS на бэке не настроен (для dev нужен Vite proxy — [ROADMAP](../ROADMAP.md), Фаза 1).
+Контракт API живёт отдельно — см. [integration-backend.md](integration-backend.md). Кратко: NestJS на `http://localhost:3001/api/v1`, Bearer JWT через `Authorization` header, refresh через `POST /auth/refresh`. CORS на бэке не настроен, в dev фронт идёт через [Vite proxy](#environment) (`'/api'` → `localhost:3001`).
 
 ---
 

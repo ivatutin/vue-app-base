@@ -13,8 +13,8 @@
 </template>
 
 <script lang="ts" setup>
-import { AppHeader } from '@/widgets/app-header';
-import { AppSidebar } from '@/widgets/app-sidebar';
-import { AppFooter } from '@/widgets/app-footer';
-import { AppNotifications } from '@/widgets/app-notifications';
+  import { AppFooter } from '@/widgets/app-footer'
+  import { AppHeader } from '@/widgets/app-header'
+  import { AppNotifications } from '@/widgets/app-notifications'
+  import { AppSidebar } from '@/widgets/app-sidebar'
 </script>

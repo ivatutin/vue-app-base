@@ -1,14 +1,14 @@
-import { useBootstrapStore } from '@/entities/bootstrap'
+import type { Router } from 'vue-router'
 import { useAuthStore } from '@/entities/auth'
+import { useBootstrapStore } from '@/entities/bootstrap'
 import { useUserStore } from '@/entities/user'
 import { retryOn404 } from '@/shared/lib/async'
-import type { Router } from 'vue-router'
 
 interface BootstrapContext {
   router: Router
 }
 
-export async function runBootstrapProcess(context?: BootstrapContext) {
+export async function runBootstrapProcess (context?: BootstrapContext) {
   const bootstrap = useBootstrapStore()
   const auth = useAuthStore()
   const user = useUserStore()

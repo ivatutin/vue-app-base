@@ -23,8 +23,8 @@ sequenceDiagram
     Browser->>main: загрузка bundle
     main->>main: createApp(App)
     main->>Providers: setupProviders(app)
-    Providers->>Providers: createPinia + createVuetify + createRouter
-    Providers-->>main: { router, pinia, vuetify }
+    Providers->>Providers: pinia + httpClient + errorHandler<br/>+ vuetify + router
+    Providers-->>main: { pinia, httpClient, vuetify, router }
 
     main->>App: app.mount('#app')
     App->>Bootstrap: useBootstrapStore()
@@ -40,14 +40,14 @@ sequenceDiagram
     Note right of Process: чтение токенов из tokenStorage<br/>в state стора auth (sync)
 
     alt isSessionActive
-        Process->>Process: await user.fetchCurrentUser()
-        Note right of Process: тянет профиль; внутри ловит<br/>ошибки и обнуляет user
+        Process->>Process: retryOn404(() => user.fetchCurrentUser(),<br/>{ attempts: 3, delay: 500 })
+        Note right of Process: тянет профиль через GET /users/me;<br/>retry на 404 покрывает гонку с<br/>UserSignedInEvent на njs-server
     end
 
     Process->>Router: await isReady()
     Router-->>Process: ✓
 
-    Note right of Process: env-валидация (Zod) и session-refresh<br/>при 401 — ROADMAP, Фаза 1
+    Note right of Process: env уже валидирован (Zod) при импорте<br/>shared/config/env. 401 + refresh — внутри HTTP-клиента.
 
     alt success
         Process->>Bootstrap: finish()
@@ -58,7 +58,7 @@ sequenceDiagram
         Process->>Bootstrap: fail(error)
         Note over Bootstrap: status = 'failed'<br/>hasError = true
         Process-->>main: throw
-        Note over main: ⚠ обработка ошибки<br/>пока не реализована<br/>(ROADMAP, Фаза 1)
+        Note over main: setupErrorHandler ловит<br/>unhandled rejection и<br/>показывает snackbar<br/>через notification-store
     end
 ```
 
@@ -81,13 +81,16 @@ stateDiagram-v2
 Текущий порядок шагов внутри `runBootstrapProcess`:
 
 1. **Init auth** — `auth.init()`: sync-чтение токенов из `tokenStorage` в state стора. **Реализовано.**
-2. **Fetch current user** — `user.fetchCurrentUser()` если `auth.isSessionActive`. **Реализовано.**
+2. **Fetch current user** — `user.fetchCurrentUser()` если `auth.isSessionActive`, обёрнут в `retryOn404` (`@/shared/lib/async`) для гонки с `UserSignedInEvent` бэка. **Реализовано.**
 3. **`router.isReady()`** — последний шаг, после него `App.vue` переключается в `<v-app>`. **Реализовано.**
 
-Запланированные расширения ([ROADMAP](../../ROADMAP.md)):
+Уже встроено в инфраструктуру (вне bootstrap):
 
-- **Валидация env** — `envSchema.parse(import.meta.env)`, падать с понятной ошибкой на старте (Фаза 1).
-- **Session-refresh при 401** — interceptor HTTP-клиента + попытка `refresh` (Фаза 1).
+- **Env-валидация** — `shared/config/env.ts` парсит `import.meta.env` через Zod при первом импорте; не нужно вызывать из bootstrap.
+- **Session-refresh при 401** — внутри `HttpClient` (single-flight `refreshPromise`), зовётся через `onUnauthorized` коллбэк из `setup-http-client.ts`.
+
+Запланированные расширения ([ROADMAP](../../ROADMAP.md), Фаза 2):
+
 - **Prefetch критичных справочников** — добавлять по необходимости, осторожно: всё, что блокирует splash, тормозит первый рендер.
 
 ## Анти-паттерны

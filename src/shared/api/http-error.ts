@@ -4,7 +4,7 @@ export class HttpError extends Error {
   public readonly errorName: string
   public readonly details: unknown
 
-  constructor(
+  constructor (
     status: number,
     statusText: string,
     errorName: string,

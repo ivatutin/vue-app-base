@@ -1,7 +1,9 @@
 <script setup lang="ts">
-definePage({
-  redirect: { name: '/dashboard' },
-})
+  definePage({
+    redirect: { name: '/dashboard' },
+  })
 </script>
 
-<template></template>
+<template>
+  <div />
+</template>

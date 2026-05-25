@@ -1,9 +1,9 @@
 import type { App } from 'vue'
+import { useAuthStore } from '@/entities/auth'
 import { HttpClient, setHttpClient } from '@/shared/api'
 import { env } from '@/shared/config'
-import { useAuthStore } from '@/entities/auth'
 
-export function setupHttpClient(_app: App): HttpClient {
+export function setupHttpClient (_app: App): HttpClient {
   const auth = useAuthStore()
 
   const client = new HttpClient({

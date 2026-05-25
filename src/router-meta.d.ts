@@ -7,5 +7,3 @@ declare module 'vue-router' {
     permissions?: PermissionCode[]
   }
 }
-
-export {}

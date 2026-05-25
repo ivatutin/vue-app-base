@@ -14,12 +14,14 @@ export const ROLE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   user: ['user.read'],
 }
 
-export function rolesToPermissions(roles: readonly string[]): PermissionCode[] {
+export function rolesToPermissions (roles: readonly string[]): PermissionCode[] {
   const set = new Set<PermissionCode>()
   for (const role of roles) {
     const perms = ROLE_PERMISSIONS[role]
     if (perms) {
-      for (const p of perms) set.add(p)
+      for (const p of perms) {
+        set.add(p)
+      }
     }
   }
   return Array.from(set)

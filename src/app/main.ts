@@ -6,11 +6,11 @@ import { setupProviders } from '@/app/providers'
 import { runBootstrapProcess } from '@/processes/app-bootstrap'
 import 'unfonts.css'
 
-async function bootstrapApplication() {
-    const app = createApp(App)
-    const { router } = setupProviders(app)
-    app.mount('#app')
-    await runBootstrapProcess({ router })
+async function bootstrapApplication () {
+  const app = createApp(App)
+  const { router } = setupProviders(app)
+  app.mount('#app')
+  await runBootstrapProcess({ router })
 }
 
 // async function bootstrapApplication() {

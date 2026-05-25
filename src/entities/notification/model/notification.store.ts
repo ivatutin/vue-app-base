@@ -23,7 +23,7 @@ const DEFAULT_TIMEOUT_BY_KIND: Record<NotificationKind, number> = {
 export const useNotificationStore = defineStore('notification', () => {
   const items = ref<Notification[]>([])
 
-  function push(input: NotifyInput): string {
+  function push (input: NotifyInput): string {
     const kind = input.kind ?? 'info'
     const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID()
@@ -38,15 +38,15 @@ export const useNotificationStore = defineStore('notification', () => {
     return id
   }
 
-  function notifyError(message: string): string {
+  function notifyError (message: string): string {
     return push({ kind: 'error', message })
   }
 
-  function dismiss(id: string): void {
-    items.value = items.value.filter((n) => n.id !== id)
+  function dismiss (id: string): void {
+    items.value = items.value.filter(n => n.id !== id)
   }
 
-  function clear(): void {
+  function clear (): void {
     items.value = []
   }
 

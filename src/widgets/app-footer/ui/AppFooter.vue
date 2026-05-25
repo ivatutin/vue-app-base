@@ -1,5 +1,5 @@
 <template>
-  <v-footer app height="40" class="justify-end">
+  <v-footer app class="justify-end" height="40">
     <div class="text-caption">
       <router-link :to="{ name: '/' }">home</router-link>
       |
@@ -18,12 +18,11 @@
 </template>
 
 <script setup lang="ts">
-const now = shallowRef(new Date)
+  const now = shallowRef(new Date())
 
+  const timer = setInterval(() => now.value = new Date(), 1000)
 
-const timer = setInterval(() => now.value = new Date, 1000)
-
-onBeforeUnmount(() => {
-  clearInterval(timer)
-})
+  onBeforeUnmount(() => {
+    clearInterval(timer)
+  })
 </script>

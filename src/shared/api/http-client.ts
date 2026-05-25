@@ -30,7 +30,7 @@ interface ErrorResponseBody {
 export class HttpClient {
   private refreshPromise: Promise<boolean> | null = null
 
-  constructor(private readonly options: HttpClientOptions) {}
+  constructor (private readonly options: HttpClientOptions) {}
 
   get<T>(path: string, options?: RequestOptions): Promise<T> {
     return this.request<T>('GET', path, undefined, options)
@@ -70,7 +70,7 @@ export class HttpClient {
     return this.parseResponse<T>(response)
   }
 
-  private async execute(
+  private async execute (
     method: Method,
     path: string,
     body: unknown,
@@ -81,7 +81,9 @@ export class HttpClient {
 
     if (options.auth !== false) {
       const token = this.options.getAccessToken?.()
-      if (token) headers['Authorization'] = `Bearer ${token}`
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
     }
 
     let bodyInit: BodyInit | undefined
@@ -117,8 +119,10 @@ export class HttpClient {
    * Single-flight refresh: одновременные 401 ждут один и тот же promise,
    * запуская onUnauthorized ровно один раз.
    */
-  private retryAfterRefresh(): Promise<boolean> {
-    if (!this.options.onUnauthorized) return Promise.resolve(false)
+  private retryAfterRefresh (): Promise<boolean> {
+    if (!this.options.onUnauthorized) {
+      return Promise.resolve(false)
+    }
     this.refreshPromise ??= this.options
       .onUnauthorized()
       .finally(() => {
@@ -127,7 +131,7 @@ export class HttpClient {
     return this.refreshPromise
   }
 
-  private buildUrl(path: string, query?: RequestOptions['query']): string {
+  private buildUrl (path: string, query?: RequestOptions['query']): string {
     const isAbsoluteBase = /^https?:\/\//i.test(this.options.baseUrl)
     const base = isAbsoluteBase ? this.options.baseUrl : `${window.location.origin}${this.options.baseUrl}`
     const normalizedBase = base.endsWith('/') ? base : `${base}/`

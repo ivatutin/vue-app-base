@@ -29,7 +29,7 @@ processes/  длительные многошаговые сценарии (на
 pages/      маршрутные страницы — file-based routing
 widgets/    самостоятельные блоки лэйаута (app-header, app-sidebar, ...)
 features/   пользовательские сценарии (зарезервирован, пока пуст / закомментирован в vite.config.mts)
-entities/   бизнес-сущности (user, auth, bootstrap) — здесь же Pinia-сторы
+entities/   бизнес-сущности (user, auth, bootstrap, notification) — здесь же Pinia-сторы
 shared/     переиспользуемая инфраструктура: lib/utils, ui/base, model (Zod-схемы)
 ```
 
@@ -61,8 +61,12 @@ shared/     переиспользуемая инфраструктура: lib/u
 **HTTP-клиент.** В [shared/api/](src/shared/api/) — `class HttpClient` (fetch, [ADR-0006](docs/adr/0006-fetch-based-http-client.md)) с DI auth-interceptor и single-flight refresh-mutex. Использовать через `getHttpClient()` из `@/shared/api`. Инстанс собирается в [app/providers/setup-http-client.ts](src/app/providers/setup-http-client.ts), не создавай вручную. Контракт backend и `HttpError`-формат — [docs/integration-backend.md](docs/integration-backend.md).
 
 Модель авторизации живёт в [entities/user](src/entities/user/):
-- **DTO ↔ Domain.** Контракт backend и domain-модель разделены ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `api/user.dto.ts` описывает форму ответа (snake_case), `schema/user.schema.ts` — domain-модель `User = z.infer<typeof userSchema>` (camelCase), `api/user.mapper.ts` — `toUser(dto)`. В [api/index.ts](src/entities/user/api/index.ts) ответ парсится через `userDtoSchema.safeParse`, прогоняется через mapper, наружу уходит только `User`. `UserDto` за пределы `api/`-сегмента **не выходит**.
-- **RBAC.** Vocabulary прав живёт в [shared/model/permission/](src/shared/model/permission/) ([ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)) — `permissionSchema` и тип `PermissionCode`. Хелпер `can(permission)` ([lib/can.ts](src/entities/user/lib/can.ts)) остаётся в `entities/user/lib/`, потому что зависит от `useUserStore()`. Сайдбар фильтрует пункты с его помощью ([widgets/app-sidebar/ui/AppSidebar.vue](src/widgets/app-sidebar/ui/AppSidebar.vue)).
+- **DTO ↔ Domain.** Контракт backend и domain-модель разделены ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `api/user.dto.ts` описывает форму ответа `UserResponseDto` (camelCase, status enum, nullable email/phone, см. [docs/integration-backend.md](docs/integration-backend.md)), `schema/user.schema.ts` — Domain-модель `User = z.infer<typeof userSchema>`, `api/user.mapper.ts` — `toUser(dto)`. В [api/index.ts](src/entities/user/api/index.ts) `GET /users/me` → `userDtoSchema.safeParse` → mapper. `UserDto` за пределы `api/`-сегмента **не выходит**.
+- **RBAC.** Vocabulary прав живёт в [shared/model/permission/](src/shared/model/permission/) ([ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)) — `permissionSchema` и тип `PermissionCode`. Backend отдаёт только `roles: string[]`, фронт превращает их в permissions через `rolesToPermissions()` (`shared/model/permission/role-permissions.ts`). Хелпер `can(permission)` ([lib/can.ts](src/entities/user/lib/can.ts)) и `userStore.hasPermission()` основаны на этом маппинге. Sidebar фильтрует пункты, router-guard проверяет `meta.permissions`.
+
+**Auth & error-handling.** `useAuthStore.login/refresh/logout` поверх HTTP-клиента дёргают `/auth/sign-in`, `/auth/refresh`, `/auth/sign-out`. Глобальные ошибки (Vue, unhandledrejection, window.error) ловит [setup-error-handler](src/app/providers/setup-error-handler.ts) → notification-store ([entities/notification](src/entities/notification/)) → `<v-snackbar>` стек ([widgets/app-notifications](src/widgets/app-notifications/), подключён в оба layout'а). Локальные ошибки бизнес-flow (например, LoginPage) ловятся inline через `try/catch`, не пускаются в глобальный handler.
+
+**Layouts.** `default.vue` (sidebar + header + main + footer) и `auth.vue` (центрированная карточка без навигации). Включается через `definePage({ meta: { layout: 'auth' } })`.
 
 ### Конвенции, заданные тулчейном
 
@@ -73,7 +77,9 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 ### Окружение
 
-Runtime-конфигурация — `import.meta.env.VITE_*` (объявлено в [env.d.ts](env.d.ts), значения в `.env`). При добавлении новых env-переменных обязательно объявляй их в `env.d.ts`, иначе сломается типизация. Zod-валидация env-схемы на старте запланирована в [ROADMAP.md](ROADMAP.md), Фаза 1.
+Runtime-конфигурация — `import.meta.env.VITE_*` (объявлено в [env.d.ts](env.d.ts), значения в `.env`), валидируется через Zod в [src/shared/config/env.ts](src/shared/config/env.ts) при первом импорте — невалидный env обрушит приложение со списком issues. В коде используй `env.VITE_API_URL` из `@/shared/config`, не дёргай `import.meta.env` напрямую. Подробнее — [docs/reference/env.md](docs/reference/env.md).
+
+В dev фронт идёт к [`njs-server`](docs/integration-backend.md) через Vite proxy (`/api → http://localhost:3001`), в prod — `VITE_API_URL` это полный URL.
 
 ## Документация
 

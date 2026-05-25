@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/entities/auth'
-import { useUserStore } from '@/entities/user'
+  import { useAuthStore } from '@/entities/auth'
+  import { useUserStore } from '@/entities/user'
 
-definePage({
-  meta: {
-    noAuth: true,
-    layout: 'auth',
-  },
-})
+  definePage({
+    meta: {
+      noAuth: true,
+      layout: 'auth',
+    },
+  })
 
-const auth = useAuthStore()
-const user = useUserStore()
-const router = useRouter()
+  const auth = useAuthStore()
+  const user = useUserStore()
+  const router = useRouter()
 
-onMounted(async () => {
-  try {
-    await auth.logout()
-  } finally {
-    user.reset()
+  onMounted(async () => {
+    try {
+      await auth.logout()
+    } finally {
+      user.reset()
+    }
+  })
+
+  function goToLogin () {
+    router.replace({ name: '/auth/login' })
   }
-})
-
-function goToLogin() {
-  router.replace({ name: '/auth/login' })
-}
 </script>
 
 <template>

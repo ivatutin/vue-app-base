@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { sidebarItems } from '../model/sidebar-items'
-import { can } from '@/entities/user'
+  import { can } from '@/entities/user'
+  import { sidebarItems } from '../model/sidebar-items'
 
-const rail = shallowRef(true)
+  const rail = shallowRef(true)
 
-const visibleItems = computed(() =>
-  sidebarItems.filter(item =>
-    !item.permission || can(item.permission),
-  ),
-)
+  const visibleItems = computed(() =>
+    sidebarItems.filter(item =>
+      !item.permission || can(item.permission),
+    ),
+  )
 </script>
 <template>
-  <v-navigation-drawer :rail="rail" permanent>
-    <v-btn @click="rail = !rail" :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'" variant="text" />
+  <v-navigation-drawer permanent :rail="rail">
+    <v-btn :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'" variant="text" @click="rail = !rail" />
     <v-list>
       <v-list-item
         v-for="item in visibleItems"
         :key="item.to"
-        :to="item.to"
         :prepend-icon="item.icon"
+        :to="item.to"
       >
         {{ item.label }}
       </v-list-item>

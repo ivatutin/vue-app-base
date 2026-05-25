@@ -1,8 +1,8 @@
-import { phoneSchema } from '@/shared/model/phone'
-import type { UserDto } from './user.dto'
 import type { User } from '../schema/user.schema'
+import type { UserDto } from './user.dto'
+import { phoneSchema } from '@/shared/model/phone'
 
-export function toUser(dto: UserDto): User {
+export function toUser (dto: UserDto): User {
   return {
     id: dto.id,
     email: dto.email,

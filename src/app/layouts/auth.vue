@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppNotifications } from '@/widgets/app-notifications'
+  import { AppNotifications } from '@/widgets/app-notifications'
 </script>
 
 <template>

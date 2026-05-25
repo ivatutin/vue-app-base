@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useNotificationStore } from '@/entities/notification'
+  import { useNotificationStore } from '@/entities/notification'
 
-const store = useNotificationStore()
-const { items } = storeToRefs(store)
+  const store = useNotificationStore()
+  const { items } = storeToRefs(store)
 </script>
 
 <template>
@@ -10,11 +10,11 @@ const { items } = storeToRefs(store)
     <v-snackbar
       v-for="item in items"
       :key="item.id"
-      :model-value="true"
       :color="item.kind"
-      :timeout="item.timeout || -1"
       location="top right"
+      :model-value="true"
       multi-line
+      :timeout="item.timeout || -1"
       @update:model-value="(v) => !v && store.dismiss(item.id)"
     >
       {{ item.message }}

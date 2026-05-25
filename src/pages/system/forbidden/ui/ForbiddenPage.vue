@@ -1,9 +1,9 @@
 <script setup lang="ts">
-definePage({
-  meta: {
-    noAuth: true,
-  },
-})
+  definePage({
+    meta: {
+      noAuth: true,
+    },
+  })
 </script>
 
 <template>

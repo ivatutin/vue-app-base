@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { useBootstrapStore } from '@/entities/bootstrap'
-import { AppPreloader } from '@/widgets/app-preloader';
+  import { useBootstrapStore } from '@/entities/bootstrap'
+  import { AppPreloader } from '@/widgets/app-preloader'
 
-const bootstrap = useBootstrapStore()
+  const bootstrap = useBootstrapStore()
 </script>
 
 <template>

@@ -1,5 +1,5 @@
+import { refreshTokens, signIn, signOut } from '../api'
 import { tokenStorage } from '../lib/token-storage'
-import { signIn, refreshTokens, signOut } from '../api'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
@@ -8,12 +8,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isSessionActive = computed(() => !!accessToken.value)
 
-  function init(): void {
+  function init (): void {
     accessToken.value = tokenStorage.getAccessToken()
     refreshToken.value = tokenStorage.getRefreshToken()
   }
 
-  async function login(email: string, password: string): Promise<void> {
+  async function login (email: string, password: string): Promise<void> {
     isLoading.value = true
     try {
       const pair = await signIn(email, password)
@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function refresh(): Promise<void> {
+  async function refresh (): Promise<void> {
     const current = refreshToken.value
     if (!current) {
       clearTokens()
@@ -33,9 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const pair = await refreshTokens(current)
       applyTokens(pair.accessToken, pair.refreshToken)
-    } catch (err) {
+    } catch (error) {
       clearTokens()
-      throw err
+      throw error
     } finally {
       isLoading.value = false
     }
@@ -46,22 +46,24 @@ export const useAuthStore = defineStore('auth', () => {
    * sign-out на бэк, но локальное состояние сбрасываем в любом
    * случае (даже при сетевой ошибке). Сброс user-state — на caller'е.
    */
-  async function logout(): Promise<void> {
+  async function logout (): Promise<void> {
     const current = refreshToken.value
     try {
-      if (current) await signOut(current)
+      if (current) {
+        await signOut(current)
+      }
     } finally {
       clearTokens()
     }
   }
 
-  function applyTokens(access: string, refresh: string): void {
+  function applyTokens (access: string, refresh: string): void {
     accessToken.value = access
     refreshToken.value = refresh
     tokenStorage.setTokens(access, refresh)
   }
 
-  function clearTokens(): void {
+  function clearTokens (): void {
     accessToken.value = null
     refreshToken.value = null
     tokenStorage.clear()

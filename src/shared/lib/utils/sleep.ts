@@ -1,7 +1,7 @@
-export function sleep(ms: number, options?: { return?: any; signal?: AbortSignal }): Promise<void> {
+export function sleep (ms: number, options?: { return?: any, signal?: AbortSignal }): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(
-      () => (undefined !== options?.return ? resolve(options.return) : resolve()),
+      () => (undefined === options?.return ? resolve() : resolve(options.return)),
       ms,
     )
     if (options?.signal) {

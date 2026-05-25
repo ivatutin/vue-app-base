@@ -110,12 +110,12 @@ import { useUserStore } from '@/entities/user/model/user.store'
 |------|-----|------------|
 | `title` | `string` | Заголовок (читается layout'ом) |
 | `noAuth` | `boolean` | Страница доступна без аутентификации |
-| `permissions` | `PermissionCode[]` | Требуемые разрешения ⚠ |
-| `layout` | `string` | Альтернативный layout ⚠ |
+| `permissions` | `PermissionCode[]` | Требуемые разрешения, проверка в guard |
+| `layout` | `'default' \| 'auth'` | Альтернативный layout |
 
-> ⚠️ **`permissions`** в guard'е **пока не проверяется** — фильтрация только в UI (sidebar). Добавление в guard — в [ROADMAP](../../ROADMAP.md), Фаза 1.
+**`permissions`** — guard зовёт `userStore.hasPermission(p)` для каждого; не хватает прав → редирект на `/system/forbidden`. Маппинг ролей в permissions — `shared/model/permission/role-permissions.ts`.
 
-> ⚠️ **`layout`** — пока существует только `default`. Layout'ы лежат в [src/app/layouts/](../../src/app/layouts/). Создание `auth.vue` запланировано в [ROADMAP](../../ROADMAP.md), Фаза 1.
+**`layout`** — Layout'ы лежат в [src/app/layouts/](../../src/app/layouts/). Доступны `default.vue` (с навигацией) и `auth.vue` (центрированная карточка без навигации).
 
 ---
 

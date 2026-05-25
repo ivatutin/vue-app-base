@@ -6,7 +6,7 @@ export interface RetryOptions {
   shouldRetry?: (err: unknown) => boolean
 }
 
-export async function retry<T>(
+export async function retry<T> (
   task: () => Promise<T>,
   options: RetryOptions,
 ): Promise<T> {
@@ -14,10 +14,12 @@ export async function retry<T>(
   for (let i = 0; i < options.attempts; i++) {
     try {
       return await task()
-    } catch (err) {
-      lastError = err
-      const shouldRetry = options.shouldRetry?.(err) ?? true
-      if (!shouldRetry || i === options.attempts - 1) break
+    } catch (error) {
+      lastError = error
+      const shouldRetry = options.shouldRetry?.(error) ?? true
+      if (!shouldRetry || i === options.attempts - 1) {
+        break
+      }
       await sleep(options.delay)
     }
   }
@@ -29,16 +31,16 @@ export async function retry<T>(
  * Под кейс `/users/me` после первого sign-in: local user создаётся
  * асинхронно через UserSignedInEvent (см. docs/integration-backend.md).
  */
-export function retryOn404<T>(
+export function retryOn404<T> (
   task: () => Promise<T>,
-  options: { attempts: number; delay: number },
+  options: { attempts: number, delay: number },
 ): Promise<T> {
   return retry(task, {
     ...options,
-    shouldRetry: (err) => err instanceof HttpError && err.status === 404,
+    shouldRetry: err => err instanceof HttpError && err.status === 404,
   })
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function sleep (ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
