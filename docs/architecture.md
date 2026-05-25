@@ -298,6 +298,34 @@ const visibleItems = computed(() =>
 
 ---
 
+## HTTP-клиент
+
+[src/shared/api/](../src/shared/api/) содержит `class HttpClient` + `HttpError` + singleton-инстанс. Архитектура зафиксирована в [ADR-0006](adr/0006-fetch-based-http-client.md): fetch-обёртка с DI auth-interceptor и refresh-mutex.
+
+Использование из API-функций сущностей:
+
+```ts
+// src/entities/<x>/api/index.ts
+import { getHttpClient } from '@/shared/api'
+
+export async function getX(): Promise<X> {
+  const client = getHttpClient()
+  const dto = await client.get<unknown>('/x')
+  // ... safeParse + mapper согласно ADR-0005
+}
+```
+
+Ключевые свойства:
+
+- **Bearer JWT** добавляется автоматически из `getAccessToken()`-коллбэка, если установлен токен и `RequestOptions.auth !== false`.
+- **401 → refresh → retry** — single-flight: одновременные 401 ждут один и тот же refresh-вызов, повторяются ровно один раз.
+- **HttpError** — типизированный класс ошибки со `status`, `statusText`, `errorName`, `message`, `details` (формат бэка `njs-server`, см. [integration-backend.md](integration-backend.md) § Формат ошибок).
+- **Public endpoints** — передавать `{ auth: false }` (sign-in, refresh не нуждаются в access-token).
+
+Инстанс собирается в [src/app/providers/setup-http-client.ts](../src/app/providers/setup-http-client.ts), который связывает клиент с `useAuthStore()` (`getAccessToken` и `onUnauthorized → auth.refresh()`). Порядок провайдеров: pinia → http-client → vuetify → router.
+
+---
+
 ## Provider-pattern в `app/`
 
 [src/app/providers/](../src/app/providers/) — каждое глобальное расширение Vue в своём setup-модуле:

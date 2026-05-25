@@ -20,6 +20,7 @@
 - [adr/0003-zod-as-source-of-truth.md](adr/0003-zod-as-source-of-truth.md) — Zod как источник типов
 - [adr/0004-rbac-vocabulary-in-shared.md](adr/0004-rbac-vocabulary-in-shared.md) — vocabulary прав в `shared/model/permission/`, `can()` в `entities/user/lib/`
 - [adr/0005-dto-domain-mapping.md](adr/0005-dto-domain-mapping.md) — разделение DTO/Domain/Mapper для всех сущностей с API
+- [adr/0006-fetch-based-http-client.md](adr/0006-fetch-based-http-client.md) — HTTP-клиент: fetch + DI auth-interceptor + refresh-mutex
 
 ## Сделать конкретную задачу (How-to)
 

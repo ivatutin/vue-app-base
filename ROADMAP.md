@@ -45,10 +45,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** `server.proxy` в `vite.config.mts`: `/api → http://localhost:3001`. Параллельно обновить `.env`: `VITE_API_URL=/api/v1`, убрать `VITE_WS_HOST` (бэк не предоставляет WS).
 **Триггер:** перед первым реальным запросом к бэку.
 
-### [P1] HTTP-клиент `shared/api/http-client.ts` `planned`
-**Зачем:** см. [integration-backend.md](docs/integration-backend.md). Нужен auth-interceptor (Bearer JWT), 401→refresh-flow с защитой от race (mutex), типизированный `HttpError` с `status`/`error`/`message`/`details`, поддержка query/signal.
-**Что:** ADR-0006 + `class HttpClient` (fetch) + `HttpError` + DI через коллбэки (`getAccessToken`, `onUnauthorized`) + provider `app/providers/setup-http-client.ts`, который связывает клиент с `useAuthStore()`. Singleton-инстанс через `shared/api/instance.ts` (set/get) — без cross-entity import из shared в entities.
-**Триггер:** немедленно после Vite proxy.
+### [P1] HTTP-клиент `shared/api/http-client.ts` `done`
+Реализовано: `class HttpClient` + `HttpError` + singleton-инстанс через `shared/api/instance.ts`, провайдер `setup-http-client.ts` с DI auth-interceptor (`getAccessToken` + `onUnauthorized → auth.refresh()`), single-flight refresh-mutex. Архитектурное решение в [ADR-0006](docs/adr/0006-fetch-based-http-client.md).
 
 ### [P1] User-схема под реальный `UserResponseDto` `planned`
 **Зачем:** текущая `userDtoSchema` декларирует snake_case и поле `fullName`, реальный бэк отдаёт camelCase с раздельными `firstName`/`lastName`, `emailVerified`/`phoneVerified`, `status` enum, `updatedAt`. Без переделки клиент не пройдёт `safeParse` на реальном ответе.
