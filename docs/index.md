@@ -21,7 +21,7 @@
 - [adr/0004-rbac-vocabulary-in-shared.md](adr/0004-rbac-vocabulary-in-shared.md) — vocabulary прав в `shared/model/permission/`, `can()` в `entities/user/lib/`
 - [adr/0005-dto-domain-mapping.md](adr/0005-dto-domain-mapping.md) — разделение DTO/Domain/Mapper для всех сущностей с API
 - [adr/0006-fetch-based-http-client.md](adr/0006-fetch-based-http-client.md) — HTTP-клиент: fetch + DI auth-interceptor + refresh-mutex
-- [adr/0007-ui-stack-migration-from-vuetify.md](adr/0007-ui-stack-migration-from-vuetify.md) — целевой UI-стек (shadcn-vue + Tailwind + Radix) и стратегия миграции с Vuetify через strangler fig
+- [adr/0007-ui-stack-migration-from-vuetify.md](adr/0007-ui-stack-migration-from-vuetify.md) — целевой UI-стек (shadcn-vue + Tailwind + Radix; PrimeVue / AG Grid / TipTap / FullCalendar опционально для сложных компонентов) и стратегия миграции с Vuetify через strangler fig
 
 ## Сделать конкретную задачу (How-to)
 

@@ -23,18 +23,48 @@
 
 ## Decision
 
-### Целевой стек
+### Целевой стек — ядро (всегда стоит)
 
 | Слой | Решение | Зачем |
 |------|---------|-------|
-| **UI-компоненты** | **shadcn-vue** | CLI копирует компоненты в `src/shared/ui/base/`. Ноль runtime UI-kit зависимости, владение кодом, простая брендировка. Лидер Vue-экосистемы 2025+. |
+| **UI-компоненты (база)** | **shadcn-vue** | CLI копирует компоненты в `src/shared/ui/base/`. Ноль runtime UI-kit зависимости, владение кодом, простая брендировка. Лидер Vue-экосистемы 2025+. |
 | **Accessibility primitives** | **radix-vue** (под shadcn-vue) | Focus management, ARIA, keyboard navigation — не изобретаем велосипед, не теряем доступность. |
 | **Стили** | **Tailwind v4** | Atomic CSS без runtime, нативный bundle ~10 КБ, конфиг через CSS-vars (естественная интеграция с design tokens). |
 | **Иконки** | **lucide-vue-next** | ~2-3 КБ за иконку, tree-shake, современная эстетика, заменяет `@mdi/font` (~25 КБ как единый файл). |
-| **Data-table** | **TanStack Table v8** | Headless, лучший в JS-экосистеме. Заменяет `v-data-table` с **расширением** возможностей (server-side, virtual scroll, column resize). |
 | **Composables** | **VueUse** | Утилитарные composables (useStorage, useEventListener, useDebounce, ...). Не зависит от UI, должен быть в любом Vue-проекте. |
 | **Forms + валидация** | **VeeValidate + Zod-resolver** | Уже в [ROADMAP.md](../../ROADMAP.md) Фаза 2 (`[P2] Form architecture`). Естественно ложится в миграцию. |
-| **Date/time** | **date-fns** + headless (radix-vue или ручной) | Замена `v-date-picker`. |
+| **Date/time (lib)** | **date-fns** | Утилитарная либа для манипуляций датами. Используется внутри custom-DatePicker'ов и валидации форм. |
+
+### Целевой стек — точечное расширение (по триггеру)
+
+shadcn-vue **намеренно** не покрывает enterprise-виджеты — он фокусируется на повседневном UI. Когда конкретный сложный компонент понадобится, добавляем специализированную либу **точечно**, через тот же фасад `src/shared/ui/base/<Component>/`. Это сохраняет принцип «потребители видят только наш API», не возвращая Vuetify-style lock-in.
+
+**Правила точечного расширения:**
+
+1. **Триггер фиксируется заранее** (см. таблицу ниже). Без явного триггера новая UI-либа не добавляется.
+2. **Каждая либа — обёрнута в `shared/ui/base/`** с проектным API. Прямой `<DataTable>` от PrimeVue в widget/page **запрещён** тем же lint-правилом, что и `<v-*>`.
+3. **Стилизуется через design tokens и Tailwind** (PrimeVue 4 Unstyled-mode, AG Grid CSS-vars). Никаких встроенных тем.
+4. **Vitest + Storybook** на обёртку обязательны — как и для shadcn-vue компонентов.
+5. **Замена/удаление либы — переписать только обёртку**, не потребителей.
+
+**Решающее дерево по сложным компонентам:**
+
+| Триггер | Что взять | Почему именно это |
+|---------|-----------|-------------------|
+| **DataTable** — server-side pagination + multi-sort + column resize + row-grouping + virtual scroll | **PrimeVue DataTable** (Unstyled) или **AG Grid Community** | Собирать на TanStack Table — 1-2 недели работы. PrimeVue DataTable — лучший в Vue-экосистеме, AG Grid — лучший в JS целиком. **Дефолт — PrimeVue** (плотнее интегрируется с Vue, бесплатен, проще в обёртке). AG Grid — если нужны Excel-export, master/detail, pivoting. |
+| **DataTable простой** — без серверной пагинации, < 200 строк | **TanStack Table v8** | Headless, легче, минимум зависимостей. Не тащим тяжёлый PrimeVue ради базового списка. |
+| **DatePicker / Calendar** — продакшен-grade с локализацией, range, диапазонами | **PrimeVue DatePicker** (Unstyled) | radix-vue Calendar — primitives, не закроет полный picker. Собирать самим — 1 неделя. PrimeVue даёт готовое. |
+| **DatePicker простой** — одиночная дата в форме | **radix-vue + date-fns + shadcn-vue Calendar** | Лёгкий, контролируемый, без новой зависимости. |
+| **FileUpload** — drag-and-drop, прогресс, chunked, превью | **PrimeVue FileUpload** или **vue-filepond** | Собирать DnD + progress + multi-file самим — рискованно и долго. **Дефолт — PrimeVue** (если уже подключён). |
+| **Tree / TreeTable** | **PrimeVue Tree/TreeTable** (Unstyled) | radix-vue не имеет, собирать с нуля — много работы по a11y и keyboard navigation. |
+| **Schedule / Calendar (event-grid)** | **FullCalendar** | Лучший event-calendar в JS-мире, не конкурент в этой нише. PrimeVue Schedule — обёртка над FullCalendar. |
+| **Charts** | **ECharts** или **Chart.js** + vue-wrapper | Это про данные, не про UI-kit. Выбор зависит от сложности (ECharts — мощнее, Chart.js — проще). |
+| **Rich Text Editor** | **TipTap** | Headless, на ProseMirror, кастомизируется через Tailwind. PrimeVue Editor — обёртка над Quill, менее гибкий. |
+| **Stepper / Wizard** | **shadcn-vue + Tailwind** (собрать самим) | Простая структура, состояние держится в Pinia. Не нужна либа. |
+
+**Когда добавляется первая «тяжёлая» либа** (например, PrimeVue для DataTable), создаётся **ADR-XX** «Точечное добавление PrimeVue для DataTable» с обоснованием конкретного выбора (PrimeVue vs AG Grid vs TanStack) и фиксацией обёрток. Это **не** замена ADR-0007, а его уточнение под конкретный кейс.
+
+### Стратегия миграции — strangler fig pattern
 
 ### Стратегия миграции — strangler fig pattern
 
@@ -122,7 +152,7 @@
 
 | Метрика | Цель |
 |---------|------|
-| Bundle size (gzipped) | −50…−70 КБ (с ~80 КБ Vuetify + ~25 КБ MDI → ~20-30 КБ Tailwind + lucide) |
+| Bundle size (gzipped) — ядро без сложных компонентов | −50…−70 КБ (с ~80 КБ Vuetify + ~25 КБ MDI → ~20-30 КБ Tailwind + lucide). При добавлении PrimeVue точечно — выигрыш меньше, но всё равно положительный за счёт tree-shake'инга. |
 | Lighthouse Performance | +5-10 пунктов |
 | Time to Interactive (3G) | −200…−500 мс |
 | `npm ls vuetify` | пусто (после Фазы 2.9) |
@@ -168,9 +198,11 @@
 
 Не выбран. Vendor lock-in уже растёт, bundle проигрывает альтернативам. Через 1-2 года миграция станет дороже в разы.
 
-### PrimeVue
+### PrimeVue целиком как замена Vuetify
 
 Рассмотрен. Сильные стороны: лучшие в Vue-экосистеме enterprise data-table'ы, ~100+ готовых компонентов, активная поддержка PrimeTek. Слабые: bundle сравним с Vuetify, vendor lock-in не исчезает (просто меняется фреймворк), эстетика «корпоративная». Подходит, если приоритет — «много готового из коробки», но не решает базовых проблем Vuetify (lock-in, bundle, бренд).
+
+**Однако PrimeVue принят как opt-in для сложных компонентов** через Unstyled-режим (см. раздел Decision → «Точечное расширение»). Это даёт лучшие data-table/datepicker/file-upload Vue-экосистемы без переноса lock-in'а на весь UI.
 
 ### Naive UI
 
