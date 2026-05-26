@@ -1,0 +1,199 @@
+# 0007. Уход с Vuetify: целевой UI-стек и стратегия миграции
+
+- **Status:** accepted
+- **Date:** 2026-05-26
+
+## Context
+
+Шаблон [vue-app-base](../../README.md) построен на **Vuetify 3.10** (Material Design компоненты), что было прагматичным выбором для быстрого старта. После Фазы 1 ([ROADMAP.md](../../ROADMAP.md)), когда вся инфраструктура (HTTP-клиент, auth, RBAC, error-handler, notification) уже стоит, накопились ограничения, которые на горизонте 1-2 лет станут блокирующими:
+
+1. **Vendor lock-in.** Прямые `<v-btn>`, `<v-card>`, `<v-text-field>` рассыпаны по слайсам. Любая замена UI-фреймворка через 2 года = переписать десятки файлов потребителей. Авторы шаблона **уже это признали**: [ROADMAP.md](../../ROADMAP.md) Фаза 2 содержит `[P2] Vuetify-обёртка в shared/ui/base/` для митигации.
+
+2. **Material Design 3 как обязательная эстетика.** Vuetify-компоненты внешне «гугловые». Если бренд проекта не Material-style — натягивать кастом через `density`, `class`, `style` дорого и хрупко. На каждом миноре Vuetify эти хаки рискуют ломаться.
+
+3. **Bundle weight.** Vuetify ~80 КБ gzipped + `@mdi/font` ~25 КБ. На медленных сетях ощутимо. `vite-plugin-vuetify` с `autoImport: true` помогает деревом-shake'ом, но не радикально (минимальный набор всё равно ~50 КБ).
+
+4. **API-долг.** Часть компонентов Vuetify — наследие v2, между минорами API дрейфует. Например, в `<v-list-item>` `prepend-icon` доступно и как prop, и как slot — оба способа официально валидны, что приводит к неконсистентности кодовой базы.
+
+5. **Скорость поддержки.** GitHub-issues Vuetify часто залипают на месяцы. Критичные баги при production-эксплуатации могут заблокировать релиз.
+
+6. **Тренд индустрии 2024-2026.** Сдвиг от monolithic UI-kit'ов к **headless + own design system** (shadcn в React, shadcn-vue + Radix-vue в Vue, Tailwind v4 в обоих). Это даёт владение кодом компонентов, нулевой runtime UI-kit и брендирование под продукт, а не подгонку продукта под фреймворк.
+
+Решение **уйти с Vuetify** принято. Этот ADR фиксирует **целевой стек** и **стратегию миграции** — strangler fig pattern, без bigbang.
+
+## Decision
+
+### Целевой стек
+
+| Слой | Решение | Зачем |
+|------|---------|-------|
+| **UI-компоненты** | **shadcn-vue** | CLI копирует компоненты в `src/shared/ui/base/`. Ноль runtime UI-kit зависимости, владение кодом, простая брендировка. Лидер Vue-экосистемы 2025+. |
+| **Accessibility primitives** | **radix-vue** (под shadcn-vue) | Focus management, ARIA, keyboard navigation — не изобретаем велосипед, не теряем доступность. |
+| **Стили** | **Tailwind v4** | Atomic CSS без runtime, нативный bundle ~10 КБ, конфиг через CSS-vars (естественная интеграция с design tokens). |
+| **Иконки** | **lucide-vue-next** | ~2-3 КБ за иконку, tree-shake, современная эстетика, заменяет `@mdi/font` (~25 КБ как единый файл). |
+| **Data-table** | **TanStack Table v8** | Headless, лучший в JS-экосистеме. Заменяет `v-data-table` с **расширением** возможностей (server-side, virtual scroll, column resize). |
+| **Composables** | **VueUse** | Утилитарные composables (useStorage, useEventListener, useDebounce, ...). Не зависит от UI, должен быть в любом Vue-проекте. |
+| **Forms + валидация** | **VeeValidate + Zod-resolver** | Уже в [ROADMAP.md](../../ROADMAP.md) Фаза 2 (`[P2] Form architecture`). Естественно ложится в миграцию. |
+| **Date/time** | **date-fns** + headless (radix-vue или ручной) | Замена `v-date-picker`. |
+
+### Стратегия миграции — strangler fig pattern
+
+**Принцип:** Vuetify уходит постепенно, **без bigbang**. Два UI-фреймворка сосуществуют 2-3 месяца. На каждом этапе приложение работает. Любую фазу можно остановить, оставшись на стабильной точке.
+
+**Ключевые инварианты:**
+
+1. **Прямые `<v-*>` запрещены вне `shared/ui/base/`** (ESLint-правило, добавляется в Фазе 2.5).
+2. **Каждая обёртка живёт с тестами (Vitest) и историей (Storybook).** Без этого подмена реализации — игра в рулетку.
+3. **Design tokens — единственный источник истины для цветов/spacing/typography.** Сначала Vuetify-тема собирается из них, потом — Tailwind. Замена UI-фреймворка не затрагивает ни одного цвета.
+4. **Feature-flag per компонент.** В фазе замены реализации каждая обёртка может рендерить старую (Vuetify) или новую (shadcn-vue) реализацию через env/storage флаг — позволяет визуально сравнить и плавно переключить.
+
+### Фазовое разбиение
+
+Фазы 2.5-2.9 (см. также [ROADMAP.md](../../ROADMAP.md), Фаза 2 — пункты с поднятым приоритетом):
+
+#### Фаза 2.5 — Фундамент (1-2 недели, без касания UI-кода)
+
+- `Vitest + Vue Test Utils` — поднять из ROADMAP Фазы 2.
+- `Storybook 8` — поднять из ROADMAP Фазы 3.
+- `Design tokens` в `src/shared/assets/tokens/` (CSS-vars) — поднять из ROADMAP Фазы 3.
+- Vuetify-тема собирается из tokens (через `createVuetify({ theme: { themes: { light: { colors: { ... } }}}})` с `var(--token-*)`).
+- `Tailwind v4` setup параллельно Vuetify (через `@tailwindcss/vite`), конфиг читает те же CSS-vars.
+- ESLint-правило: `no-restricted-imports` запрещает `import 'vuetify'` и `<v-*>`-теги вне `src/shared/ui/base/`.
+
+**Результат:** инфраструктура готова, ничего визуально не изменилось.
+
+#### Фаза 2.6 — Слой обёрток поверх Vuetify (2-3 недели)
+
+Создать `src/shared/ui/base/<Component>/` для каждого используемого Vuetify-компонента. **Без замены реализации**, только доменный API.
+
+**Чек-лист обёртки:**
+- Props на проектном языке (`<Button variant="primary" loading size="md">`, не `color="primary" :loading`).
+- Использует только design tokens.
+- `*.test.ts` (Vitest) — render + основные interactions.
+- `*.stories.ts` (Storybook) — все variant/size/state.
+- Экспортируется через `src/shared/ui/base/index.ts`.
+
+**Порядок (по частоте + простоте):**
+
+| Приоритет | Обёртка | Vuetify-эквивалент |
+|-----------|---------|-------------------|
+| 1 | `Button` | `v-btn` |
+| 1 | `TextField` | `v-text-field` |
+| 1 | `Card` (+ Header/Body/Footer) | `v-card` + `v-card-*` |
+| 1 | `Icon` | `v-icon` |
+| 2 | `Divider`, `Alert`, `Form`, `Spacer` | `v-divider`, `v-alert`, `v-form`, `v-spacer` |
+| 3 | `Menu`/`Dropdown`, `List`/`ListItem`, `Snackbar` | `v-menu`, `v-list`/`v-list-item`, `v-snackbar` |
+| 4 | `AppBar`, `NavigationDrawer`, `Container`/`AppShell` | `v-app-bar`, `v-navigation-drawer`, `v-container`/`v-layout`/`v-main`/`v-app` |
+
+Параллельно: миграция потребителей (`<v-btn>` → `<Button>` и т.п.), PR per category.
+
+**Результат:** все прямые `<v-*>` ушли в `shared/ui/base/`. Lint-правило падает на нарушения.
+
+#### Фаза 2.7 — Замена реализации в обёртках (2-4 недели)
+
+- `pnpm dlx shadcn-vue@latest init`.
+- Каждая обёртка получает новую реализацию через feature-flag.
+- Side-by-side ревью в Storybook.
+- Старая реализация удаляется после визуальной проверки.
+
+**Результат:** все `shared/ui/base/*` работают на shadcn-vue + Tailwind. Vuetify ещё в зависимостях.
+
+#### Фаза 2.8 — Сложные компоненты и долги (1-2 недели)
+
+- `DataTable` на TanStack Table (когда появится первая list-страница).
+- `DatePicker`/`TimePicker` — headless или из shadcn-vue.
+- `Dialog`/`Drawer` — по необходимости.
+- `VeeValidate` + `Zod-resolver` — замена ручной валидации в `LoginPage`.
+- `AppShell` — переписать `default.vue`/`auth.vue` без `<v-app>`/`<v-main>` (Tailwind grid/flex + CSS vars).
+- `ThemeProvider` — заменить `useTheme()` из Vuetify на свой (CSS-vars + `prefers-color-scheme` + localStorage).
+
+#### Фаза 2.9 — Удаление Vuetify (1 неделя)
+
+- `grep -r "import.*vuetify"` → только `package.json` (до удаления).
+- Удалить `vuetify`, `vite-plugin-vuetify`, `@mdi/font`.
+- Удалить `src/app/providers/setup-vuetify.ts` + вызов в `setupProviders`.
+- Удалить `src/assets/styles/settings.scss`.
+- Обновить документацию (architecture.md, CLAUDE.md, README.md).
+- Bundle-аудит, Lighthouse — финальная сверка с метриками успеха.
+
+**Точка невозврата.** Откат — дорогой.
+
+### Метрики успеха
+
+| Метрика | Цель |
+|---------|------|
+| Bundle size (gzipped) | −50…−70 КБ (с ~80 КБ Vuetify + ~25 КБ MDI → ~20-30 КБ Tailwind + lucide) |
+| Lighthouse Performance | +5-10 пунктов |
+| Time to Interactive (3G) | −200…−500 мс |
+| `npm ls vuetify` | пусто (после Фазы 2.9) |
+| Visual regressions при миграции | 0 (через Storybook side-by-side) |
+| Покрытие тестами `shared/ui/base/` | ≥ 80% |
+
+### Ответственность фаз
+
+- **Фазы 2.5-2.6 обязательны.** Они дают **80% выгоды (защита от vendor lock-in) за 30% усилий** и оставляют опцию остановиться, не уходя с Vuetify. Это полезно даже если решение «уходить» отменится.
+- **Фазы 2.7-2.9 — собственно миграция.** Можно начинать только после полного завершения 2.5-2.6 (без них замена реализации — игра вслепую).
+- **Фазы делаются параллельно продуктовым задачам.** Миграция не должна заморозить разработку фичей.
+
+## Consequences
+
+### Положительные
+
+- **Владение UI-кодом.** Компоненты в `src/shared/ui/base/` — твои файлы, можно править без оглядки на upstream.
+- **Брендирование без боли.** Не натягиваем дизайн на Material Design 3.
+- **Меньше bundle.** Целевой минус 50-70 КБ — на медленных сетях это 1-2 секунды.
+- **Современный стек.** Tailwind v4 + shadcn-vue — индустриальный тренд, в команду легче нанимать.
+- **Лучшая accessibility.** Radix-vue primitives — best-in-class. У Vuetify a11y тоже есть, но не такая системная.
+- **Готовность к Vue 4 / следующим major.** При уходе с Vuetify нет ожидания «когда выйдет Vuetify 4».
+
+### Отрицательные
+
+- **7-12 недель календарной работы** параллельно с фичами. Команда должна это вместить.
+- **Кривая обучения Tailwind** — если нет опыта. Митигация: 1-2 дня обучения в Фазе 2.5 + CONTRIBUTING.md с примерами.
+- **Нужен дизайнер для ревью** в Фазе 2.7. Без него обёртки рискуют выглядеть «программистски».
+- **Стартовый объём работы по дизайн-системе.** Tokens, типографика, scale, dark theme — это не «выберем 5 цветов». Митигация: использовать дефолты shadcn-vue/Radix как отправную точку, постепенно подгонять.
+- **Регрессы UX неизбежны** при замене реализации. Митигация: feature-flag per компонент + Storybook side-by-side + smoke-тесты.
+
+### Что меняется в коде (поэтапно)
+
+- **Фаза 2.5:** новые директории `src/shared/assets/tokens/`, файлы конфигурации (Vitest, Storybook, Tailwind). `setup-vuetify.ts` модифицируется на чтение токенов. ESLint-конфиг получает `no-restricted-imports`.
+- **Фаза 2.6:** новый слой `src/shared/ui/base/<Component>/`. Все потребители `<v-*>` (widgets, pages) переписываются на `<Button>`/`<TextField>`/etc.
+- **Фаза 2.7:** реализации внутри `shared/ui/base/<Component>/` переписываются на shadcn-vue + Tailwind. Feature-flag в env.
+- **Фаза 2.8:** новые сложные компоненты (DataTable, DatePicker, Dialog). Замена `useTheme()`, `<v-app>` шелла.
+- **Фаза 2.9:** удаление Vuetify-зависимостей и связанной инфраструктуры.
+
+## Альтернативы (для истории)
+
+### Остаться на Vuetify
+
+Не выбран. Vendor lock-in уже растёт, bundle проигрывает альтернативам. Через 1-2 года миграция станет дороже в разы.
+
+### PrimeVue
+
+Рассмотрен. Сильные стороны: лучшие в Vue-экосистеме enterprise data-table'ы, ~100+ готовых компонентов, активная поддержка PrimeTek. Слабые: bundle сравним с Vuetify, vendor lock-in не исчезает (просто меняется фреймворк), эстетика «корпоративная». Подходит, если приоритет — «много готового из коробки», но не решает базовых проблем Vuetify (lock-in, bundle, бренд).
+
+### Naive UI
+
+Рассмотрен. Сильные стороны: TypeScript-first, лёгкий bundle, чистый API. Слабые: меньшая экосистема, документация местами «китайская» (примеры не покрывают западные UX-паттерны типа Stripe), меньше готовых компонентов уровня PrimeVue/Vuetify. Хороший выбор для проекта без сложных таблиц, но не оптимален здесь.
+
+### Element Plus / Ant Design Vue
+
+Не выбраны. Заточены под китайский enterprise-стиль, эстетика плохо адаптируется под западные B2B-продукты. Bundle тяжёлый, vendor lock-in остаётся.
+
+### Headless (radix-vue + Tailwind) без shadcn-vue
+
+Рассмотрен как «более радикальный» вариант. Полная DIY-сборка дизайн-системы. Отвергнут как стартовая точка: shadcn-vue даёт **готовые** реализации компонентов поверх radix-vue, экономя 2-4 недели работы. После Фазы 2.7 при необходимости можно собирать что угодно поверх radix-vue — shadcn-vue не мешает, его компоненты — обычные `.vue`-файлы в нашем коде.
+
+### TanStack Query вместо переезда на Tailwind
+
+Не альтернатива — TanStack Query про другой слой (server state). Этот пункт остаётся в [ROADMAP.md](../../ROADMAP.md) Фаза 2 независимо от UI-стека.
+
+## Ссылки
+
+- [ROADMAP.md](../../ROADMAP.md) — пункты Фазы 2, поднимаемые в приоритет (Vuetify-обёртка, Design tokens, Storybook, Vitest, Form architecture).
+- [ADR-0001](0001-feature-sliced-design.md) — FSD-слои. `shared/ui/base/` — это `shared/`-слой, доступен любому слою выше.
+- [ADR-0005](0005-dto-domain-mapping.md) — паттерн «фасад с собственным API» (DTO ↔ Domain). Обёртки UI — тот же паттерн, только для view-слоя.
+- [shadcn-vue.com](https://www.shadcn-vue.com) — целевой UI-инструмент.
+- [tailwindcss.com](https://tailwindcss.com) — Tailwind v4.
+- [tanstack.com/table](https://tanstack.com/table) — TanStack Table.
+- [radix-vue.com](https://www.radix-vue.com) — Radix-vue primitives.

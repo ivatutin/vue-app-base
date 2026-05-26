@@ -75,6 +75,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 
 > Пункт «DTO ↔ Domain model» перенесён в Фазу 0 и зафиксирован в [docs/adr/0005-dto-domain-mapping.md](docs/adr/0005-dto-domain-mapping.md). Паттерн обязателен для всех сущностей с API, не только для новых после реального backend.
 
+> **Миграция с Vuetify** — стратегия и целевой стек зафиксированы в [docs/adr/0007-ui-stack-migration-from-vuetify.md](docs/adr/0007-ui-stack-migration-from-vuetify.md). ADR поднимает в приоритет пункты `[P2] Vuetify-обёртка`, `[P2] Vitest`, и переносит из Фазы 3 пункты **Storybook** и **Design tokens** (становятся частью Фазы 2 как Фаза 2.5 фундамента для миграции).
+
 ### [P2] Route data-loaders `proposed`
 **Зачем:** `unplugin-vue-router/data-loaders` уже в `optimizeDeps` (см. `vite.config.mts`), но не используется. Это убирает 80% «store + fetch + isLoading» boilerplate'а на list-страницах.
 **Что:** перевести list-страницы на `defineBasicLoader`/`defineLoader`.
@@ -102,10 +104,10 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** VeeValidate + Zod-resolver (рекомендую) либо собственный `useForm`.
 **Триггер:** второй CRUD-экран.
 
-### [P2] Vuetify-обёртка в `shared/ui/base/` `proposed`
-**Зачем:** прямое использование `<v-btn>` в widgets/pages = vendor lock-in. Vuetify 4 → переписывать сотни мест.
-**Что:** тонкие обёртки с доменным API (`<Button variant="primary" loading>`).
-**Триггер:** 50+ кнопок в проекте.
+### [P2] Vuetify-обёртка в `shared/ui/base/` `planned`
+**Зачем:** прямое использование `<v-btn>` в widgets/pages = vendor lock-in.
+**Что:** Фаза 2.6 миграции с Vuetify по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md). Тонкие обёртки с доменным API (`<Button variant="primary" loading>`) — пока поверх Vuetify, потом реализация подменяется на shadcn-vue + Tailwind (Фаза 2.7).
+**Триггер:** немедленно после Фазы 2.5 (Design tokens + Storybook + Vitest).
 
 ### [P2] `processes/` для cross-entity сценариев `proposed`
 **Зачем:** auth-flow (login → fetch user → fetch permissions → navigate) не помещается ни в один стор. Сторы, зовущие друг друга, — антипаттерн.
