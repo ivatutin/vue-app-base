@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { logoutFlow } from '@/processes/auth-flow'
+  import { Button, Card, Spacer } from '@/shared/ui/base'
 
   definePage({
     meta: {
@@ -20,13 +21,11 @@
 </script>
 
 <template>
-  <v-card width="100%">
-    <v-card-title>Вы вышли</v-card-title>
-    <v-card-text>Сессия завершена.</v-card-text>
-    <v-divider />
-    <v-card-actions>
-      <v-spacer />
-      <v-btn color="primary" variant="elevated" @click="goToLogin">Войти снова</v-btn>
-    </v-card-actions>
-  </v-card>
+  <Card title="Вы вышли" width="100%">
+    Сессия завершена.
+    <template #footer>
+      <Spacer />
+      <Button variant="primary" @click="goToLogin">Войти снова</Button>
+    </template>
+  </Card>
 </template>

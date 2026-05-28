@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { loginFlow } from '@/processes/auth-flow'
   import { HttpError } from '@/shared/api'
+  import { Alert, Button, Card, Form, Spacer, TextField } from '@/shared/ui/base'
 
   definePage({
     meta: {
@@ -31,49 +32,38 @@
 </script>
 
 <template>
-  <v-card width="100%">
-    <v-card-title>Вход</v-card-title>
-    <v-form @submit.prevent="submit">
-      <v-card-text>
-        <v-alert
-          v-if="error"
-          class="mb-4"
-          density="compact"
-          type="error"
-          variant="tonal"
-        >
-          {{ error }}
-        </v-alert>
-        <v-text-field
-          v-model="email"
-          autocomplete="email"
-          :disabled="loading"
-          label="E-mail"
-          required
-          type="email"
-        />
-        <v-text-field
-          v-model="password"
-          autocomplete="current-password"
-          :disabled="loading"
-          label="Пароль"
-          required
-          type="password"
-        />
-      </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          color="primary"
+  <Form @submit="submit">
+    <Card title="Вход" width="100%">
+      <Alert v-if="error" class="mb-4" density="compact" kind="error">
+        {{ error }}
+      </Alert>
+      <TextField
+        v-model="email"
+        autocomplete="email"
+        :disabled="loading"
+        label="E-mail"
+        required
+        type="email"
+      />
+      <TextField
+        v-model="password"
+        autocomplete="current-password"
+        :disabled="loading"
+        label="Пароль"
+        required
+        type="password"
+      />
+      <template #footer>
+        <Spacer />
+        <Button
           :disabled="!email || !password"
           :loading="loading"
           type="submit"
-          variant="elevated"
+          variant="primary"
         >
           Войти
-        </v-btn>
-      </v-card-actions>
-    </v-form>
-  </v-card>
+        </Button>
+      </template>
+    </Card>
+  </Form>
 </template>

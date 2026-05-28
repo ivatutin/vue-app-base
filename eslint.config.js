@@ -30,8 +30,8 @@ const VUETIFY_ALLOWED = [
   'src/widgets/app-sidebar/**',
   'src/widgets/app-footer/**',
   'src/widgets/app-preloader/**',
-  'src/pages/auth/**',
-  'src/pages/dashboard/**',
+  // pages/auth/login + logout + dashboard мигрированы на shared/ui/base
+  // (Фаза 2.6.3). Дальше: system/ui-kit/index ждут своей очереди.
   'src/pages/system/**',
   'src/pages/ui-kit/**',
 ]
