@@ -1,0 +1,17 @@
+/**
+ * Design tokens (ADR-0007, Фаза 2.5).
+ *
+ * Единственный источник истины для:
+ * - Vuetify-темы (читает значения через JS-обёртку tokens.theme.ts).
+ * - Tailwind v4 (@theme inline в src/assets/styles/tailwind.css).
+ * - Любого ручного CSS — через `rgb(var(--color-x))` / `var(--spacing-md)`.
+ *
+ * При смене бренда — правка только здесь. Vuetify и Tailwind подхватят.
+ */
+
+@import './colors.css';
+@import './spacing.css';
+@import './radius.css';
+@import './typography.css';
+@import './shadow.css';
+@import './z-index.css';

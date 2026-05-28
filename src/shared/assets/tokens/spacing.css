@@ -1,0 +1,16 @@
+/**
+ * Spacing tokens. Используются как для padding/margin, так и для gap.
+ * Шкала кратная 4px — стандарт Tailwind / Material.
+ */
+
+:root {
+  --spacing-0: 0;
+  --spacing-px: 1px;
+  --spacing-xs: 4px;     /* 0.25rem */
+  --spacing-sm: 8px;     /* 0.5rem  */
+  --spacing-md: 16px;    /* 1rem    */
+  --spacing-lg: 24px;    /* 1.5rem  */
+  --spacing-xl: 32px;    /* 2rem    */
+  --spacing-2xl: 48px;   /* 3rem    */
+  --spacing-3xl: 64px;   /* 4rem    */
+}

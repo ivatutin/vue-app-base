@@ -4,6 +4,7 @@
 import App from '@/app/App.vue'
 import { setupProviders } from '@/app/providers'
 import { runBootstrapProcess } from '@/processes/app-bootstrap'
+import '@/shared/assets/tokens/index.css'
 import 'unfonts.css'
 
 async function bootstrapApplication () {

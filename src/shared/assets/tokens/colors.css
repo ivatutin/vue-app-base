@@ -1,0 +1,69 @@
+/**
+ * Цветовые токены. Формат — RGB triplet (`R G B`), не hex —
+ * чтобы Tailwind v4 мог использовать через `rgb(var(--color-x) / <alpha-value>)`.
+ *
+ * Light theme — :root.
+ * Dark theme — html.dark (стандарт shadcn/Tailwind).
+ *
+ * Имена синхронизированы с Vuetify-палитрой (primary, surface, error, ...)
+ * для упрощения миграции. См. tokens.theme.ts.
+ */
+
+:root {
+  /* Поверхности */
+  --color-background: 255 255 255;
+  --color-foreground: 9 9 11;
+  --color-surface: 250 250 250;
+  --color-surface-foreground: 24 24 27;
+  --color-border: 228 228 231;
+  --color-input: 228 228 231;
+  --color-ring: 24 24 27;
+
+  /* Брендовые */
+  --color-primary: 24 24 27;
+  --color-primary-foreground: 250 250 250;
+  --color-secondary: 244 244 245;
+  --color-secondary-foreground: 24 24 27;
+  --color-accent: 244 244 245;
+  --color-accent-foreground: 24 24 27;
+  --color-muted: 244 244 245;
+  --color-muted-foreground: 113 113 122;
+
+  /* Семантические */
+  --color-info: 14 165 233;
+  --color-info-foreground: 255 255 255;
+  --color-success: 34 197 94;
+  --color-success-foreground: 255 255 255;
+  --color-warning: 234 179 8;
+  --color-warning-foreground: 24 24 27;
+  --color-error: 239 68 68;
+  --color-error-foreground: 255 255 255;
+}
+
+.dark {
+  --color-background: 9 9 11;
+  --color-foreground: 250 250 250;
+  --color-surface: 24 24 27;
+  --color-surface-foreground: 250 250 250;
+  --color-border: 39 39 42;
+  --color-input: 39 39 42;
+  --color-ring: 212 212 216;
+
+  --color-primary: 250 250 250;
+  --color-primary-foreground: 24 24 27;
+  --color-secondary: 39 39 42;
+  --color-secondary-foreground: 250 250 250;
+  --color-accent: 39 39 42;
+  --color-accent-foreground: 250 250 250;
+  --color-muted: 39 39 42;
+  --color-muted-foreground: 161 161 170;
+
+  --color-info: 56 189 248;
+  --color-info-foreground: 9 9 11;
+  --color-success: 74 222 128;
+  --color-success-foreground: 9 9 11;
+  --color-warning: 250 204 21;
+  --color-warning-foreground: 9 9 11;
+  --color-error: 248 113 113;
+  --color-error-foreground: 9 9 11;
+}
