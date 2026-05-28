@@ -49,9 +49,28 @@ npm run build && npm run preview
 
 ## Тестирование
 
-Тестовый раннер пока не настроен — нет ни Vitest, ни Playwright. Это запланировано в [ROADMAP](../../ROADMAP.md), Фаза 2.
+### `npm test`
 
-Когда добавим — здесь появятся команды `npm test`, `npm run test:unit`, `npm run test:e2e`.
+Однократный прогон Vitest (`vitest run`). Используется в CI и перед PR.
+
+Тесты ищутся по паттерну `src/**/*.{test,spec}.{ts,js}`. Конфиг — [vitest.config.ts](../../vitest.config.ts) (отдельный от vite.config.mts, лёгкий: без Vue/Vuetify-плагинов, но с AutoImport, потому что production-код опирается на глобальные `defineStore`/`ref`/`computed`).
+
+Окружение — `happy-dom` (лёгкая альтернатива jsdom для unit-тестов).
+
+### `npm run test:watch`
+
+Vitest в watch-режиме (по умолчанию `vitest`). Используется при разработке: перезапускает только затронутые тесты при изменении файла.
+
+### Стиль и расположение тестов
+
+- Файл рядом с тестируемым модулем: `plural.ts` ↔ `plural.test.ts`.
+- В тестах **явные импорты** (`import { describe, it, expect } from 'vitest'`) — globals настроены через `test.globals: true`, но явный импорт даёт лучшую читаемость.
+- Pinia-сторы тестируются через `setActivePinia(createPinia())` в `beforeEach`. Пример — `src/entities/notification/model/notification.store.test.ts`.
+- Async с таймерами — `vi.useFakeTimers()` + `vi.runAllTimersAsync()`. Если task rejects — подключай `expect(...).rejects` **до** `runAllTimersAsync` через `Promise.all`, иначе Vitest флагает unhandled rejection. Пример — `src/shared/lib/async/retry.test.ts`.
+
+### E2E
+
+E2E (Playwright или Cypress) пока не настроен — запланировано в [ROADMAP](../../ROADMAP.md), Фаза 3.
 
 ## Версии и зависимости
 
@@ -67,6 +86,7 @@ npm outdated      # что устарело
 | Что нужно | Команда |
 |-----------|---------|
 | Запустить разработку | `npm run dev` |
-| Перед PR | `npm run lint && npm run type-check` |
+| Тесты в watch | `npm run test:watch` |
+| Перед PR | `npm run lint && npm run type-check && npm test` |
 | Собрать прод | `npm run build` |
 | Посмотреть прод-сборку | `npm run build && npm run preview` |

@@ -127,10 +127,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 ### [P2] Husky + lint-staged + commitlint `done`
 Husky 9 + lint-staged 17 + @commitlint/{cli,config-conventional} 21. Pre-commit запускает `eslint --fix` только на staged `*.{ts,vue,js,mjs,cjs}`. Commit-msg валидирует conventional commits с ослаблениями для русскоязычных сообщений (`subject-case: 0`, `header-max-length: 120`, `body/footer-max-line-length: 200`). Конфиг — [commitlint.config.cjs](commitlint.config.cjs).
 
-### [P2] Vitest для shared/lib и сторов `proposed`
-**Зачем:** в проекте 0 тестов. Утилиты типа `plural`, `normalizePhone`, `formatBytes` — идеальные кандидаты unit-тестов.
-**Что:** vitest + @vue/test-utils.
-**Триггер:** второй критический баг в логике.
+### [P2] Vitest для shared/lib и сторов `done`
+Vitest 4 + @vue/test-utils 2 + happy-dom 20. Конфиг — отдельный [vitest.config.ts](vitest.config.ts) (без Vue/Vuetify-плагинов для скорости, но с `unplugin-auto-import` для совместимости с production-кодом). 36 тестов покрывают три паттерна: чистые функции (`plural`, `formatTimeInterval`, `normalizePhone`, `rolesToPermissions`), async с fake-timers (`retry`/`retryOn404`), Pinia setup-store (`notification.store`). Прогон — `npm test`, watch — `npm run test:watch`. Документация — [docs/reference/commands.md](docs/reference/commands.md) § Тестирование. Это Фаза 2.5 фундамента миграции по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md) — теперь обёртки `shared/ui/base/` пишутся **с тестами**, замена реализации делается безопасно.
 
 ### [P2] `useAsyncStatus` или Query вместо разных loading-флагов `proposed`
 **Зачем:** сейчас `bootstrap` — FSM, `auth` — `isLoaded`, `user` — нет вообще. К 20-му стору — зоопарк.
