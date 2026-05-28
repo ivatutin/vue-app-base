@@ -230,11 +230,25 @@ type UserStatusType = 'pending_verification' | 'active' | 'suspended' | 'deleted
 ## Особенности интеграции
 
 - **E.164 для phone** — `^\+[1-9]\d{7,14}$`. Бэк отказывает 400 без этого. Фронт уже использует `phoneSchema` brand-type, формат совместим.
-- **`/users/me` может вернуть 404** первые секунды после первого sign-in (асинхронное создание local user). Клиент должен это обработать — например, ретрай с backoff или показать «настраиваем профиль...» (поведение определим в шаге Фазы 1.6).
+- **`/users/me` может вернуть 404** первые секунды после первого sign-in (асинхронное создание local user). Клиент это обрабатывает через `retryOn404(() => user.fetchCurrentUser(), { attempts: 3, delay: 500 })` в [bootstrap.process.ts](../src/processes/app-bootstrap/bootstrap.process.ts).
 - **Sign-out требует и refresh, и access** — клиент должен корректно слать оба в одном запросе.
 - **Refresh-rotation** — бэк отдаёт новый refresh в каждом ответе; старый отзывается. Клиент **обязан** заменять refresh в storage после успешного refresh.
 - **Public endpoints** помечены `@Public()` — это login + refresh. Все остальные требуют Bearer JWT. Без него — 401.
 - **Конкурентные 401** — клиент должен делать только один refresh-запрос на пакет упавших, остальные ждут результат (реализовано через `refreshPromise` mutex в HttpClient — см. Фаза 1.3).
+- **Отозванный access после sign-out** — бэк держит access-blacklist в Redis. Использование уже отозванного токена → 401 с `error: "InvalidTokenError"`, `message: "Token has been revoked"`. Это сигнал чистого logout, обрабатывается тем же `onUnauthorized` → `auth.refresh()` фейлится → `auth.logout()` → редирект на login.
+- **Профиль НЕ синхронизируется автоматически с Keycloak.** Даже если в Keycloak заполнены `firstName`/`lastName`, в `/users/me` они приходят `null` после первого sign-in. Заполняются через `PATCH /users/:id/profile`. На фронте `userStore.fullName` имеет fallback на `email`/`phone` ([user.store.ts](../src/entities/user/model/user.store.ts)).
+- **Roles в `/users/me` — это Keycloak roles**, не бизнес-роли. По умолчанию у нового user: `["offline_access", "uma_authorization", "default-roles-app"]`. Эти роли наш `ROLE_PERMISSIONS` ([shared/model/permission/role-permissions.ts](../src/shared/model/permission/role-permissions.ts)) не распознаёт → `userStore.permissions` пустой → permission-протектед маршруты редиректят на `/system/forbidden`. Чтобы получить permissions, нужно либо назначить realm-role `admin`/`manager`/`user` в Keycloak, либо настроить protocol mapper, чтобы бизнес-роли попадали в JWT claims.
+
+## Подводные камни setup Keycloak (dev)
+
+Зафиксированы в ходе первого smoke-теста (2026-05-28):
+
+- **Client Secret в `njs-server/.env`** должен совпадать с актуальным в Keycloak `app-backend` client → Credentials. После пересоздания client'а — обязательно обновить `KEYCLOAK_CLIENT_SECRET` и перезапустить бэк.
+- **VERIFY_PROFILE realm action** включён по умолчанию в Keycloak 24+ и требует заполненных `firstName`/`lastName` на user'е. Без них любой sign-in возвращает `invalid_grant: Account is not fully set up`, а бэк маскирует это под единый `InvalidCredentialsError`. Заполнить можно через UI (Users → user → Details → Save) или Admin API.
+- **Password при создании user'а — temporary: OFF.** Иначе при первом sign-in Keycloak требует смены пароля (required action), что валит password grant.
+- **Бэк маскирует разные причины ошибки auth** (плохой client secret, протухший password, неверный grant, неполный профиль) под единый 401 `InvalidCredentialsError`. Это правильное security-поведение в проде, но для dev-debug **всегда смотрим `docker logs app-backend` или вывод `npm run start:dev`** — там точное сообщение от Keycloak.
+- **Локальный `npm run start:dev`** против **dockerized `app-backend`** — разные процессы на одном порту :3001. При переключении: `docker stop app-backend` перед локальным запуском (и наоборот), иначе порт занят.
+- **На хост-порту 8088** маппится Keycloak (`docker-compose.yml`); порт 8080 был занят сторонним процессом в окружении разработчика, потому был перемаппен. В Keycloak Admin UI ходить по `http://127.0.0.1:8088`.
 
 ---
 
