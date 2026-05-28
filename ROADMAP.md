@@ -124,10 +124,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** `eslint-plugin-boundaries` или `@feature-sliced/eslint-config`. Запрет нарушения слоёв + запрет импорта в обход barrel.
 **Триггер:** в команде появился 3-й разработчик.
 
-### [P2] Husky + lint-staged + commitlint `proposed`
-**Зачем:** pre-commit lint + Conventional Commits.
-**Что:** husky, lint-staged, @commitlint/config-conventional.
-**Триггер:** появление PR-review-флоу.
+### [P2] Husky + lint-staged + commitlint `done`
+Husky 9 + lint-staged 17 + @commitlint/{cli,config-conventional} 21. Pre-commit запускает `eslint --fix` только на staged `*.{ts,vue,js,mjs,cjs}`. Commit-msg валидирует conventional commits с ослаблениями для русскоязычных сообщений (`subject-case: 0`, `header-max-length: 120`, `body/footer-max-line-length: 200`). Конфиг — [commitlint.config.cjs](commitlint.config.cjs).
 
 ### [P2] Vitest для shared/lib и сторов `proposed`
 **Зачем:** в проекте 0 тестов. Утилиты типа `plural`, `normalizePhone`, `formatBytes` — идеальные кандидаты unit-тестов.

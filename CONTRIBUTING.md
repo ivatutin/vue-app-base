@@ -10,10 +10,12 @@
 
 1. Ветка от `main`: `feat/<scope>`, `fix/<scope>`, `docs/<scope>`, `refactor/<scope>`, `chore/<scope>`.
 2. Локально: `npm run lint && npm run type-check`.
-3. Conventional Commits для сообщений коммитов:
+3. Conventional Commits для сообщений коммитов — проверяется автоматически через `@commitlint/config-conventional` в `commit-msg` git-hook'е ([commitlint.config.cjs](commitlint.config.cjs)):
    - `feat(user): add profile menu`
    - `fix(router): restore session before guard`
    - `docs(adr): accept FSD as primary layering`
+   - Subject можно на русском (`subject-case: 0`), header до 120 символов.
+   Pre-commit hook прогоняет `eslint --fix` на staged-файлах через `lint-staged` — забыть про линт перед commit уже невозможно.
 4. PR в `main`. Описание содержит: что меняется, почему, как тестировать.
 5. Если меняешь архитектуру или конвенции — обнови `docs/` **в том же PR**.
 
