@@ -14,6 +14,11 @@ import { defineConfig } from 'vitest/config'
  * defineStore / ref / computed / storeToRefs (см. vite.config.mts).
  * Без него любой импорт setup-стора в тесте падает с
  * `ReferenceError: defineStore is not defined`.
+ *
+ * Storybook addon-vitest НЕ подключаем — он требует playwright-browser
+ * режим и Vue-плагин, что несовместимо с лёгким конфигом. Stories
+ * проверяются через `npm run build-storybook`, визуальный smoke — через
+ * `npm run storybook`.
  */
 export default defineConfig({
   plugins: [
