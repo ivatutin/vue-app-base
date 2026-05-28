@@ -142,9 +142,8 @@ Vitest 4 + @vue/test-utils 2 + happy-dom 20. Конфиг — отдельный
 ### [P3] Sentry / observability `proposed`
 **Что:** `@sentry/vue` + source maps в CI. Замена `console.error` на структурированный логгер.
 
-### [P3] Storybook для `shared/ui/base/` `proposed`
-**Что:** живой reference для компонентов с props/slots/состояниями.
-**Триггер:** 10+ компонентов в `shared/ui/`.
+### [P2] Storybook для `shared/ui/base/` `done` (поднят из Фазы 3 как Фаза 2.5.4)
+Storybook 8 для Vue + Vite (`@storybook/vue3-vite`). Конфиг `.storybook/{main,preview}.ts`. Stories рядом с компонентами по паттерну `src/**/*.stories.@(js|ts)`. В preview подключены design tokens + Tailwind, Vuetify-стили намеренно не импортируются (будущие обёртки `shared/ui/base/` должны рендериться без Vuetify). Аддоны: `addon-a11y` (warnings), `addon-docs`, `addon-vitest`, `chromatic-com`. Демо — `widgets/app-preloader/ui/AppPreloader.stories.ts` с Light/Dark. Команды: `npm run storybook` (dev :6006), `npm run build-storybook`.
 
 ### [P3] CI (lint + type-check + test + build) `proposed`
 **Что:** GitHub Actions или эквивалент. Превью PR — опционально.
