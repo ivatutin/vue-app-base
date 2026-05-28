@@ -29,6 +29,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
+    "@tailwindcss/vite": "^4.3.0",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.9.0",
     "@vitejs/plugin-vue": "^6.0.1",
@@ -41,6 +42,7 @@
     "lint-staged": "^17.0.5",
     "npm-run-all2": "^8.0.4",
     "sass-embedded": "^1.92.1",
+    "tailwindcss": "^4.3.0",
     "typescript": "~5.9.2",
     "unplugin-auto-import": "^20.1.0",
     "unplugin-fonts": "^1.4.0",

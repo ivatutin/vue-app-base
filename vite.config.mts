@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import Tailwind from '@tailwindcss/vite'
 import Vue from '@vitejs/plugin-vue'
 // Plugins
 import AutoImport from 'unplugin-auto-import/vite'
@@ -77,6 +78,7 @@ export default defineConfig({
     Vue({
       template: { transformAssetUrls },
     }),
+    Tailwind(),
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
     Vuetify({
       autoImport: true,

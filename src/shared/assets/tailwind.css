@@ -1,0 +1,58 @@
+/**
+ * Tailwind v4 entry. ADR-0007, Фаза 2.5.3.
+ *
+ * Tailwind v4 не использует tailwind.config.js — конфиг здесь, в CSS,
+ * через @theme. Все токены берутся из src/shared/assets/tokens/ (источник
+ * истины), Tailwind лишь делает на их основе utility-классы.
+ *
+ * Подключается в src/app/main.ts ПОСЛЕ tokens/index.css.
+ */
+
+@import 'tailwindcss';
+
+@theme {
+  /* Цвета — alpha-aware. Tailwind v4 ожидает функцию rgb()
+     с переменной как RGB-triplet (R G B). См. tokens/colors.css. */
+  --color-background: rgb(var(--color-background) / <alpha-value>);
+  --color-foreground: rgb(var(--color-foreground) / <alpha-value>);
+  --color-surface: rgb(var(--color-surface) / <alpha-value>);
+  --color-surface-foreground: rgb(var(--color-surface-foreground) / <alpha-value>);
+  --color-border: rgb(var(--color-border) / <alpha-value>);
+  --color-input: rgb(var(--color-input) / <alpha-value>);
+  --color-ring: rgb(var(--color-ring) / <alpha-value>);
+
+  --color-primary: rgb(var(--color-primary) / <alpha-value>);
+  --color-primary-foreground: rgb(var(--color-primary-foreground) / <alpha-value>);
+  --color-secondary: rgb(var(--color-secondary) / <alpha-value>);
+  --color-secondary-foreground: rgb(var(--color-secondary-foreground) / <alpha-value>);
+  --color-accent: rgb(var(--color-accent) / <alpha-value>);
+  --color-accent-foreground: rgb(var(--color-accent-foreground) / <alpha-value>);
+  --color-muted: rgb(var(--color-muted) / <alpha-value>);
+  --color-muted-foreground: rgb(var(--color-muted-foreground) / <alpha-value>);
+
+  --color-info: rgb(var(--color-info) / <alpha-value>);
+  --color-info-foreground: rgb(var(--color-info-foreground) / <alpha-value>);
+  --color-success: rgb(var(--color-success) / <alpha-value>);
+  --color-success-foreground: rgb(var(--color-success-foreground) / <alpha-value>);
+  --color-warning: rgb(var(--color-warning) / <alpha-value>);
+  --color-warning-foreground: rgb(var(--color-warning-foreground) / <alpha-value>);
+  --color-error: rgb(var(--color-error) / <alpha-value>);
+  --color-error-foreground: rgb(var(--color-error-foreground) / <alpha-value>);
+
+  /* Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* Typography */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/*
+ * Dark variant активируется через `.dark` класс на html (стандарт shadcn).
+ * При смене темы — `document.documentElement.classList.toggle('dark')`.
+ * Vuetify-тема переключается параллельно через свой механизм (useTheme).
+ */
+@custom-variant dark (&:where(.dark, .dark *));
