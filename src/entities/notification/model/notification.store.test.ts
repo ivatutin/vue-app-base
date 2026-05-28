@@ -19,7 +19,14 @@ describe('useNotificationStore', () => {
 
   it('default timeout зависит от kind: info=4000, warning=6000, error=0', () => {
     const store = useNotificationStore()
-    store.push({ kind: 'info', message: 'i' }, { kind: 'warning', message: 'w' }, { kind: 'error', message: 'e' })
+    const inputs = [
+      { kind: 'info' as const, message: 'i' },
+      { kind: 'warning' as const, message: 'w' },
+      { kind: 'error' as const, message: 'e' },
+    ]
+    for (const input of inputs) {
+      store.push(input)
+    }
     expect(store.items[0]?.timeout).toBe(4000)
     expect(store.items[1]?.timeout).toBe(6000)
     expect(store.items[2]?.timeout).toBe(0)
@@ -58,7 +65,9 @@ describe('useNotificationStore', () => {
 
   it('clear удаляет все элементы', () => {
     const store = useNotificationStore()
-    store.push({ message: 'a' }, { message: 'b' })
+    for (const m of ['a', 'b']) {
+      store.push({ message: m })
+    }
     store.clear()
     expect(store.items).toHaveLength(0)
   })

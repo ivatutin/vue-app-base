@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { useAuthStore } from '@/entities/auth'
-  import { useUserStore } from '@/entities/user'
+  import { logoutFlow } from '@/processes/auth-flow'
 
   definePage({
     meta: {
@@ -9,16 +8,10 @@
     },
   })
 
-  const auth = useAuthStore()
-  const user = useUserStore()
   const router = useRouter()
 
-  onMounted(async () => {
-    try {
-      await auth.logout()
-    } finally {
-      user.reset()
-    }
+  onMounted(() => {
+    void logoutFlow()
   })
 
   function goToLogin () {

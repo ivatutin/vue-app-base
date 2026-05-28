@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { useAuthStore } from '@/entities/auth'
-  import { useUserStore } from '@/entities/user'
+  import { loginFlow } from '@/processes/auth-flow'
   import { HttpError } from '@/shared/api'
 
   definePage({
@@ -10,8 +9,6 @@
     },
   })
 
-  const auth = useAuthStore()
-  const user = useUserStore()
   const router = useRouter()
 
   const email = ref('')
@@ -23,8 +20,7 @@
     error.value = null
     loading.value = true
     try {
-      await auth.login(email.value, password.value)
-      await user.fetchCurrentUser()
+      await loginFlow(email.value, password.value)
       await router.replace({ name: '/dashboard' })
     } catch (error_) {
       error.value = error_ instanceof HttpError ? error_.message : 'Не удалось войти'

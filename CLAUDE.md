@@ -25,7 +25,7 @@ npm run preview      # Предпросмотр production-сборки
 
 ```
 app/        composition root, провайдеры, лэйауты, App.vue, main.ts
-processes/  длительные многошаговые сценарии (например, app-bootstrap)
+processes/  длительные многошаговые сценарии (app-bootstrap, auth-flow)
 pages/      маршрутные страницы — file-based routing
 widgets/    самостоятельные блоки лэйаута (app-header, app-sidebar, ...)
 features/   пользовательские сценарии (зарезервирован, пока пуст / закомментирован в vite.config.mts)
@@ -64,7 +64,7 @@ shared/     переиспользуемая инфраструктура: lib/u
 - **DTO ↔ Domain.** Контракт backend и domain-модель разделены ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `api/user.dto.ts` описывает форму ответа `UserResponseDto` (camelCase, status enum, nullable email/phone, см. [docs/integration-backend.md](docs/integration-backend.md)), `schema/user.schema.ts` — Domain-модель `User = z.infer<typeof userSchema>`, `api/user.mapper.ts` — `toUser(dto)`. В [api/index.ts](src/entities/user/api/index.ts) `GET /users/me` → `userDtoSchema.safeParse` → mapper. `UserDto` за пределы `api/`-сегмента **не выходит**.
 - **RBAC.** Vocabulary прав живёт в [shared/model/permission/](src/shared/model/permission/) ([ADR-0004](docs/adr/0004-rbac-vocabulary-in-shared.md)) — `permissionSchema` и тип `PermissionCode`. Backend отдаёт только `roles: string[]`, фронт превращает их в permissions через `rolesToPermissions()` (`shared/model/permission/role-permissions.ts`). Хелпер `can(permission)` ([lib/can.ts](src/entities/user/lib/can.ts)) и `userStore.hasPermission()` основаны на этом маппинге. Sidebar фильтрует пункты, router-guard проверяет `meta.permissions`.
 
-**Auth & error-handling.** `useAuthStore.login/refresh/logout` поверх HTTP-клиента дёргают `/auth/sign-in`, `/auth/refresh`, `/auth/sign-out`. Глобальные ошибки (Vue, unhandledrejection, window.error) ловит [setup-error-handler](src/app/providers/setup-error-handler.ts) → notification-store ([entities/notification](src/entities/notification/)) → `<v-snackbar>` стек ([widgets/app-notifications](src/widgets/app-notifications/), подключён в оба layout'а). Локальные ошибки бизнес-flow (например, LoginPage) ловятся inline через `try/catch`, не пускаются в глобальный handler.
+**Auth & error-handling.** `useAuthStore.login/refresh/logout` поверх HTTP-клиента дёргают `/auth/sign-in`, `/auth/refresh`, `/auth/sign-out`. Cross-entity-сценарии живут в [processes/auth-flow](src/processes/auth-flow/) — `loginFlow(email, password)` (orchestration: login + fetchCurrentUser с retry на 404 + compensating rollback) и `logoutFlow()` (гарантированная очистка auth+user через try/finally). Потребители: LoginPage, LogoutPage, `setup-http-client.ts` `onUnauthorized`. **Не дублируй cross-entity-логику в UI** — заводи новый процесс. Глобальные ошибки (Vue, unhandledrejection, window.error) ловит [setup-error-handler](src/app/providers/setup-error-handler.ts) → notification-store ([entities/notification](src/entities/notification/)) → `<v-snackbar>` стек ([widgets/app-notifications](src/widgets/app-notifications/), подключён в оба layout'а). Локальные ошибки бизнес-flow (например, LoginPage) ловятся inline через `try/catch`, не пускаются в глобальный handler.
 
 **Layouts.** `default.vue` (sidebar + header + main + footer) и `auth.vue` (центрированная карточка без навигации). Включается через `definePage({ meta: { layout: 'auth' } })`.
 

@@ -109,10 +109,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** Фаза 2.6 миграции с Vuetify по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md). Тонкие обёртки с доменным API (`<Button variant="primary" loading>`) — пока поверх Vuetify, потом реализация подменяется на shadcn-vue + Tailwind (Фаза 2.7).
 **Триггер:** немедленно после Фазы 2.5 (Design tokens + Storybook + Vitest).
 
-### [P2] `processes/` для cross-entity сценариев `proposed`
-**Зачем:** auth-flow (login → fetch user → fetch permissions → navigate) не помещается ни в один стор. Сторы, зовущие друг друга, — антипаттерн.
-**Что:** `processes/auth-flow`, `processes/logout-flow`, `processes/session-refresh`.
-**Триггер:** второй cross-entity сценарий.
+### [P2] `processes/` для cross-entity сценариев `partial done`
+Создан `processes/auth-flow` с `loginFlow(email, password)` (auth.login → retryOn404 user.fetchCurrentUser + compensating rollback) и `logoutFlow()` (гарантированная очистка auth + user через try/finally). Потребители: LoginPage, LogoutPage и `setup-http-client.ts` `onUnauthorized` (последний раньше зовёл `auth.logout()`, оставляя осиротевший user-state — это был скрытый баг). Покрыто 4 unit-тестами через `vi.spyOn` на сторы. Session-refresh-flow отдельным процессом не нужен — refresh-mutex уже внутри HttpClient ([ADR-0006](docs/adr/0006-fetch-based-http-client.md)).
 
 ### [P2] i18n (vue-i18n) `proposed`
 **Зачем:** UI уже на русском, тексты вшиты в шаблоны. Перевести через год — невозможно.

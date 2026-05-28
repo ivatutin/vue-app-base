@@ -1,5 +1,6 @@
 import type { App } from 'vue'
 import { useAuthStore } from '@/entities/auth'
+import { logoutFlow } from '@/processes/auth-flow'
 import { HttpClient, setHttpClient } from '@/shared/api'
 import { env } from '@/shared/config'
 
@@ -14,7 +15,9 @@ export function setupHttpClient (_app: App): HttpClient {
         await auth.refresh()
         return true
       } catch {
-        auth.logout()
+        // Полная очистка: tokens + user-state. Раньше зов был
+        // auth.logout(), user-state оставался осиротевшим.
+        await logoutFlow()
         return false
       }
     },
