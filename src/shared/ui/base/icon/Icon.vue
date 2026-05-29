@@ -1,35 +1,99 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка Icon. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * shadcn-vue реализация Icon — на @lucide/vue (SVG-иконки).
  *
- * Контракт `name: string` сейчас принимает MDI-имена (`mdi-*`)
- * для совместимости с обеими реализациями. Семантические имена —
- * после Шага 14 (удаление vuetify-версии).
+ * Контракт `name: string` принимает MDI-имена (`mdi-account`, …) для
+ * совместимости с потребителями vuetify-версии. Внутри маппится через
+ * `MDI_TO_LUCIDE` в lucide-компонент. Неизвестное имя → null +
+ * console.warn (заметно в dev, не падает в prod).
+ *
+ * **Расширение словаря.** Новая иконка в коде → добавь mapping здесь,
+ * иначе lint пройдёт, а в браузере будет пусто + warning.
+ *
+ * После Шага 14 миграции (когда vuetify-версия удалится) словарь
+ * переедет в семантические имена (`'user'` вместо `'mdi-account'`), а
+ * потребители — на них через codemod-замену.
  */
-  import { env } from '@/shared/config'
-  import IconShadcn from './Icon.shadcn.vue'
-  import IconVuetify from './Icon.vuetify.vue'
+  import type { Component } from 'vue'
+  import {
+    ChevronsLeft,
+    ChevronsRight,
+    ChevronsUp,
+    CodeXml,
+    Copy,
+    LayoutDashboard,
+    LogOut,
+    Moon,
+    MoreVertical,
+    Pencil,
+    PencilRuler,
+    Save,
+    Settings,
+    Shield,
+    Sun,
+    Trash2,
+    User,
+    UserPen,
+    X,
+  } from '@lucide/vue'
 
   type Size = 'sm' | 'md' | 'lg' | 'xl'
 
-  withDefaults(defineProps<{
+  const props = withDefaults(defineProps<{
     name: string
     size?: Size
     color?: string
   }>(), {
     size: 'md',
+    color: 'currentColor',
   })
 
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? IconShadcn : IconVuetify
+  const MDI_TO_LUCIDE: Record<string, Component> = {
+    'mdi-account': User,
+    'mdi-account-edit-outline': UserPen,
+    'mdi-chevron-double-up': ChevronsUp,
+    'mdi-close': X,
+    'mdi-cog': Settings,
+    'mdi-content-copy': Copy,
+    'mdi-content-save': Save,
+    'mdi-delete': Trash2,
+    'mdi-dots-vertical': MoreVertical,
+    'mdi-exit-run': LogOut,
+    'mdi-pencil': Pencil,
+    'mdi-pencil-ruler': PencilRuler,
+    'mdi-shield': Shield,
+    'mdi-unfold-less-vertical': ChevronsLeft,
+    'mdi-unfold-more-vertical': ChevronsRight,
+    'mdi-view-dashboard-outline': LayoutDashboard,
+    'mdi-weather-night': Moon,
+    'mdi-white-balance-sunny': Sun,
+    'mdi-xml': CodeXml,
+  }
+
+  const SIZE_PX: Record<Size, number> = {
+    sm: 20,
+    md: 24,
+    lg: 28,
+    xl: 36,
+  }
+
+  const Impl = computed<Component | null>(() => {
+    const found = MDI_TO_LUCIDE[props.name]
+    if (!found) {
+      console.warn(`[Icon] нет mapping для "${props.name}" в MDI_TO_LUCIDE`)
+      return null
+    }
+    return found
+  })
+
+  const pxSize = computed(() => SIZE_PX[props.size])
 </script>
 
 <template>
   <component
     :is="Impl"
+    v-if="Impl"
     :color="color"
-    :name="name"
-    :size="size"
+    :size="pxSize"
   />
 </template>

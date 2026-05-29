@@ -1,15 +1,24 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка ListItem. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * shadcn-vue реализация ListItem. Tag выбирается по props:
+ * - to → RouterLink
+ * - href → <a>
+ * - иначе → <button>
+ *
+ * Стилизация: hover:bg-accent, active → bg-accent text-accent-foreground,
+ * disabled → opacity-50 + pointer-events-none.
+ *
+ * Иконка слева через shared/ui/base/icon (MDI_TO_LUCIDE словарь).
+ *
+ * router-link active-классы (`router-link-active`,
+ * `router-link-exact-active`) автоматически подкрашивают item, когда
+ * текущий маршрут совпадает. Дополнительно поддержан явный prop active.
  */
   import type { RouteLocationRaw } from 'vue-router'
-  import { env } from '@/shared/config'
-  import ListItemShadcn from './ListItem.shadcn.vue'
-  import ListItemVuetify from './ListItem.vuetify.vue'
+  import { cn } from '@/shared/lib/utils/cn'
+  import Icon from '../icon/Icon.vue'
 
-  withDefaults(defineProps<{
+  const props = withDefaults(defineProps<{
     icon?: string
     title?: string
     to?: RouteLocationRaw
@@ -27,20 +36,38 @@
 
   defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? ListItemShadcn : ListItemVuetify
+  const tag = computed(() => {
+    if (props.to !== undefined) return 'RouterLink'
+    if (props.href !== undefined) return 'a'
+    return 'button'
+  })
+
+  const itemClass = computed(() => cn(
+    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
+    'transition-colors',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    'text-foreground',
+    !props.disabled && [
+      'hover:bg-accent hover:text-accent-foreground',
+      'router-link-exact-active:bg-accent router-link-exact-active:text-accent-foreground',
+    ],
+    props.active && 'bg-accent text-accent-foreground',
+    props.disabled && 'opacity-50 pointer-events-none',
+  ))
 </script>
 
 <template>
   <component
-    :is="Impl"
-    :active="active"
-    :disabled="disabled"
-    :href="href"
-    :icon="icon"
-    :title="title"
-    :to="to"
+    :is="tag"
+    :class="itemClass"
+    :disabled="tag === 'button' ? disabled : undefined"
+    :href="tag === 'a' ? href : undefined"
+    :to="tag === 'RouterLink' ? to : undefined"
+    :type="tag === 'button' ? 'button' : undefined"
     @click="$emit('click', $event)"
   >
+    <Icon v-if="icon" :name="icon" size="sm" />
+    <span v-if="title" class="flex-1 truncate">{{ title }}</span>
     <slot />
   </component>
 </template>

@@ -1,19 +1,13 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка Spacer. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007). После полного перехода на shadcn-vue Spacer.vuetify.vue
- * удалится и entry превратится в re-export shadcn-версии.
+ * shadcn-vue реализация Spacer'а — растягивается во flex-контейнере,
+ * заполняя свободное пространство.
  *
- * Оба импорта попадают в bundle во время миграции — это ожидаемо.
+ * Использует Tailwind utility flex-1 (= flex: 1 1 0%). `min-w-0`/`min-h-0`
+ * не добавляем — у Spacer'а нет children, overflow невозможен.
  */
-  import { env } from '@/shared/config'
-  import SpacerShadcn from './Spacer.shadcn.vue'
-  import SpacerVuetify from './Spacer.vuetify.vue'
-
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? SpacerShadcn : SpacerVuetify
 </script>
 
 <template>
-  <component :is="Impl" />
+  <div aria-hidden="true" class="flex-1" />
 </template>

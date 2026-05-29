@@ -7,6 +7,11 @@
   defineProps<{
     title?: string
   }>()
+
+  function onClickToggleTheme () {
+    console.log('onClickToggleTheme')
+    theme.toggle()
+  }
 </script>
 
 <template>
@@ -24,13 +29,13 @@
             v-if="theme.name.value === 'light'"
             icon="mdi-weather-night"
             title="Темная тема"
-            @click="theme.toggle()"
+            @click="onClickToggleTheme"
           />
           <ListItem
             v-if="theme.name.value === 'dark'"
             icon="mdi-white-balance-sunny"
             title="Светлая тема"
-            @click="theme.toggle()"
+            @click="onClickToggleTheme"
           />
           <Divider />
           <!-- TODO: logout action (ROADMAP, Фаза 1 — auth flow) -->

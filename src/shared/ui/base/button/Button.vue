@@ -1,17 +1,29 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка Button. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * shadcn-vue реализация Button — на reka-ui Primitive + CVA-варианты.
+ *
+ * Адаптирован под наш проектный API:
+ * - variant: 'primary' | 'secondary' | 'tonal' | 'text' | 'destructive'
+ * - size: 'sm' | 'md' | 'lg'
+ * - loading | disabled | block | type | icon
+ *
+ * Дизайн-токены: bg-primary/secondary/error + foreground'ы из
+ * src/shared/assets/tokens/colors.css (Tailwind v4 @theme).
+ *
+ * Loading-состояние: Loader2 lucide иконка с animate-spin вместо
+ * контента (disabled на кнопке параллельно). Icon-only: рендерим
+ * <Icon> из shared/ui/base, скрываем default slot.
  */
-  import { env } from '@/shared/config'
-  import ButtonShadcn from './Button.shadcn.vue'
-  import ButtonVuetify from './Button.vuetify.vue'
+  import { Loader2 } from '@lucide/vue'
+  import { cva } from 'class-variance-authority'
+  import { Primitive } from 'reka-ui'
+  import { cn } from '@/shared/lib/utils/cn'
+  import Icon from '../icon/Icon.vue'
 
   type Variant = 'primary' | 'secondary' | 'tonal' | 'text' | 'destructive'
   type Size = 'sm' | 'md' | 'lg'
 
-  withDefaults(defineProps<{
+  const props = withDefaults(defineProps<{
     variant?: Variant
     size?: Size
     loading?: boolean
@@ -31,27 +43,73 @@
 
   defineEmits<{ click: [event: MouseEvent] }>()
 
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? ButtonShadcn : ButtonVuetify
+  const BASE_CLASS = [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap',
+    'rounded-md text-sm font-medium ring-offset-background transition-colors',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    'focus-visible:ring-offset-2 disabled:pointer-events-none',
+    'disabled:opacity-50',
+  ].join(' ')
+
+  const buttonVariants = cva(BASE_CLASS, {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        tonal: 'bg-primary/10 text-primary hover:bg-primary/20',
+        text: 'hover:bg-accent hover:text-accent-foreground',
+        destructive: 'bg-error text-error-foreground hover:bg-error/90',
+      },
+      size: {
+        sm: 'h-9 px-3',
+        md: 'h-10 px-4 py-2',
+        lg: 'h-11 px-8',
+      },
+      iconOnly: {
+        true: '!px-0',
+        false: '',
+      },
+      block: {
+        true: 'w-full',
+        false: '',
+      },
+    },
+  },
+  )
+
+  const iconOnly = computed(() => Boolean(props.icon))
+
+  const iconOnlySquare = computed(() => {
+    if (!iconOnly.value) return ''
+    return {
+      sm: '!w-9',
+      md: '!w-10',
+      lg: '!w-11',
+    }[props.size]
+  })
+
+  const innerIconSize = computed<'sm' | 'md'>(() => (props.size === 'lg' ? 'md' : 'sm'))
 </script>
 
 <template>
-  <component
-    :is="Impl"
-    :block="block"
-    :disabled="disabled"
-    :icon="icon"
-    :loading="loading"
-    :size="size"
+  <Primitive
+    as="button"
+    :class="cn(
+      buttonVariants({ variant, size, iconOnly, block }),
+      iconOnlySquare,
+    )"
+    :disabled="disabled || loading"
     :type="type"
-    :variant="variant"
     @click="$emit('click', $event)"
   >
-    <template #prepend>
-      <slot name="prepend" />
+    <Loader2 v-if="loading" class="animate-spin" :size="innerIconSize === 'md' ? 20 : 16" />
+    <template v-else-if="iconOnly">
+      <Icon :name="icon!" :size="innerIconSize" />
     </template>
-    <slot />
-    <template #append>
+    <template v-else>
+      <slot name="prepend" />
+      <slot />
       <slot name="append" />
     </template>
-  </component>
+  </Primitive>
 </template>

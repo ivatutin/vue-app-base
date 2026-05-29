@@ -1,20 +1,17 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка Form. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * shadcn-vue реализация Form — тонкий <form> + prevent.submit.
+ *
+ * Полноценный shadcn-vue Form (с VeeValidate + Zod-resolver и
+ * полем-уровневой валидацией) откладывается до Фазы 2.8 ([P2] Form
+ * architecture в ROADMAP). Сейчас обёртка нужна только для submit-
+ * события и единого API на местах использования.
  */
-  import { env } from '@/shared/config'
-  import FormShadcn from './Form.shadcn.vue'
-  import FormVuetify from './Form.vuetify.vue'
-
   defineEmits<{ submit: [] }>()
-
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? FormShadcn : FormVuetify
 </script>
 
 <template>
-  <component :is="Impl" @submit="$emit('submit')">
+  <form @submit.prevent="$emit('submit')">
     <slot />
-  </component>
+  </form>
 </template>

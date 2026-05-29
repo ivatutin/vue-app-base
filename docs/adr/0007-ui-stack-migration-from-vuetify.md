@@ -119,14 +119,17 @@ shadcn-vue **намеренно** не покрывает enterprise-видже�
 
 **Результат:** все прямые `<v-*>` ушли в `shared/ui/base/`. Lint-правило падает на нарушения.
 
-#### Фаза 2.7 — Замена реализации в обёртках (2-4 недели)
+#### Фаза 2.7 — Замена реализации в обёртках `done` (2026-05-29)
 
-- `pnpm dlx shadcn-vue@latest init`.
-- Каждая обёртка получает новую реализацию через feature-flag.
-- Side-by-side ревью в Storybook.
-- Старая реализация удаляется после визуальной проверки.
+Закрыта цепочкой коммитов `348783d…b1fe76c`. Сделано:
 
-**Результат:** все `shared/ui/base/*` работают на shadcn-vue + Tailwind. Vuetify ещё в зависимостях.
+- shadcn-vue init вручную (CLI-конфиг `components.json`, `cn()` хелпер, ядро зависимостей `reka-ui` + `class-variance-authority` + `clsx` + `tailwind-merge` + `@lucide/vue` + `@vueuse/core`).
+- Feature-flag `VITE_UI_IMPL=vuetify|shadcn` — каждая обёртка получала parallel-реализацию `<Component>.shadcn.vue` рядом с `.vuetify.vue` + entry `<Component>.vue` с runtime-выбором по флагу. Это позволило мигрировать **по одной обёртке** атомарными коммитами с side-by-side ревью в Storybook.
+- 11 обёрток мигрированы по списку: Spacer → Divider (`reka-ui` Separator) → Icon (`@lucide/vue` + словарь `MDI_TO_LUCIDE`) → Button (`reka-ui` Primitive + cva) → Alert (cva + compoundVariants) → TextField (composite Input + Label с `useId()` a11y) → Card (custom composite с border-t footer) → Form (нативный `<form>`) → List/ListItem (Tailwind nav + RouterLink) → Menu (`reka-ui` Popover) → Snackbar (custom card + setTimeout auto-dismiss).
+- После переключения default → `shadcn` потребовались три hotfix'а: `effectScope()` для watch'а вне Vue setup (df7d6c3); удаление TS-аннотаций из template inline-handlers — Vue silently игнорирует их (3023e7c); z-[3000] на PopoverContent выше Vuetify overlay-container z-index 2400 (b1fe76c).
+- Финальная чистка (Шаг 2.7.14): удаление `*.vuetify.vue`, упрощение entry до прямой реализации, удаление `VITE_UI_IMPL` из env, удаление Vuetify setup из Storybook preview.
+
+**Результат:** все `shared/ui/base/*` работают на shadcn-vue + reka-ui + Tailwind. Vuetify остаётся в зависимостях для shell (App.vue, layouts, header/sidebar/footer) — переезд в Фазе 2.8.
 
 #### Фаза 2.8 — Сложные компоненты и долги (1-2 недели)
 

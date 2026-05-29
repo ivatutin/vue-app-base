@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import IconShadcn from './Icon.shadcn.vue'
 import Icon from './Icon.vue'
-import IconVuetify from './Icon.vuetify.vue'
 
 const meta: Meta<typeof Icon> = {
   title: 'shared/ui/base/Icon',
@@ -76,41 +74,6 @@ export const AllNames: Story = {
         <div v-for="name in names" :key="name" :style="cellStyle">
           <Icon :name="name" size="lg" />
           <div :style="labelStyle">{{ name }}</div>
-        </div>
-      </div>
-    `,
-  }),
-}
-
-/**
- * Side-by-side: vuetify (MDI font) vs shadcn (lucide SVG).
- * Lucide-иконки тонкие и stroke-based, MDI — filled — небольшие
- * визуальные отличия ожидаемы. Проверяй семантическое совпадение.
- */
-export const SideBySide: Story = {
-  name: 'Side-by-side (vuetify / shadcn)',
-  render: () => ({
-    components: { IconVuetify, IconShadcn },
-    setup: () => ({ names: NAMES, cellStyle, labelStyle }),
-    template: `
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <div>
-          <div style="font-size: 12px; color: #71717a; margin-bottom: 8px;">vuetify · MDI font</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-            <div v-for="name in names" :key="'v-' + name" :style="cellStyle">
-              <IconVuetify :name="name" size="lg" />
-              <div :style="labelStyle">{{ name }}</div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size: 12px; color: #71717a; margin-bottom: 8px;">shadcn · lucide SVG</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-            <div v-for="name in names" :key="'s-' + name" :style="cellStyle">
-              <IconShadcn :name="name" size="lg" />
-              <div :style="labelStyle">{{ name }}</div>
-            </div>
-          </div>
         </div>
       </div>
     `,
