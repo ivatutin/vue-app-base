@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка Alert. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * Обёртка над <v-alert> (ADR-0007, Фаза 2.6).
+ *
+ * Цвета берутся из design tokens через Vuetify-палитру (info/success/
+ * warning/error). После Фазы 2.7 — Tailwind-классы.
  */
-  import { env } from '@/shared/config'
-  import AlertShadcn from './Alert.shadcn.vue'
-  import AlertVuetify from './Alert.vuetify.vue'
+  import { VAlert } from 'vuetify/components'
 
   type Kind = 'info' | 'success' | 'warning' | 'error'
 
@@ -23,19 +22,16 @@
   })
 
   defineEmits<{ close: [] }>()
-
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? AlertShadcn : AlertVuetify
 </script>
 
 <template>
-  <component
-    :is="Impl"
+  <VAlert
     :closable="closable"
     :density="density"
-    :kind="kind"
+    :type="kind"
     :variant="variant"
-    @close="$emit('close')"
+    @click:close="$emit('close')"
   >
     <slot />
-  </component>
+  </VAlert>
 </template>
