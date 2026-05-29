@@ -1,14 +1,12 @@
 <script setup lang="ts">
 /**
- * Обёртка над <v-menu> (ADR-0007, Фаза 2.6).
- *
- * Контракт близок к radix-vue Popover / shadcn-vue DropdownMenu —
- * scoped slot `activator` отдаёт `props`, которые потребитель навешивает
- * на trigger-элемент (Button/Icon/..).
- *
- * После Фазы 2.7 — реализация на radix-vue Popover с тем же API.
+ * Entry-обёртка Menu. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
-  import { VMenu } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import MenuShadcn from './Menu.shadcn.vue'
+  import MenuVuetify from './Menu.vuetify.vue'
 
   type Location
     = | 'top'
@@ -21,21 +19,25 @@
       | 'bottom end'
 
   withDefaults(defineProps<{
-    /** Закрывать ли меню по клику на содержимое (по умолчанию — да) */
     closeOnContentClick?: boolean
-    /** Положение всплывашки относительно activator */
     location?: Location
   }>(), {
     closeOnContentClick: true,
     location: 'bottom',
   })
+
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? MenuShadcn : MenuVuetify
 </script>
 
 <template>
-  <VMenu :close-on-content-click="closeOnContentClick" :location="location">
+  <component
+    :is="Impl"
+    :close-on-content-click="closeOnContentClick"
+    :location="location"
+  >
     <template #activator="{ props: activatorProps }">
       <slot name="activator" :props="activatorProps" />
     </template>
     <slot />
-  </VMenu>
+  </component>
 </template>

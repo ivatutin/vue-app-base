@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { Button } from '../button'
 import { Divider } from '../divider'
 import { List, ListItem } from '../list'
+import MenuShadcn from './Menu.shadcn.vue'
 import Menu from './Menu.vue'
+import MenuVuetify from './Menu.vuetify.vue'
 
 const meta: Meta<typeof Menu> = {
   title: 'shared/ui/base/Menu',
@@ -67,6 +69,53 @@ export const LocationEnd: Story = {
             <ListItem title="Пункт 2" />
           </List>
         </Menu>
+      </div>
+    `,
+  }),
+}
+
+/**
+ * Side-by-side: vuetify v-menu vs shadcn reka-ui Popover. Контракт
+ * (scoped slot activator с props, default slot — содержимое) полностью
+ * совместим. Закройся по клику внутри (closeOnContentClick=true)
+ * работает в обеих реализациях.
+ */
+export const SideBySide: Story = {
+  name: 'Side-by-side (vuetify / shadcn)',
+  render: () => ({
+    components: {
+      MenuVuetify, MenuShadcn, Button, List, ListItem, Divider,
+    },
+    template: `
+      <div style="display: flex; gap: 32px; padding: 80px;">
+        <div>
+          <div style="font-size: 12px; color: #71717a; margin-bottom: 8px;">vuetify</div>
+          <MenuVuetify>
+            <template #activator="{ props }">
+              <Button v-bind="props" variant="tonal">Открыть</Button>
+            </template>
+            <List density="compact">
+              <ListItem icon="mdi-account-edit-outline" title="Мой профиль" />
+              <ListItem icon="mdi-cog" title="Настройки" />
+              <Divider />
+              <ListItem icon="mdi-exit-run" title="Выйти" />
+            </List>
+          </MenuVuetify>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: #71717a; margin-bottom: 8px;">shadcn</div>
+          <MenuShadcn>
+            <template #activator="{ props }">
+              <Button v-bind="props" variant="tonal">Открыть</Button>
+            </template>
+            <List density="compact">
+              <ListItem icon="mdi-account-edit-outline" title="Мой профиль" />
+              <ListItem icon="mdi-cog" title="Настройки" />
+              <Divider />
+              <ListItem icon="mdi-exit-run" title="Выйти" />
+            </List>
+          </MenuShadcn>
+        </div>
       </div>
     `,
   }),
