@@ -1,16 +1,16 @@
 <script setup lang="ts">
 /**
- * Entry-обёртка TextField. Выбирает реализацию по env.VITE_UI_IMPL
- * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
- * (ADR-0007).
+ * Обёртка над <v-text-field> (ADR-0007, Фаза 2.6).
+ *
+ * Поведение error: непустая строка → отображается под полем,
+ * пустая/undefined → не показывается. Это упрощает интеграцию с
+ * VeeValidate/Zod (Фаза 2.8).
  */
-  import { env } from '@/shared/config'
-  import TextFieldShadcn from './TextField.shadcn.vue'
-  import TextFieldVuetify from './TextField.vuetify.vue'
+  import { VTextField } from 'vuetify/components'
 
   type Size = 'sm' | 'md' | 'lg'
 
-  withDefaults(defineProps<{
+  const props = withDefaults(defineProps<{
     modelValue?: string
     label?: string
     type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url'
@@ -30,21 +30,27 @@
 
   defineEmits<{ 'update:modelValue': [value: string] }>()
 
-  const Impl = env.VITE_UI_IMPL === 'shadcn' ? TextFieldShadcn : TextFieldVuetify
+  const density = computed(() => {
+    switch (props.size) {
+      case 'sm': { return 'compact' as const }
+      case 'lg': { return 'comfortable' as const }
+      default: { return 'default' as const }
+    }
+  })
 </script>
 
 <template>
-  <component
-    :is="Impl"
+  <VTextField
     :autocomplete="autocomplete"
+    :density="density"
     :disabled="disabled"
-    :error="error"
+    :error-messages="error ? [error] : []"
     :label="label"
     :model-value="modelValue"
     :placeholder="placeholder"
     :required="required"
-    :size="size"
     :type="type"
+    variant="outlined"
     @update:model-value="(value: string) => $emit('update:modelValue', value)"
   />
 </template>
