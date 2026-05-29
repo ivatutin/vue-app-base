@@ -17,6 +17,7 @@
 | Переменная | Тип | Назначение | Пример |
 |------------|-----|-----------|--------|
 | `VITE_API_URL` | `string` | URL backend API. В dev — путь через [Vite proxy](#dev-proxy), в prod — полный URL | `/api/v1` |
+| `VITE_UI_IMPL` | `'vuetify' \| 'shadcn'` (default `vuetify`) | Какая реализация обёрток `shared/ui/base/` рендерится в runtime. Временный флаг Фазы 2.7 миграции ([ADR-0007](../adr/0007-ui-stack-migration-from-vuetify.md)) — удалится после полного перехода на shadcn-vue | `shadcn` |
 
 ## Доступ из кода
 

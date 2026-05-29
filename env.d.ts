@@ -4,6 +4,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
+  readonly VITE_UI_IMPL?: 'vuetify' | 'shadcn'
 }
 
 interface ImportMeta {
