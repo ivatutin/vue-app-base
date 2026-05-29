@@ -28,6 +28,8 @@
     active: false,
     disabled: false,
   })
+
+  defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 </script>
 
 <template>
@@ -38,6 +40,7 @@
     :prepend-icon="icon"
     :title="title"
     :to="to"
+    @click="(event: MouseEvent | KeyboardEvent) => $emit('click', event)"
   >
     <slot />
   </VListItem>

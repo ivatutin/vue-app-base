@@ -1,41 +1,42 @@
 <script setup lang="ts">
   import { useTheme } from 'vuetify'
+  import { Button, Divider, List, ListItem, Menu } from '@/shared/ui/base'
 
   const theme = useTheme()
-  const $props = defineProps({
-    title: String,
-  })
+
+  defineProps<{
+    title?: string
+  }>()
 </script>
+
 <template>
-  <v-app-bar flat :order="1" :title="$props.title">
+  <v-app-bar flat :order="1" :title="title">
     <template #append>
-      <v-menu>
+      <Menu>
         <template #activator="{ props }">
-          <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" />
+          <Button v-bind="props" icon="mdi-dots-vertical" variant="text" />
         </template>
 
-        <v-list density="compact">
+        <List density="compact">
           <!-- TODO: profile action (ROADMAP, Фаза 1 — auth flow) -->
-          <v-list-item density="compact" prepend-icon="mdi-account-edit-outline" title="Мой профиль" />
-          <v-list-item
-            v-if="'light' == theme.name.value"
-            density="compact"
-            prepend-icon="mdi-weather-night"
+          <ListItem icon="mdi-account-edit-outline" title="Мой профиль" />
+          <ListItem
+            v-if="theme.name.value === 'light'"
+            icon="mdi-weather-night"
             title="Темная тема"
             @click="theme.toggle()"
           />
-          <v-list-item
-            v-if="'dark' == theme.name.value"
-            density="compact"
-            prepend-icon="mdi-white-balance-sunny"
+          <ListItem
+            v-if="theme.name.value === 'dark'"
+            icon="mdi-white-balance-sunny"
             title="Светлая тема"
             @click="theme.toggle()"
           />
-          <v-divider />
+          <Divider />
           <!-- TODO: logout action (ROADMAP, Фаза 1 — auth flow) -->
-          <v-list-item density="compact" prepend-icon="mdi-exit-run" title="Выйти" />
-        </v-list>
-      </v-menu>
+          <ListItem icon="mdi-exit-run" title="Выйти" />
+        </List>
+      </Menu>
     </template>
   </v-app-bar>
 </template>
