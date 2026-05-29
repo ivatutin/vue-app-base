@@ -23,6 +23,7 @@
     "@fontsource/roboto": "5.2.7",
     "@lucide/vue": "^1.17.0",
     "@mdi/font": "7.4.47",
+    "@vueuse/core": "^14.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "pinia": "^3.0.3",
