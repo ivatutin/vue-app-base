@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { can } from '@/entities/user'
+  import { Button, List, ListItem } from '@/shared/ui/base'
   import { sidebarItems } from '../model/sidebar-items'
 
   const rail = shallowRef(true)
@@ -10,19 +11,22 @@
     ),
   )
 </script>
+
 <template>
   <v-navigation-drawer permanent :rail="rail">
-    <v-btn :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'" variant="text" @click="rail = !rail" />
-    <v-list>
-      <v-list-item
+    <Button
+      :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'"
+      variant="text"
+      @click="rail = !rail"
+    />
+    <List nav>
+      <ListItem
         v-for="item in visibleItems"
         :key="item.to"
-        :prepend-icon="item.icon"
+        :icon="item.icon"
+        :title="item.label"
         :to="item.to"
-      >
-        {{ item.label }}
-      </v-list-item>
-    </v-list>
-
+      />
+    </List>
   </v-navigation-drawer>
 </template>

@@ -23,6 +23,12 @@
     disabled?: boolean
     block?: boolean
     type?: 'button' | 'submit' | 'reset'
+    /**
+     * Icon-only режим. Если задан — кнопка рендерится квадратной с одной
+     * иконкой (semantic = `<button aria-label>`). После Фазы 2.7 — это
+     * shadcn-vue Button с `size="icon"` + `<Icon name="...">`.
+     */
+    icon?: string
   }>(), {
     variant: 'primary',
     size: 'md',
@@ -30,6 +36,7 @@
     disabled: false,
     block: false,
     type: 'button',
+    icon: undefined,
   })
 
   defineEmits<{ click: [event: MouseEvent] }>()
@@ -65,14 +72,17 @@
     :block="block"
     :color="vuetifyColor"
     :disabled="disabled"
+    :icon="icon"
     :loading="loading"
     :size="vuetifySize"
     :type="type"
     :variant="vuetifyVariant"
     @click="(event: MouseEvent) => $emit('click', event)"
   >
-    <slot name="prepend" />
-    <slot />
-    <slot name="append" />
+    <template v-if="!icon">
+      <slot name="prepend" />
+      <slot />
+      <slot name="append" />
+    </template>
   </VBtn>
 </template>

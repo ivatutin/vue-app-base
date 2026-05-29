@@ -77,3 +77,17 @@ export const States: Story = {
     `,
   }),
 }
+
+export const IconOnly: Story = {
+  render: () => ({
+    components: { Button },
+    template: `
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <Button icon="mdi-pencil" variant="text" />
+        <Button icon="mdi-delete" variant="text" />
+        <Button icon="mdi-content-save" variant="primary" />
+        <Button icon="mdi-close" variant="tonal" />
+      </div>
+    `,
+  }),
+}
