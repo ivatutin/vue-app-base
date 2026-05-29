@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * Обёртка над <v-list> (ADR-0007, Фаза 2.6).
- *
- * Контейнер для ListItem. После Фазы 2.7 — обычный <nav>/<ul>
- * с Tailwind-классами, ListItem перейдёт на ul>li-семантику.
+ * Entry-обёртка List. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
-  import { VList } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import ListShadcn from './List.shadcn.vue'
+  import ListVuetify from './List.vuetify.vue'
 
   withDefaults(defineProps<{
     density?: 'default' | 'compact' | 'comfortable'
@@ -14,10 +15,12 @@
     density: 'default',
     nav: false,
   })
+
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? ListShadcn : ListVuetify
 </script>
 
 <template>
-  <VList :density="density" :nav="nav">
+  <component :is="Impl" :density="density" :nav="nav">
     <slot />
-  </VList>
+  </component>
 </template>

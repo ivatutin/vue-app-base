@@ -1,22 +1,18 @@
 <script setup lang="ts">
 /**
- * Обёртка над <v-list-item> (ADR-0007, Фаза 2.6).
- *
- * Контракт упрощён до того, что реально нужно: title (slot или prop),
- * иконка слева, навигационный target. После Фазы 2.7 — <RouterLink>
- * со стилизацией Tailwind и focus-ring через radix-vue primitives.
+ * Entry-обёртка ListItem. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
   import type { RouteLocationRaw } from 'vue-router'
-  import { VListItem } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import ListItemShadcn from './ListItem.shadcn.vue'
+  import ListItemVuetify from './ListItem.vuetify.vue'
 
   withDefaults(defineProps<{
-    /** Иконка слева (mdi-* до Фазы 2.7) */
     icon?: string
-    /** Заголовок (если slot не задан) */
     title?: string
-    /** Куда вести (опционально). При наличии — рендерится как router-link. */
     to?: RouteLocationRaw
-    /** Внешняя ссылка (опционально). Взаимоисключает с `to`. */
     href?: string
     active?: boolean
     disabled?: boolean
@@ -30,18 +26,21 @@
   })
 
   defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
+
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? ListItemShadcn : ListItemVuetify
 </script>
 
 <template>
-  <VListItem
+  <component
+    :is="Impl"
     :active="active"
     :disabled="disabled"
     :href="href"
-    :prepend-icon="icon"
+    :icon="icon"
     :title="title"
     :to="to"
     @click="(event: MouseEvent | KeyboardEvent) => $emit('click', event)"
   >
     <slot />
-  </VListItem>
+  </component>
 </template>
