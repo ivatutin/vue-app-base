@@ -64,7 +64,7 @@
     :href="tag === 'a' ? href : undefined"
     :to="tag === 'RouterLink' ? to : undefined"
     :type="tag === 'button' ? 'button' : undefined"
-    @click="(event: MouseEvent | KeyboardEvent) => $emit('click', event)"
+    @click="$emit('click', $event)"
   >
     <IconShadcn v-if="icon" :name="icon" size="sm" />
     <span v-if="title" class="flex-1 truncate">{{ title }}</span>

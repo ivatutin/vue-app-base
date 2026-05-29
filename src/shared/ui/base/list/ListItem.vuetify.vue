@@ -40,7 +40,7 @@
     :prepend-icon="icon"
     :title="title"
     :to="to"
-    @click="(event: MouseEvent | KeyboardEvent) => $emit('click', event)"
+    @click="$emit('click', $event)"
   >
     <slot />
   </VListItem>

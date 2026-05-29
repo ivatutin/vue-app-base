@@ -100,7 +100,7 @@
     )"
     :disabled="disabled || loading"
     :type="type"
-    @click="(event: MouseEvent) => $emit('click', event)"
+    @click="$emit('click', $event)"
   >
     <Loader2 v-if="loading" class="animate-spin" :size="innerIconSize === 'md' ? 20 : 16" />
     <template v-else-if="iconOnly">

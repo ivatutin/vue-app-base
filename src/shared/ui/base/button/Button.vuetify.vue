@@ -77,7 +77,7 @@
     :size="vuetifySize"
     :type="type"
     :variant="vuetifyVariant"
-    @click="(event: MouseEvent) => $emit('click', event)"
+    @click="$emit('click', $event)"
   >
     <template v-if="!icon">
       <slot name="prepend" />

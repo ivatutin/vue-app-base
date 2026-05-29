@@ -44,7 +44,7 @@
     :size="size"
     :type="type"
     :variant="variant"
-    @click="(event: MouseEvent) => $emit('click', event)"
+    @click="$emit('click', $event)"
   >
     <template #prepend>
       <slot name="prepend" />
