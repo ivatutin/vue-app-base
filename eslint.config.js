@@ -9,10 +9,9 @@ import vuePlugin from 'eslint-plugin-vue'
  * - app/providers/setup-vuetify.ts + vuetify-theme.ts — bootstrap Vuetify.
  * - app/layouts/** — пока v-app/v-main используются как shell;
  *   в Фазе 2.8 переедут на свой layout без Vuetify.
- * - widgets/app-header, app-sidebar, app-footer, app-preloader —
- *   рендерят v-app-bar/v-navigation-drawer/etc, тоже подлежат
- *   замене в Фазах 2.6-2.7.
- * - pages/system, pages/ui-kit — мигрируют после обёрток.
+ * - widgets/app-header, app-sidebar, app-footer — рендерят v-app-bar /
+ *   v-navigation-drawer / v-footer (shell) или зовут useTheme() — всё это
+ *   мигрирует в Фазе 2.8 (свой AppShell + ThemeProvider без Vuetify).
  *
  * Этот whitelist **постепенно сужается** по мере миграции: когда
  * widget/page переписан через shared/ui/base/, его путь убирается
@@ -25,12 +24,11 @@ const VUETIFY_ALLOWED = [
   'src/app/providers/vuetify-theme.ts',
   'src/app/layouts/**',
   // widgets/app-notifications мигрирован на Snackbar (Фаза 2.6.4).
+  // widgets/app-preloader — pure SVG, не использует Vuetify.
+  // pages/system/{forbidden,not-found}, pages/ui-kit/* — заглушки без <v-*>.
   'src/widgets/app-header/**',
   'src/widgets/app-sidebar/**',
   'src/widgets/app-footer/**',
-  'src/widgets/app-preloader/**',
-  'src/pages/system/**',
-  'src/pages/ui-kit/**',
 ]
 
 export default [
