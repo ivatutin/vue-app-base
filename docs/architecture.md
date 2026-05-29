@@ -9,13 +9,14 @@
 | Слой | Технология | Документация |
 |------|-----------|--------------|
 | Каркас | Vue 3.5 (Composition API, `<script setup>`) | [vuejs.org](https://vuejs.org) |
-| UI | Vuetify 3.10 + Material Design Icons + Roboto | [vuetifyjs.com](https://vuetifyjs.com) |
+| UI (обёртки `shared/ui/base/`) | shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens | [shadcn-vue.com](https://www.shadcn-vue.com/) / [ADR-0007](adr/0007-ui-stack-migration-from-vuetify.md) |
+| UI (shell) | Vuetify 3.10 + MDI + Roboto — пока в `app/layouts/*` и `widgets/app-{header,sidebar,footer}` (переезд в Фазе 2.8) | [vuetifyjs.com](https://vuetifyjs.com) |
 | State | Pinia 3 (setup-stores) | [pinia.vuejs.org](https://pinia.vuejs.org) |
 | Routing | vue-router 4 + `unplugin-vue-router` | [router.vuejs.org](https://router.vuejs.org) |
 | Layouts | `vite-plugin-vue-layouts-next` | |
 | Валидация / типы | Zod 4 (источник истины для типов) | [zod.dev](https://zod.dev) |
 | Сборка | Vite 7 + TypeScript 5.9 + `vue-tsc` | |
-| DX | `unplugin-auto-import`, `unplugin-vue-components` | |
+| DX | `unplugin-auto-import`, `unplugin-vue-components`, `@vueuse/core` | |
 
 Псевдоним `@/` → `src/` ([tsconfig.app.json:11](../tsconfig.app.json#L11), [vite.config.mts:108-111](../vite.config.mts#L108-L111)).
 

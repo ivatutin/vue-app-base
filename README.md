@@ -1,6 +1,6 @@
 # vue-app-base
 
-Стартовый шаблон под B2B-SPA на **Vue 3 + Vuetify**. Архитектура — **Feature-Sliced Design** с типизированным file-based роутингом, setup-сторами Pinia и schema-first типизацией через Zod.
+Стартовый шаблон под B2B-SPA на **Vue 3 + shadcn-vue + Tailwind v4** (UI-обёртки) поверх Vuetify shell. Архитектура — **Feature-Sliced Design** с типизированным file-based роутингом, setup-сторами Pinia и schema-first типизацией через Zod.
 
 ## Требования
 
@@ -47,13 +47,17 @@ npm run dev          # → http://localhost:3000
 ## Стек
 
 - **Vue 3.5** (Composition API, `<script setup>`)
-- **Vuetify 3.10** + Material Design Icons + Roboto
+- **UI (обёртки `shared/ui/base/`):** shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens ([ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md))
+- **UI (shell):** Vuetify 3.10 + Material Design Icons + Roboto — пока используется в `app/layouts/*` и `widgets/app-{header,sidebar,footer}` (переезд в Фазе 2.8)
 - **Pinia 3** (setup-stores)
 - **vue-router 4** + `unplugin-vue-router` (file-based, типизированный)
 - **Zod 4** (валидация и источник типов)
 - **Vite 7** + TypeScript 5.9
 - **vite-plugin-vue-layouts-next** (лэйауты)
+- **@vueuse/core**, `class-variance-authority`, `clsx`, `tailwind-merge`
 - `unplugin-auto-import`, `unplugin-vue-components`
+- **Vitest 4** + happy-dom + @vue/test-utils
+- **Storybook 8** (для `shared/ui/base/`)
 
 Весь UI-текст и общение в проекте — на **русском языке**.
 

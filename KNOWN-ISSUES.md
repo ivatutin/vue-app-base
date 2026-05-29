@@ -1,6 +1,6 @@
 # Known Issues
 
-Реестр известных багов и тех-долга. Дата ревью: **2026-05-22**.
+Реестр известных багов и тех-долга. Дата ревью: **2026-05-29**.
 
 Уровни:
 - **P0** — ломает функциональность, фиксить срочно.
@@ -9,7 +9,7 @@
 
 Каждый пункт ссылается на конкретное место в коде. План устранения — в [ROADMAP.md](ROADMAP.md).
 
-> **Статус:** Фаза 0 закрыта 2026-05-22 — все P0 и блокирующие P1 устранены, `npm run type-check` green. Текущий реестр содержит только то, что не блокировало старт и осталось на Фазу 1+.
+> **Статус:** Фазы 0-2.7 закрыты — все P0/P1 устранены, инфраструктура (HTTP-клиент, env Zod, error-handler, notification, RBAC, Husky/lint-staged/commitlint, Vitest, Storybook) подключена, миграция UI на shadcn-vue завершена (ADR-0007). `npm run type-check` + `npm test` + `npm run build` — green.
 
 ---
 
@@ -40,15 +40,12 @@
 
 Не баги, но «отсутствующая инфраструктура» проявится на масштабе. Все вынесены в [ROADMAP.md](ROADMAP.md):
 
-- Нет HTTP-клиента / interceptor'ов / обработки 401.
-- Нет валидации env через Zod.
-- Нет глобального `app.config.errorHandler`.
-- Нет snackbar/notification-стора.
-- Нет i18n (UI на русском, тексты вшиты в шаблоны).
-- Нет тестов (Vitest, Playwright не настроены).
-- Нет ESLint-boundaries для FSD-правил.
-- Нет Husky/lint-staged/commitlint.
-- Нет CI.
+- Нет i18n (UI на русском, тексты вшиты в шаблоны) — Фаза 2 (proposed).
+- Нет Playwright / E2E-тестов (Vitest для unit подключён — Фаза 2.5) — Фаза 3.
+- Нет ESLint-boundaries для FSD-правил — Фаза 2 (proposed).
+- Нет CI (GitHub Actions) — Фаза 3 (proposed).
+- Нет своего AppShell + ThemeProvider — Фаза 2.8 (в работе по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md)).
+- Нет Sentry / observability — Фаза 3.
 
 ---
 
