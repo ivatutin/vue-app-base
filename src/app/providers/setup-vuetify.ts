@@ -1,5 +1,5 @@
 import type { App } from 'vue'
-import { watch } from 'vue'
+import { effectScope, watch } from 'vue'
 import { createVuetify } from 'vuetify'
 import { darkTheme, lightTheme } from './vuetify-theme'
 import '@mdi/font/css/materialdesignicons.css'
@@ -11,6 +11,10 @@ import 'vuetify/styles'
  * реагируют на тему только через класс `.dark` на <html> (по Tailwind
  * v4 @custom-variant dark). Без этого моста theme.toggle() меняет
  * Vuetify-состояние, но shadcn-компоненты остаются в light.
+ *
+ * watch() требует EffectScope (не работает вне setup()/scope), поэтому
+ * создаём отдельный effectScope() — provider вызывается из main.ts
+ * вне Vue component context.
  *
  * В Фазе 2.8 заменится на собственный composable useTheme(), который
  * сам управляет .dark классом + localStorage + prefers-color-scheme.
@@ -33,7 +37,12 @@ export function setupVuetify (app: App): ReturnType<typeof createVuetify> {
   app.use(vuetify)
 
   syncTailwindDarkClass(vuetify.theme.global.name.value)
-  watch(vuetify.theme.global.name, syncTailwindDarkClass)
+  effectScope(true).run(() => {
+    watch(
+      () => vuetify.theme.global.name.value,
+      syncTailwindDarkClass,
+    )
+  })
 
   return vuetify
 }
