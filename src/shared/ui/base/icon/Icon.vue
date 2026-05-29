@@ -1,17 +1,20 @@
 <script setup lang="ts">
 /**
- * Обёртка над <v-icon> (ADR-0007, Фаза 2.6).
+ * Entry-обёртка Icon. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  *
- * **Текущий контракт name:** строка MDI (например, `mdi-account`).
- * В Фазе 2.7 при переходе на lucide-vue-next введём словарь
- * семантических имён (`user`, `logout`, `dashboard`, ...) и потребители
- * перейдут на них без правок shapes — изменится только Icon.vue.
+ * Контракт `name: string` сейчас принимает MDI-имена (`mdi-*`)
+ * для совместимости с обеими реализациями. Семантические имена —
+ * после Шага 14 (удаление vuetify-версии).
  */
-  import { VIcon } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import IconShadcn from './Icon.shadcn.vue'
+  import IconVuetify from './Icon.vuetify.vue'
 
   type Size = 'sm' | 'md' | 'lg' | 'xl'
 
-  const props = withDefaults(defineProps<{
+  withDefaults(defineProps<{
     name: string
     size?: Size
     color?: string
@@ -19,16 +22,14 @@
     size: 'md',
   })
 
-  const vuetifySize = computed(() => {
-    switch (props.size) {
-      case 'sm': { return 'small' as const }
-      case 'lg': { return 'large' as const }
-      case 'xl': { return 'x-large' as const }
-      default: { return 'default' as const }
-    }
-  })
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? IconShadcn : IconVuetify
 </script>
 
 <template>
-  <VIcon :color="color" :icon="name" :size="vuetifySize" />
+  <component
+    :is="Impl"
+    :color="color"
+    :name="name"
+    :size="size"
+  />
 </template>
