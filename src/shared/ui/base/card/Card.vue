@@ -1,32 +1,29 @@
 <script setup lang="ts">
 /**
- * Обёртка над <v-card> (ADR-0007, Фаза 2.6).
- *
- * Слоты: header, default (body), footer. Если соответствующий слот
- * не передан — секция не рендерится. Подразумевается, что почти
- * все потребители используют header+body или header+body+footer.
+ * Entry-обёртка Card. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
-  import { VCard, VCardActions, VCardText, VCardTitle, VDivider } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import CardShadcn from './Card.shadcn.vue'
+  import CardVuetify from './Card.vuetify.vue'
 
   withDefaults(defineProps<{
     width?: string | number
     title?: string
   }>(), {})
+
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? CardShadcn : CardVuetify
 </script>
 
 <template>
-  <VCard :width="width">
-    <VCardTitle v-if="$slots.header || title">
-      <slot name="header">{{ title }}</slot>
-    </VCardTitle>
-    <VCardText v-if="$slots.default">
-      <slot />
-    </VCardText>
-    <template v-if="$slots.footer">
-      <VDivider />
-      <VCardActions>
-        <slot name="footer" />
-      </VCardActions>
+  <component :is="Impl" :title="title" :width="width">
+    <template v-if="$slots.header" #header>
+      <slot name="header" />
     </template>
-  </VCard>
+    <slot />
+    <template v-if="$slots.footer" #footer>
+      <slot name="footer" />
+    </template>
+  </component>
 </template>
