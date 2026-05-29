@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { useNotificationStore } from '@/entities/notification'
+  import { Snackbar } from '@/shared/ui/base'
 
   const store = useNotificationStore()
   const { items } = storeToRefs(store)
@@ -7,20 +8,13 @@
 
 <template>
   <div class="app-notifications">
-    <v-snackbar
+    <Snackbar
       v-for="item in items"
       :key="item.id"
-      :color="item.kind"
-      location="top right"
-      :model-value="true"
-      multi-line
+      :kind="item.kind"
+      :message="item.message"
       :timeout="item.timeout || -1"
-      @update:model-value="(v) => !v && store.dismiss(item.id)"
-    >
-      {{ item.message }}
-      <template #actions>
-        <v-btn icon="mdi-close" variant="text" @click="store.dismiss(item.id)" />
-      </template>
-    </v-snackbar>
+      @close="store.dismiss(item.id)"
+    />
   </div>
 </template>
