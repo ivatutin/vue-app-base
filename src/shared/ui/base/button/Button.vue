@@ -1,33 +1,23 @@
 <script setup lang="ts">
 /**
- * Доменная обёртка над <v-btn> (по ADR-0007, Фаза 2.6).
- *
- * Принимает проектный API (variant/size/loading/...), внутри маппит
- * на Vuetify-пропсы. Когда в Фазе 2.7 реализация заменится на
- * shadcn-vue + Tailwind — поменяется только шаблон, потребители
- * не трогаются.
- *
- * **Тестируется через Storybook stories**, не Vitest: рендер v-btn
- * требует Vuetify CSS, что несовместимо с лёгким vitest.config.
- * Unit-тесты появятся в Фазе 2.7 после замены реализации.
+ * Entry-обёртка Button. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
-  import { VBtn } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import ButtonShadcn from './Button.shadcn.vue'
+  import ButtonVuetify from './Button.vuetify.vue'
 
   type Variant = 'primary' | 'secondary' | 'tonal' | 'text' | 'destructive'
   type Size = 'sm' | 'md' | 'lg'
 
-  const props = withDefaults(defineProps<{
+  withDefaults(defineProps<{
     variant?: Variant
     size?: Size
     loading?: boolean
     disabled?: boolean
     block?: boolean
     type?: 'button' | 'submit' | 'reset'
-    /**
-     * Icon-only режим. Если задан — кнопка рендерится квадратной с одной
-     * иконкой (semantic = `<button aria-label>`). После Фазы 2.7 — это
-     * shadcn-vue Button с `size="icon"` + `<Icon name="...">`.
-     */
     icon?: string
   }>(), {
     variant: 'primary',
@@ -41,48 +31,27 @@
 
   defineEmits<{ click: [event: MouseEvent] }>()
 
-  const vuetifyVariant = computed(() => {
-    switch (props.variant) {
-      case 'tonal': { return 'tonal' as const }
-      case 'text': { return 'text' as const }
-      default: { return 'elevated' as const }
-    }
-  })
-
-  const vuetifyColor = computed(() => {
-    switch (props.variant) {
-      case 'primary': { return 'primary' }
-      case 'secondary': { return 'secondary' }
-      case 'destructive': { return 'error' }
-      default: { return undefined }
-    }
-  })
-
-  const vuetifySize = computed(() => {
-    switch (props.size) {
-      case 'sm': { return 'small' as const }
-      case 'lg': { return 'large' as const }
-      default: { return 'default' as const }
-    }
-  })
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? ButtonShadcn : ButtonVuetify
 </script>
 
 <template>
-  <VBtn
+  <component
+    :is="Impl"
     :block="block"
-    :color="vuetifyColor"
     :disabled="disabled"
     :icon="icon"
     :loading="loading"
-    :size="vuetifySize"
+    :size="size"
     :type="type"
-    :variant="vuetifyVariant"
+    :variant="variant"
     @click="(event: MouseEvent) => $emit('click', event)"
   >
-    <template v-if="!icon">
+    <template #prepend>
       <slot name="prepend" />
-      <slot />
+    </template>
+    <slot />
+    <template #append>
       <slot name="append" />
     </template>
-  </VBtn>
+  </component>
 </template>
