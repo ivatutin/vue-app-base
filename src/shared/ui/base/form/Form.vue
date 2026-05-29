@@ -1,17 +1,20 @@
 <script setup lang="ts">
 /**
- * Тонкая обёртка над <v-form> + prevent.submit (ADR-0007, Фаза 2.6).
- *
- * Реальная form-валидация — отдельный шаг (Фаза 2.8 миграции,
- * VeeValidate + Zod-resolver).
+ * Entry-обёртка Form. Выбирает реализацию по env.VITE_UI_IMPL
+ * (vuetify | shadcn) — strangler fig pattern Фазы 2.7 миграции
+ * (ADR-0007).
  */
-  import { VForm } from 'vuetify/components'
+  import { env } from '@/shared/config'
+  import FormShadcn from './Form.shadcn.vue'
+  import FormVuetify from './Form.vuetify.vue'
 
   defineEmits<{ submit: [] }>()
+
+  const Impl = env.VITE_UI_IMPL === 'shadcn' ? FormShadcn : FormVuetify
 </script>
 
 <template>
-  <VForm @submit.prevent="$emit('submit')">
+  <component :is="Impl" @submit="$emit('submit')">
     <slot />
-  </VForm>
+  </component>
 </template>
