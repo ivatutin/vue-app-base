@@ -11,7 +11,6 @@ import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 
 import Layouts from 'vite-plugin-vue-layouts-next'
-import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -75,17 +74,8 @@ export default defineConfig({
       ],
       dts: 'src/components.d.ts',
     }),
-    Vue({
-      template: { transformAssetUrls },
-    }),
+    Vue(),
     Tailwind(),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
-    Vuetify({
-      autoImport: true,
-      styles: {
-        configFile: 'src/assets/styles/settings.scss',
-      },
-    }),
     Fonts({
       fontsource: {
         families: [
@@ -100,7 +90,6 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: [
-      'vuetify',
       'vue-router',
       'unplugin-vue-router/runtime',
       'unplugin-vue-router/data-loaders',
