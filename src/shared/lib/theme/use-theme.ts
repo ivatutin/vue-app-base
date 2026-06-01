@@ -57,18 +57,23 @@ export function initThemeProvider (): void {
 
   // 3. watch'ы — sync .dark класс + persist mode. effectScope(true)
   //    нужен, потому что initThemeProvider() вызывается вне Vue setup().
+  //    Getter-форма () => currentTheme.value — для устойчивости к
+  //    module-level computed (надёжнее, чем передача ref напрямую).
   effectScope(true).run(() => {
     watch(
-      currentTheme,
+      () => currentTheme.value,
       theme => {
         document.documentElement.classList.toggle('dark', theme === 'dark')
       },
       { immediate: true },
     )
 
-    watch(mode, newMode => {
-      window.localStorage.setItem(THEME_STORAGE_KEY, newMode)
-    })
+    watch(
+      () => mode.value,
+      newMode => {
+        window.localStorage.setItem(THEME_STORAGE_KEY, newMode)
+      },
+    )
   })
 }
 
