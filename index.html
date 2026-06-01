@@ -4,7 +4,25 @@
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Vuetify 3</title>
+    <title>vue-app-base</title>
+    <script>
+      // Anti-FOUC: устанавливаем .dark класс ДО загрузки Vue, чтобы
+      // shadcn-обёртки сразу рендерились в правильной теме. Логика
+      // дублирует initThemeProvider() в src/shared/lib/theme/use-theme.ts —
+      // ключ '__app-theme', режимы 'light'/'dark'/'system'.
+      (function () {
+        try {
+          var key = '__app-theme'
+          var mode = localStorage.getItem(key)
+          if (mode !== 'light' && mode !== 'dark' && mode !== 'system') {
+            mode = 'system'
+          }
+          var isDark = mode === 'dark'
+            || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (isDark) document.documentElement.classList.add('dark')
+        } catch (e) { /* SSR / no-localStorage */ }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>
