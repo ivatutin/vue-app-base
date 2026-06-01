@@ -13,20 +13,25 @@
 </script>
 
 <template>
-  <v-navigation-drawer permanent :rail="rail">
-    <Button
-      :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'"
-      variant="text"
-      @click="rail = !rail"
-    />
+  <aside
+    class="flex flex-col border-r bg-surface text-surface-foreground overflow-hidden transition-[width] duration-200 ease-in-out"
+    :class="rail ? 'w-14' : 'w-56'"
+  >
+    <div class="p-1">
+      <Button
+        :icon="rail ? 'mdi-unfold-more-vertical' : 'mdi-unfold-less-vertical'"
+        variant="text"
+        @click="rail = !rail"
+      />
+    </div>
     <List nav>
       <ListItem
         v-for="item in visibleItems"
         :key="item.to"
         :icon="item.icon"
-        :title="item.label"
+        :title="rail ? undefined : item.label"
         :to="item.to"
       />
     </List>
-  </v-navigation-drawer>
+  </aside>
 </template>

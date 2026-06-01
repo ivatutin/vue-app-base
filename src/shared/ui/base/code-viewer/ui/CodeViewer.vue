@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { Button, Card, Divider } from '@/shared/ui/base'
   import { escapeHtml } from '../lib/escape-html'
 
   const codeMode = ref(false)
@@ -9,33 +10,24 @@
     htmlContent = escapeHtml(refSlotWrapper.value?.innerHTML || '')
   })
 </script>
-<template>
-  <v-card>
-    <v-btn
-      class="position-absolute right-0"
-      :icon="codeMode ? 'mdi-chevron-double-up' : 'mdi-xml'"
-      size="small"
-      variant="text"
-      @click="codeMode = !codeMode"
-    />
-    <!-- <v-toolbar density="compact">
-            <template v-slot:append>
-                <v-btn @click="codeMode = !codeMode" :icon="codeMode ? 'mdi-chevron-double-up' : 'mdi-xml'" size="small" />
-            </template>
-        </v-toolbar> -->
 
-    <v-slide-y-transition v-show="codeMode">
-      <div>
-        <v-card-text class="bg-surface-light">
-          <code v-html="htmlContent" />
-        </v-card-text>
-        <v-divider />
+<template>
+  <Card>
+    <div class="relative">
+      <Button
+        class="absolute right-2 top-2"
+        :icon="codeMode ? 'mdi-chevron-double-up' : 'mdi-xml'"
+        size="sm"
+        variant="text"
+        @click="codeMode = !codeMode"
+      />
+      <div v-show="codeMode" class="bg-muted p-4">
+        <code v-html="htmlContent" />
       </div>
-    </v-slide-y-transition>
-    <v-card-text>
-      <div ref="refSlotWrapper">
+      <Divider v-show="codeMode" />
+      <div ref="refSlotWrapper" class="p-4">
         <slot />
       </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </Card>
 </template>

@@ -69,7 +69,7 @@
     <PopoverPortal>
       <PopoverContent
         :align="sideAlign.align"
-        class="z-[3000] min-w-[12rem] rounded-md border bg-surface text-surface-foreground p-1 shadow-md outline-none"
+        class="z-50 min-w-[12rem] rounded-md border bg-surface text-surface-foreground p-1 shadow-md outline-none"
         :side="sideAlign.side"
         :side-offset="4"
         @click="handleContentClick"

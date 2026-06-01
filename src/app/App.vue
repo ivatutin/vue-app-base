@@ -6,8 +6,6 @@
 </script>
 
 <template>
-  <v-app v-if="bootstrap.isReady">
-    <router-view />
-  </v-app>
+  <router-view v-if="bootstrap.isReady" />
   <AppPreloader v-else />
 </template>

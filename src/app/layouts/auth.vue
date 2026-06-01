@@ -3,12 +3,10 @@
 </script>
 
 <template>
-  <v-app>
-    <v-main class="d-flex align-center justify-center">
-      <v-container class="d-flex justify-center" style="max-width: 480px;">
-        <router-view />
-      </v-container>
-    </v-main>
-    <AppNotifications />
-  </v-app>
+  <div class="min-h-dvh bg-background text-foreground flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+      <router-view />
+    </div>
+  </div>
+  <AppNotifications />
 </template>
