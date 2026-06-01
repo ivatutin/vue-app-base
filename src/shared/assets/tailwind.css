@@ -10,9 +10,14 @@
 
 @import 'tailwindcss';
 
-@theme {
+@theme inline {
   /* Цвета — alpha-aware. Tailwind v4 ожидает функцию rgb()
-     с переменной как RGB-triplet (R G B). См. tokens/colors.css. */
+     с переменной как RGB-triplet (R G B). См. tokens/colors.css.
+     `inline` ОБЯЗАТЕЛЕН — без него Tailwind разрешает CSS-vars на
+     этапе build и инлайнит light-значения в утилиты (bg-background
+     и т.п.), из-за чего .dark переключение CSS-vars в colors.css
+     не имеет эффекта на runtime. С `inline` — utility держит
+     `var(--color-background)`, резолвится at-use-time. */
   --color-background: rgb(var(--color-background) / <alpha-value>);
   --color-foreground: rgb(var(--color-foreground) / <alpha-value>);
   --color-surface: rgb(var(--color-surface) / <alpha-value>);
