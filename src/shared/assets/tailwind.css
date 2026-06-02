@@ -11,35 +11,40 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Цвета — alpha-aware. Tailwind v4 ожидает функцию rgb()
-     с переменной как RGB-triplet (R G B). См. tokens/colors.css.
+  /* Цвета: @theme переменные ссылаются на CSS-vars из colors.css
+     через простой var() — это даёт runtime resolution, .dark
+     переопределения работают.
+
      Имена в colors.css БЕЗ префикса --color- (--background, --surface,
-     ...), чтобы избежать circular reference с @theme. */
-  --color-background: rgb(var(--background) / <alpha-value>);
-  --color-foreground: rgb(var(--foreground) / <alpha-value>);
-  --color-surface: rgb(var(--surface) / <alpha-value>);
-  --color-surface-foreground: rgb(var(--surface-foreground) / <alpha-value>);
-  --color-border: rgb(var(--border) / <alpha-value>);
-  --color-input: rgb(var(--input) / <alpha-value>);
-  --color-ring: rgb(var(--ring) / <alpha-value>);
+     ...), чтобы избежать circular reference с @theme.
 
-  --color-primary: rgb(var(--primary) / <alpha-value>);
-  --color-primary-foreground: rgb(var(--primary-foreground) / <alpha-value>);
-  --color-secondary: rgb(var(--secondary) / <alpha-value>);
-  --color-secondary-foreground: rgb(var(--secondary-foreground) / <alpha-value>);
-  --color-accent: rgb(var(--accent) / <alpha-value>);
-  --color-accent-foreground: rgb(var(--accent-foreground) / <alpha-value>);
-  --color-muted: rgb(var(--muted) / <alpha-value>);
-  --color-muted-foreground: rgb(var(--muted-foreground) / <alpha-value>);
+     Значения в colors.css — полные `rgb(R G B)` выражения. Alpha-
+     modifiers (bg-background/50) работают через color-mix() в Tailwind v4. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  --color-info: rgb(var(--info) / <alpha-value>);
-  --color-info-foreground: rgb(var(--info-foreground) / <alpha-value>);
-  --color-success: rgb(var(--success) / <alpha-value>);
-  --color-success-foreground: rgb(var(--success-foreground) / <alpha-value>);
-  --color-warning: rgb(var(--warning) / <alpha-value>);
-  --color-warning-foreground: rgb(var(--warning-foreground) / <alpha-value>);
-  --color-error: rgb(var(--error) / <alpha-value>);
-  --color-error-foreground: rgb(var(--error-foreground) / <alpha-value>);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
 
   /* Radius */
   --radius-sm: var(--radius-sm);

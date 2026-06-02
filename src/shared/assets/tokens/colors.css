@@ -1,74 +1,79 @@
 /**
- * Цветовые токены. Формат — RGB triplet (`R G B`), не hex —
- * чтобы Tailwind v4 мог использовать через `rgb(var(--x) / <alpha-value>)`.
+ * Цветовые токены. Значения — полные `rgb(R G B)` выражения (не triplet),
+ * чтобы Tailwind v4 мог использовать через простой `var()` без обёртки
+ * `rgb(... / <alpha-value>)` (этот синтаксис устарел в Tailwind v4).
  *
  * Light theme — :root. Dark theme — html.dark (стандарт shadcn/Tailwind).
  *
  * **Имена БЕЗ префикса `--color-`** — обернутые версии живут в @theme
  * (src/shared/assets/tailwind.css). Это разделение обязательно: если
  * имена в colors.css и @theme совпадают — Tailwind v4 создаёт circular
- * reference, и .dark переопределения не работают.
+ * reference.
  *
- * Tailwind @theme: `--color-background: rgb(var(--background) / <alpha-value>)`
- * → utility `bg-background` резолвит `--background` at-runtime → .dark
+ * Tailwind @theme: `--color-background: var(--background)` → utility
+ * `bg-background` резолвит `--background` at-runtime → .dark
  * переопределения подхватываются.
+ *
+ * Для alpha-modifiers (bg-background/50, text-foreground/70 и т.п.)
+ * Tailwind v4 использует `color-mix()` — работает с любым color-resolved
+ * значением.
  */
 
 :root {
   /* Поверхности */
-  --background: 255 255 255;
-  --foreground: 9 9 11;
-  --surface: 250 250 250;
-  --surface-foreground: 24 24 27;
-  --border: 228 228 231;
-  --input: 228 228 231;
-  --ring: 24 24 27;
+  --background: rgb(255 255 255);
+  --foreground: rgb(9 9 11);
+  --surface: rgb(250 250 250);
+  --surface-foreground: rgb(24 24 27);
+  --border: rgb(228 228 231);
+  --input: rgb(228 228 231);
+  --ring: rgb(24 24 27);
 
   /* Брендовые */
-  --primary: 24 24 27;
-  --primary-foreground: 250 250 250;
-  --secondary: 244 244 245;
-  --secondary-foreground: 24 24 27;
-  --accent: 244 244 245;
-  --accent-foreground: 24 24 27;
-  --muted: 244 244 245;
-  --muted-foreground: 113 113 122;
+  --primary: rgb(24 24 27);
+  --primary-foreground: rgb(250 250 250);
+  --secondary: rgb(244 244 245);
+  --secondary-foreground: rgb(24 24 27);
+  --accent: rgb(244 244 245);
+  --accent-foreground: rgb(24 24 27);
+  --muted: rgb(244 244 245);
+  --muted-foreground: rgb(113 113 122);
 
   /* Семантические */
-  --info: 14 165 233;
-  --info-foreground: 255 255 255;
-  --success: 34 197 94;
-  --success-foreground: 255 255 255;
-  --warning: 234 179 8;
-  --warning-foreground: 24 24 27;
-  --error: 239 68 68;
-  --error-foreground: 255 255 255;
+  --info: rgb(14 165 233);
+  --info-foreground: rgb(255 255 255);
+  --success: rgb(34 197 94);
+  --success-foreground: rgb(255 255 255);
+  --warning: rgb(234 179 8);
+  --warning-foreground: rgb(24 24 27);
+  --error: rgb(239 68 68);
+  --error-foreground: rgb(255 255 255);
 }
 
 .dark {
-  --background: 9 9 11;
-  --foreground: 250 250 250;
-  --surface: 24 24 27;
-  --surface-foreground: 250 250 250;
-  --border: 39 39 42;
-  --input: 39 39 42;
-  --ring: 212 212 216;
+  --background: rgb(9 9 11);
+  --foreground: rgb(250 250 250);
+  --surface: rgb(24 24 27);
+  --surface-foreground: rgb(250 250 250);
+  --border: rgb(39 39 42);
+  --input: rgb(39 39 42);
+  --ring: rgb(212 212 216);
 
-  --primary: 250 250 250;
-  --primary-foreground: 24 24 27;
-  --secondary: 39 39 42;
-  --secondary-foreground: 250 250 250;
-  --accent: 39 39 42;
-  --accent-foreground: 250 250 250;
-  --muted: 39 39 42;
-  --muted-foreground: 161 161 170;
+  --primary: rgb(250 250 250);
+  --primary-foreground: rgb(24 24 27);
+  --secondary: rgb(39 39 42);
+  --secondary-foreground: rgb(250 250 250);
+  --accent: rgb(39 39 42);
+  --accent-foreground: rgb(250 250 250);
+  --muted: rgb(39 39 42);
+  --muted-foreground: rgb(161 161 170);
 
-  --info: 56 189 248;
-  --info-foreground: 9 9 11;
-  --success: 74 222 128;
-  --success-foreground: 9 9 11;
-  --warning: 250 204 21;
-  --warning-foreground: 9 9 11;
-  --error: 248 113 113;
-  --error-foreground: 9 9 11;
+  --info: rgb(56 189 248);
+  --info-foreground: rgb(9 9 11);
+  --success: rgb(74 222 128);
+  --success-foreground: rgb(9 9 11);
+  --warning: rgb(250 204 21);
+  --warning-foreground: rgb(9 9 11);
+  --error: rgb(248 113 113);
+  --error-foreground: rgb(9 9 11);
 }
