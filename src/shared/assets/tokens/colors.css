@@ -1,69 +1,74 @@
 /**
  * Цветовые токены. Формат — RGB triplet (`R G B`), не hex —
- * чтобы Tailwind v4 мог использовать через `rgb(var(--color-x) / <alpha-value>)`.
+ * чтобы Tailwind v4 мог использовать через `rgb(var(--x) / <alpha-value>)`.
  *
- * Light theme — :root.
- * Dark theme — html.dark (стандарт shadcn/Tailwind).
+ * Light theme — :root. Dark theme — html.dark (стандарт shadcn/Tailwind).
  *
- * Имена синхронизированы с Vuetify-палитрой (primary, surface, error, ...)
- * для упрощения миграции. См. tokens.theme.ts.
+ * **Имена БЕЗ префикса `--color-`** — обернутые версии живут в @theme
+ * (src/shared/assets/tailwind.css). Это разделение обязательно: если
+ * имена в colors.css и @theme совпадают — Tailwind v4 создаёт circular
+ * reference, и .dark переопределения не работают.
+ *
+ * Tailwind @theme: `--color-background: rgb(var(--background) / <alpha-value>)`
+ * → utility `bg-background` резолвит `--background` at-runtime → .dark
+ * переопределения подхватываются.
  */
 
 :root {
   /* Поверхности */
-  --color-background: 255 255 255;
-  --color-foreground: 9 9 11;
-  --color-surface: 250 250 250;
-  --color-surface-foreground: 24 24 27;
-  --color-border: 228 228 231;
-  --color-input: 228 228 231;
-  --color-ring: 24 24 27;
+  --background: 255 255 255;
+  --foreground: 9 9 11;
+  --surface: 250 250 250;
+  --surface-foreground: 24 24 27;
+  --border: 228 228 231;
+  --input: 228 228 231;
+  --ring: 24 24 27;
 
   /* Брендовые */
-  --color-primary: 24 24 27;
-  --color-primary-foreground: 250 250 250;
-  --color-secondary: 244 244 245;
-  --color-secondary-foreground: 24 24 27;
-  --color-accent: 244 244 245;
-  --color-accent-foreground: 24 24 27;
-  --color-muted: 244 244 245;
-  --color-muted-foreground: 113 113 122;
+  --primary: 24 24 27;
+  --primary-foreground: 250 250 250;
+  --secondary: 244 244 245;
+  --secondary-foreground: 24 24 27;
+  --accent: 244 244 245;
+  --accent-foreground: 24 24 27;
+  --muted: 244 244 245;
+  --muted-foreground: 113 113 122;
 
   /* Семантические */
-  --color-info: 14 165 233;
-  --color-info-foreground: 255 255 255;
-  --color-success: 34 197 94;
-  --color-success-foreground: 255 255 255;
-  --color-warning: 234 179 8;
-  --color-warning-foreground: 24 24 27;
-  --color-error: 239 68 68;
-  --color-error-foreground: 255 255 255;
+  --info: 14 165 233;
+  --info-foreground: 255 255 255;
+  --success: 34 197 94;
+  --success-foreground: 255 255 255;
+  --warning: 234 179 8;
+  --warning-foreground: 24 24 27;
+  --error: 239 68 68;
+  --error-foreground: 255 255 255;
 }
 
 .dark {
-  --color-background: 9 9 11;
-  --color-foreground: 250 250 250;
-  --color-surface: 24 24 27;
-  --color-surface-foreground: 250 250 250;
-  --color-border: 39 39 42;
-  --color-input: 39 39 42;
-  --color-ring: 212 212 216;
+  --background: 9 9 11;
+  --foreground: 250 250 250;
+  --surface: 24 24 27;
+  --surface-foreground: 250 250 250;
+  --border: 39 39 42;
+  --input: 39 39 42;
+  --ring: 212 212 216;
 
-  --color-primary: 250 250 250;
-  --color-primary-foreground: 24 24 27;
-  --color-secondary: 39 39 42;
-  --color-secondary-foreground: 250 250 250;
-  --color-accent: 39 39 42;
-  --color-accent-foreground: 250 250 250;
-  --color-muted: 39 39 42;
-  --color-muted-foreground: 161 161 170;
+  --primary: 250 250 250;
+  --primary-foreground: 24 24 27;
+  --secondary: 39 39 42;
+  --secondary-foreground: 250 250 250;
+  --accent: 39 39 42;
+  --accent-foreground: 250 250 250;
+  --muted: 39 39 42;
+  --muted-foreground: 161 161 170;
 
-  --color-info: 56 189 248;
-  --color-info-foreground: 9 9 11;
-  --color-success: 74 222 128;
-  --color-success-foreground: 9 9 11;
-  --color-warning: 250 204 21;
-  --color-warning-foreground: 9 9 11;
-  --color-error: 248 113 113;
-  --color-error-foreground: 9 9 11;
+  --info: 56 189 248;
+  --info-foreground: 9 9 11;
+  --success: 74 222 128;
+  --success-foreground: 9 9 11;
+  --warning: 250 204 21;
+  --warning-foreground: 9 9 11;
+  --error: 248 113 113;
+  --error-foreground: 9 9 11;
 }

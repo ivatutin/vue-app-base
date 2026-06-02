@@ -10,39 +10,36 @@
 
 @import 'tailwindcss';
 
-@theme inline {
+@theme {
   /* Цвета — alpha-aware. Tailwind v4 ожидает функцию rgb()
      с переменной как RGB-triplet (R G B). См. tokens/colors.css.
-     `inline` ОБЯЗАТЕЛЕН — без него Tailwind разрешает CSS-vars на
-     этапе build и инлайнит light-значения в утилиты (bg-background
-     и т.п.), из-за чего .dark переключение CSS-vars в colors.css
-     не имеет эффекта на runtime. С `inline` — utility держит
-     `var(--color-background)`, резолвится at-use-time. */
-  --color-background: rgb(var(--color-background) / <alpha-value>);
-  --color-foreground: rgb(var(--color-foreground) / <alpha-value>);
-  --color-surface: rgb(var(--color-surface) / <alpha-value>);
-  --color-surface-foreground: rgb(var(--color-surface-foreground) / <alpha-value>);
-  --color-border: rgb(var(--color-border) / <alpha-value>);
-  --color-input: rgb(var(--color-input) / <alpha-value>);
-  --color-ring: rgb(var(--color-ring) / <alpha-value>);
+     Имена в colors.css БЕЗ префикса --color- (--background, --surface,
+     ...), чтобы избежать circular reference с @theme. */
+  --color-background: rgb(var(--background) / <alpha-value>);
+  --color-foreground: rgb(var(--foreground) / <alpha-value>);
+  --color-surface: rgb(var(--surface) / <alpha-value>);
+  --color-surface-foreground: rgb(var(--surface-foreground) / <alpha-value>);
+  --color-border: rgb(var(--border) / <alpha-value>);
+  --color-input: rgb(var(--input) / <alpha-value>);
+  --color-ring: rgb(var(--ring) / <alpha-value>);
 
-  --color-primary: rgb(var(--color-primary) / <alpha-value>);
-  --color-primary-foreground: rgb(var(--color-primary-foreground) / <alpha-value>);
-  --color-secondary: rgb(var(--color-secondary) / <alpha-value>);
-  --color-secondary-foreground: rgb(var(--color-secondary-foreground) / <alpha-value>);
-  --color-accent: rgb(var(--color-accent) / <alpha-value>);
-  --color-accent-foreground: rgb(var(--color-accent-foreground) / <alpha-value>);
-  --color-muted: rgb(var(--color-muted) / <alpha-value>);
-  --color-muted-foreground: rgb(var(--color-muted-foreground) / <alpha-value>);
+  --color-primary: rgb(var(--primary) / <alpha-value>);
+  --color-primary-foreground: rgb(var(--primary-foreground) / <alpha-value>);
+  --color-secondary: rgb(var(--secondary) / <alpha-value>);
+  --color-secondary-foreground: rgb(var(--secondary-foreground) / <alpha-value>);
+  --color-accent: rgb(var(--accent) / <alpha-value>);
+  --color-accent-foreground: rgb(var(--accent-foreground) / <alpha-value>);
+  --color-muted: rgb(var(--muted) / <alpha-value>);
+  --color-muted-foreground: rgb(var(--muted-foreground) / <alpha-value>);
 
-  --color-info: rgb(var(--color-info) / <alpha-value>);
-  --color-info-foreground: rgb(var(--color-info-foreground) / <alpha-value>);
-  --color-success: rgb(var(--color-success) / <alpha-value>);
-  --color-success-foreground: rgb(var(--color-success-foreground) / <alpha-value>);
-  --color-warning: rgb(var(--color-warning) / <alpha-value>);
-  --color-warning-foreground: rgb(var(--color-warning-foreground) / <alpha-value>);
-  --color-error: rgb(var(--color-error) / <alpha-value>);
-  --color-error-foreground: rgb(var(--color-error-foreground) / <alpha-value>);
+  --color-info: rgb(var(--info) / <alpha-value>);
+  --color-info-foreground: rgb(var(--info-foreground) / <alpha-value>);
+  --color-success: rgb(var(--success) / <alpha-value>);
+  --color-success-foreground: rgb(var(--success-foreground) / <alpha-value>);
+  --color-warning: rgb(var(--warning) / <alpha-value>);
+  --color-warning-foreground: rgb(var(--warning-foreground) / <alpha-value>);
+  --color-error: rgb(var(--error) / <alpha-value>);
+  --color-error-foreground: rgb(var(--error-foreground) / <alpha-value>);
 
   /* Radius */
   --radius-sm: var(--radius-sm);
@@ -58,6 +55,5 @@
 /*
  * Dark variant активируется через `.dark` класс на html (стандарт shadcn).
  * При смене темы — `document.documentElement.classList.toggle('dark')`.
- * Vuetify-тема переключается параллельно через свой механизм (useTheme).
  */
 @custom-variant dark (&:where(.dark, .dark *));
