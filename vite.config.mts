@@ -3,7 +3,6 @@ import Tailwind from '@tailwindcss/vite'
 import Vue from '@vitejs/plugin-vue'
 // Plugins
 import AutoImport from 'unplugin-auto-import/vite'
-import Fonts from 'unplugin-fonts/vite'
 import Components from 'unplugin-vue-components/vite'
 import { VueRouterAutoImports } from 'unplugin-vue-router'
 import VueRouter from 'unplugin-vue-router/vite'
@@ -76,17 +75,6 @@ export default defineConfig({
     }),
     Vue(),
     Tailwind(),
-    Fonts({
-      fontsource: {
-        families: [
-          {
-            name: 'Roboto',
-            weights: [100, 300, 400, 500, 700, 900],
-            styles: ['normal', 'italic'],
-          },
-        ],
-      },
-    }),
   ],
   optimizeDeps: {
     exclude: [
