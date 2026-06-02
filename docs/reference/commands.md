@@ -43,7 +43,7 @@ npm run build && npm run preview
 
 ### `npm run lint`
 
-`eslint . --fix`. Конфиг — [eslint.config.js](../../eslint.config.js), наследуется от `eslint-config-vuetify`.
+`eslint . --fix`. Конфиг — [eslint.config.js](../../eslint.config.js), наследуется от `eslint-config-vuetify` (fork стандартных Vue/TS-конвенций, не привязан к Vuetify runtime — после Фазы 2.9 Vuetify в проекте нет).
 
 Запускай **перед каждым PR**. Авто-фикс правит большую часть мелочей.
 

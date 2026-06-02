@@ -13,7 +13,7 @@ npm run dev          # Dev-сервер Vite на http://localhost:3000
 npm run build        # Параллельно: type-check (vue-tsc --build --force) + vite build (через npm-run-all2)
 npm run build-only   # Только сборка, без type-check
 npm run type-check   # Только vue-tsc
-npm run lint         # eslint . --fix (конфиг: eslint-config-vuetify)
+npm run lint         # eslint . --fix (наследуется от eslint-config-vuetify — fork Vue/TS-конвенций, не привязан к Vuetify runtime)
 npm run preview      # Предпросмотр production-сборки
 ```
 

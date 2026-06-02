@@ -81,20 +81,22 @@ shadcn-vue **намеренно** не покрывает enterprise-видже�
 
 Фазы 2.5-2.9 (см. также [ROADMAP.md](../../ROADMAP.md), Фаза 2 — пункты с поднятым приоритетом):
 
-#### Фаза 2.5 — Фундамент (1-2 недели, без касания UI-кода)
+#### Фаза 2.5 — Фундамент `done` (2026-05-26)
 
-- `Vitest + Vue Test Utils` — поднять из ROADMAP Фазы 2.
-- `Storybook 8` — поднять из ROADMAP Фазы 3.
-- `Design tokens` в `src/shared/assets/tokens/` (CSS-vars) — поднять из ROADMAP Фазы 3.
-- Vuetify-тема собирается из tokens (через `createVuetify({ theme: { themes: { light: { colors: { ... } }}}})` с `var(--token-*)`).
-- `Tailwind v4` setup параллельно Vuetify (через `@tailwindcss/vite`), конфиг читает те же CSS-vars.
-- ESLint-правило: `no-restricted-imports` запрещает `import 'vuetify'` и `<v-*>`-теги вне `src/shared/ui/base/`.
+Сделано (без касания UI-кода):
+
+- `Vitest + Vue Test Utils` — поднят из ROADMAP Фазы 2.
+- `Storybook 8` — поднят из ROADMAP Фазы 3.
+- `Design tokens` в `src/shared/assets/tokens/` (CSS-vars) — поднят из ROADMAP Фазы 3.
+- Vuetify-тема собиралась из tokens (через `createVuetify({ theme: { themes: { light: { colors: { ... } }}}})` с `var(--token-*)`). На момент Фазы 2.5 — actively used; снят в Фазе 2.9.
+- `Tailwind v4` setup параллельно Vuetify (через `@tailwindcss/vite`).
+- ESLint-правило: `no-restricted-imports` запрещал `import 'vuetify'` и `<v-*>`-теги вне `src/shared/ui/base/`. Снят в Фазе 2.9.
 
 **Результат:** инфраструктура готова, ничего визуально не изменилось.
 
-#### Фаза 2.6 — Слой обёрток поверх Vuetify (2-3 недели)
+#### Фаза 2.6 — Слой обёрток поверх Vuetify `done` (2026-05-28)
 
-Создать `src/shared/ui/base/<Component>/` для каждого используемого Vuetify-компонента. **Без замены реализации**, только доменный API.
+Создан `src/shared/ui/base/<Component>/` для каждого используемого Vuetify-компонента. **Без замены реализации**, только доменный API.
 
 **Чек-лист обёртки:**
 - Props на проектном языке (`<Button variant="primary" loading size="md">`, не `color="primary" :loading`).
