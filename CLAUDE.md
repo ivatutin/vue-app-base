@@ -39,9 +39,9 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 [src/app/main.ts](src/app/main.ts) намеренно монтирует приложение **до** запуска асинхронного bootstrap, чтобы splash-экран отрисовался сразу:
 
-1. `createApp(App)` → `setupProviders(app)` регистрирует Pinia, Vuetify, Router.
+1. `createApp(App)` → `setupProviders(app)` регистрирует Pinia, HTTP-клиент, error-handler, ThemeProvider, Router.
 2. `app.mount('#app')` — на этом этапе [App.vue](src/app/App.vue) показывает `<AppPreloader/>`, потому что стор `bootstrap` всё ещё в состоянии `idle`.
-3. `runBootstrapProcess({ router })` ([processes/app-bootstrap/bootstrap.process.ts](src/processes/app-bootstrap/bootstrap.process.ts)) переключает FSM bootstrap `idle → initializing → ready | failed`, ждёт `router.isReady()`, и только после этого рендерится `<v-app>` с `<router-view/>`.
+3. `runBootstrapProcess({ router })` ([processes/app-bootstrap/bootstrap.process.ts](src/processes/app-bootstrap/bootstrap.process.ts)) переключает FSM bootstrap `idle → initializing → ready | failed`, ждёт `router.isReady()`, и только после этого рендерится `<router-view/>` (через [layouts/default.vue](src/app/layouts/default.vue) или [auth.vue](src/app/layouts/auth.vue)).
 
 Стор bootstrap — это **конечный автомат** ([entities/bootstrap/bootstrap.store.ts](src/entities/bootstrap/bootstrap.store.ts) со status + error + actions `start/finish/fail/reset`. Держи `entities/bootstrap` (состояние) и `processes/app-bootstrap` (оркестрация) раздельно.
 
@@ -72,8 +72,7 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 - **Auto-imports** ([vite.config.mts](vite.config.mts), плагин `AutoImport`): Vue Composition API, хелперы vue-router и `defineStore`/`storeToRefs` доступны глобально. Сгенерированные `src/auto-imports.d.ts` и `.eslintrc-auto-import.json` закоммичены — пересобираются при `dev`/`build`, руками не редактируй.
 - **Авто-регистрация компонентов** сканирует `src/shared/components/**` (объявлено в `Components({ dirs })`). Компоненты в других местах — включая `src/widgets/**` и `src/shared/ui/**` — нужно импортировать явно через barrel `index.ts` слайса.
-- **UI-стек** ([ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md)). Все обёртки в [src/shared/ui/base/](src/shared/ui/base/) (Button, Card, TextField, Alert, Menu, Snackbar, List/ListItem, Divider, Spacer, Form, Icon) — на **shadcn-vue + reka-ui + Tailwind v4 + design tokens** ([src/shared/assets/tokens/](src/shared/assets/tokens/)). Иконки — `@lucide/vue` + словарь `MDI_TO_LUCIDE` внутри [Icon.vue](src/shared/ui/base/icon/Icon.vue) (потребители принимают `mdi-*` имена для совместимости). Вуetify ещё в shell: `<v-app>` в [App.vue](src/app/App.vue), `<v-main>`/`<v-app-bar>`/`<v-navigation-drawer>`/`<v-footer>` в layouts + widgets, `useTheme()` в [setup-vuetify.ts](src/app/providers/setup-vuetify.ts) — переезд в Фазу 2.8. ESLint-правило `no-restricted-imports` + `vue/no-restricted-syntax` запрещает прямые `<v-*>` и `import 'vuetify'` вне whitelist в [eslint.config.js](eslint.config.js).
-- Vuetify импортируется с `autoImport: true`, стили подхватываются из [src/assets/styles/settings.scss](src/assets/styles/settings.scss).
+- **UI-стек** ([ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md), Фазы 2.5-2.9 закрыты). Полностью на **shadcn-vue + reka-ui + Tailwind v4 + design tokens** ([src/shared/assets/tokens/](src/shared/assets/tokens/)). 11 обёрток в [src/shared/ui/base/](src/shared/ui/base/) (Button, Card, TextField, Alert, Menu, Snackbar, List/ListItem, Divider, Spacer, Form, Icon). Shell ([app/App.vue](src/app/App.vue), [app/layouts/](src/app/layouts/), `widgets/app-{header,sidebar,footer}`) — на нативном HTML + Tailwind grid/flex. Иконки — `@lucide/vue` + словарь `MDI_TO_LUCIDE` внутри [Icon.vue](src/shared/ui/base/icon/Icon.vue) (потребители принимают `mdi-*` имена для совместимости). Тема — composable `useTheme()` из [shared/lib/theme/](src/shared/lib/theme/) (mode `light/dark/system` + persist в localStorage + sync `.dark` класса на html). Anti-FOUC inline-script в [index.html](index.html). Vuetify полностью удалён из проекта.
 - Brand-типы Zod (например, `Phone` в [shared/model/phone/phone.schema.ts](src/shared/model/phone/phone.schema.ts)) маркированы `.brand<'Phone'>()` — принимай brand-тип в API, которым нужно уже провалидированное значение.
 
 ### Окружение

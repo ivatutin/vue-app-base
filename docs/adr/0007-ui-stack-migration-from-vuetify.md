@@ -131,25 +131,31 @@ shadcn-vue **намеренно** не покрывает enterprise-видже�
 
 **Результат:** все `shared/ui/base/*` работают на shadcn-vue + reka-ui + Tailwind. Vuetify остаётся в зависимостях для shell (App.vue, layouts, header/sidebar/footer) — переезд в Фазе 2.8.
 
-#### Фаза 2.8 — Сложные компоненты и долги (1-2 недели)
+#### Фаза 2.8 — Свой shell + ThemeProvider `done` (2026-06-02)
 
-- `DataTable` на TanStack Table (когда появится первая list-страница).
-- `DatePicker`/`TimePicker` — headless или из shadcn-vue.
-- `Dialog`/`Drawer` — по необходимости.
-- `VeeValidate` + `Zod-resolver` — замена ручной валидации в `LoginPage`.
-- `AppShell` — переписать `default.vue`/`auth.vue` без `<v-app>`/`<v-main>` (Tailwind grid/flex + CSS vars).
-- `ThemeProvider` — заменить `useTheme()` из Vuetify на свой (CSS-vars + `prefers-color-scheme` + localStorage).
+Цепочка коммитов `2893ff0…2880678`. Сделано:
 
-#### Фаза 2.9 — Удаление Vuetify (1 неделя)
+- **ThemeProvider** — composable `useTheme()` в [src/shared/lib/theme/](../../src/shared/lib/theme/) (singleton state на module level + effectScope для watcher'ов вне Vue setup): mode `'light'|'dark'|'system'`, listener на `prefers-color-scheme`, persist в localStorage (ключ `__app-theme`), sync `.dark` класса на html. 7 unit-тестов в happy-dom. Inline-script anti-FOUC в [index.html](../../index.html) ставит класс до загрузки JS.
+- **AppHeader** — `<v-app-bar>` → `<header>` + Tailwind flex; `useTheme()` from 'vuetify' → from `@/shared/lib/theme`.
+- **AppSidebar** — `<v-navigation-drawer rail>` → `<aside>` + Tailwind transition `w-14`↔`w-56`.
+- **AppFooter** — `<v-footer>` → `<footer>` + Tailwind flex.
+- **Layouts** — `default.vue` переписан на Tailwind grid `rows-[auto_1fr_auto] × cols-[auto_1fr]`; `auth.vue` — flex center + max-w-md. Оба без `<v-app>`/`<v-main>`/`<v-container>`.
+- **App.vue** — убран `<v-app>` wrapper.
+- **CodeViewer** — мигрирован с `<v-card>+<v-btn>+<v-card-text>` на наши обёртки.
+- **Menu** — откатили `z-[3000]` обратно к `z-50` (Vuetify overlay-container больше нет).
+- **`vite-plugin-vuetify`** удалён из vite.config.mts.
 
-- `grep -r "import.*vuetify"` → только `package.json` (до удаления).
-- Удалить `vuetify`, `vite-plugin-vuetify`, `@mdi/font`.
-- Удалить `src/app/providers/setup-vuetify.ts` + вызов в `setupProviders`.
-- Удалить `src/assets/styles/settings.scss`.
-- Обновить документацию (architecture.md, CLAUDE.md, README.md).
-- Bundle-аудит, Lighthouse — финальная сверка с метриками успеха.
+Подводные камни (зафиксированы в hotfix-коммитах):
+- `watch(...)` вне Vue setup нужен `effectScope(true).run(...)` (df7d6c3).
+- TS-аннотации в template inline-handlers Vue silently игнорирует (3023e7c).
+- `<v-app>` overlay z-index 2400 перекрывал PopoverContent z-50 — пришлось z-[3000] временно (b1fe76c).
+- Tailwind v4 + `<alpha-value>` обёртка в @theme не реагирует на `.dark` переопределения. Решение: в `colors.css` хранить полные `rgb()` без префикса `--color-`, в `@theme` ссылаться через `var(--background)` (2880678) — стандартный shadcn-vue v4 pattern.
 
-**Точка невозврата.** Откат — дорогой.
+#### Фаза 2.9 — Удаление Vuetify `done` (2026-06-02)
+
+Коммит `5253c63`. `npm uninstall vuetify @mdi/font @fontsource/roboto vite-plugin-vuetify sass-embedded unplugin-fonts` (6 пакетов). Удалены файлы: `src/app/providers/setup-vuetify.ts`, `vuetify-theme.ts`, `src/assets/styles/settings.scss`, `src/assets/logo.{png,svg}`. ESLint правила `no-restricted-imports`/`vue/no-restricted-syntax` для vuetify удалены вместе с whitelist'ом. `npm ls vuetify` — пусто.
+
+**Точка невозврата пройдена.**
 
 ### Метрики успеха
 

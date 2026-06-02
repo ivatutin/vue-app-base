@@ -53,7 +53,7 @@ npm run build && npm run preview
 
 Однократный прогон Vitest (`vitest run`). Используется в CI и перед PR.
 
-Тесты ищутся по паттерну `src/**/*.{test,spec}.{ts,js}`. Конфиг — [vitest.config.ts](../../vitest.config.ts) (отдельный от vite.config.mts, лёгкий: без Vue/Vuetify-плагинов, но с AutoImport, потому что production-код опирается на глобальные `defineStore`/`ref`/`computed`).
+Тесты ищутся по паттерну `src/**/*.{test,spec}.{ts,js}`. Конфиг — [vitest.config.ts](../../vitest.config.ts) (отдельный от vite.config.mts, лёгкий: без Vue-плагина, но с AutoImport, потому что production-код опирается на глобальные `defineStore`/`ref`/`computed`).
 
 Окружение — `happy-dom` (лёгкая альтернатива jsdom для unit-тестов).
 

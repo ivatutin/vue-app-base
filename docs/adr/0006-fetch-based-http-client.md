@@ -83,7 +83,7 @@ const client = new HttpClient({
 setHttpClient(client)
 ```
 
-Порядок в `setupProviders`: pinia → **http-client** → vuetify → router. HTTP-клиент собирается после pinia (нужен `useAuthStore()`), до router (чтобы guard и bootstrap могли его использовать).
+Порядок в `setupProviders`: pinia → **http-client** → error-handler → theme → router. HTTP-клиент собирается после pinia (нужен `useAuthStore()`), до router (чтобы guard и bootstrap могли его использовать).
 
 **4. Single-flight refresh через `refreshPromise`-поле.**
 

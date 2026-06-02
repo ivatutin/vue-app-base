@@ -23,8 +23,8 @@ sequenceDiagram
     Browser->>main: загрузка bundle
     main->>main: createApp(App)
     main->>Providers: setupProviders(app)
-    Providers->>Providers: pinia + httpClient + errorHandler<br/>+ vuetify + router
-    Providers-->>main: { pinia, httpClient, vuetify, router }
+    Providers->>Providers: pinia + httpClient + errorHandler<br/>+ theme + router
+    Providers-->>main: { pinia, httpClient, router }
 
     main->>App: app.mount('#app')
     App->>Bootstrap: useBootstrapStore()
@@ -52,8 +52,8 @@ sequenceDiagram
     alt success
         Process->>Bootstrap: finish()
         Note over Bootstrap: status = 'ready'<br/>isReady = true
-        App->>App: v-if переключается на <v-app>
-        App-->>Browser: <router-view/> рендерится
+        App->>App: v-if переключается на <router-view/>
+        App-->>Browser: layout (default или auth) рендерится
     else error
         Process->>Bootstrap: fail(error)
         Note over Bootstrap: status = 'failed'<br/>hasError = true
@@ -82,7 +82,7 @@ stateDiagram-v2
 
 1. **Init auth** — `auth.init()`: sync-чтение токенов из `tokenStorage` в state стора. **Реализовано.**
 2. **Fetch current user** — `user.fetchCurrentUser()` если `auth.isSessionActive`, обёрнут в `retryOn404` (`@/shared/lib/async`) для гонки с `UserSignedInEvent` бэка. **Реализовано.**
-3. **`router.isReady()`** — последний шаг, после него `App.vue` переключается в `<v-app>`. **Реализовано.**
+3. **`router.isReady()`** — последний шаг, после него `App.vue` рендерит `<router-view/>` через layout. **Реализовано.**
 
 Уже встроено в инфраструктуру (вне bootstrap):
 

@@ -9,8 +9,8 @@
 | Слой | Технология | Документация |
 |------|-----------|--------------|
 | Каркас | Vue 3.5 (Composition API, `<script setup>`) | [vuejs.org](https://vuejs.org) |
-| UI (обёртки `shared/ui/base/`) | shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens | [shadcn-vue.com](https://www.shadcn-vue.com/) / [ADR-0007](adr/0007-ui-stack-migration-from-vuetify.md) |
-| UI (shell) | Vuetify 3.10 + MDI + Roboto — пока в `app/layouts/*` и `widgets/app-{header,sidebar,footer}` (переезд в Фазе 2.8) | [vuetifyjs.com](https://vuetifyjs.com) |
+| UI | shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens (всё приложение, включая shell) | [shadcn-vue.com](https://www.shadcn-vue.com/) / [ADR-0007](adr/0007-ui-stack-migration-from-vuetify.md) |
+| Тема | Собственный composable `useTheme()` в [shared/lib/theme/](../src/shared/lib/theme/) (mode + localStorage + `prefers-color-scheme` + `.dark` class) | — |
 | State | Pinia 3 (setup-stores) | [pinia.vuejs.org](https://pinia.vuejs.org) |
 | Routing | vue-router 4 + `unplugin-vue-router` | [router.vuejs.org](https://router.vuejs.org) |
 | Layouts | `vite-plugin-vue-layouts-next` | |
@@ -54,7 +54,7 @@ shared/     ←  переиспользуемая инфраструктура (
 | `widgets/` | Готовые блоки лэйаута: AppHeader, AppSidebar, AppNotifications | Доменная логика |
 | `pages/` | Страницы маршрутов | Реиспользуемая логика (выносится в features/widgets) |
 | `processes/` | Cross-entity сценарии: app-bootstrap (FSM-инициализация), auth-flow (loginFlow, logoutFlow) | Простая логика, помещающаяся в один стор |
-| `app/` | Точка входа, провайдеры (Pinia, Vuetify, Router), layouts, `App.vue` | Бизнес-код |
+| `app/` | Точка входа, провайдеры (Pinia, HTTP-клиент, error-handler, ThemeProvider, Router), layouts, `App.vue` | Бизнес-код |
 
 ### Запрещённые направления импортов
 
@@ -125,7 +125,7 @@ async function bootstrapApplication() {
 }
 ```
 
-В этот момент [src/app/App.vue](../src/app/App.vue) показывает `<AppPreloader/>`, потому что `useBootstrapStore().isReady === false`. Когда `runBootstrapProcess` ставит статус `ready`, рендерится `<v-app>` с `<router-view/>`.
+В этот момент [src/app/App.vue](../src/app/App.vue) показывает `<AppPreloader/>`, потому что `useBootstrapStore().isReady === false`. Когда `runBootstrapProcess` ставит статус `ready`, рендерится `<router-view/>` (через layout — default.vue или auth.vue).
 
 Состояние bootstrap — конечный автомат:
 
@@ -345,7 +345,7 @@ export async function getX(): Promise<X> {
 - **HttpError** — типизированный класс ошибки со `status`, `statusText`, `errorName`, `message`, `details` (формат бэка `njs-server`, см. [integration-backend.md](integration-backend.md) § Формат ошибок).
 - **Public endpoints** — передавать `{ auth: false }` (sign-in, refresh не нуждаются в access-token).
 
-Инстанс собирается в [src/app/providers/setup-http-client.ts](../src/app/providers/setup-http-client.ts), который связывает клиент с `useAuthStore()` (`getAccessToken` и `onUnauthorized → auth.refresh()`). Порядок провайдеров: pinia → http-client → error-handler → vuetify → router.
+Инстанс собирается в [src/app/providers/setup-http-client.ts](../src/app/providers/setup-http-client.ts), который связывает клиент с `useAuthStore()` (`getAccessToken` и `onUnauthorized → auth.refresh()`). Порядок провайдеров: pinia → http-client → error-handler → theme → router.
 
 ---
 
@@ -379,10 +379,12 @@ Notification-store — [src/entities/notification](../src/entities/notification/
 
 ```
 providers/
-├── index.ts              ← агрегатор: setupProviders(app)
-├── setup-pinia.ts        ← createPinia + app.use
-├── setup-router.ts       ← createRouter + guards
-└── setup-vuetify.ts      ← createVuetify
+├── index.ts                  ← агрегатор: setupProviders(app)
+├── setup-pinia.ts            ← createPinia + app.use
+├── setup-http-client.ts      ← HttpClient + DI auth-interceptor
+├── setup-error-handler.ts    ← app.config.errorHandler + unhandledrejection
+├── setup-theme.ts            ← initThemeProvider (composable useTheme)
+└── setup-router.ts           ← createRouter + guards
 ```
 
 Добавляешь новую инфраструктуру (i18n, sentry, error-handler) — создаёшь `setup-<name>.ts` и подключаешь в `index.ts`. Это **composition root**: все зависимости собираются ровно здесь.

@@ -51,7 +51,7 @@
   ```ts
   import { plural, sleep, formatBytes } from '@/shared/lib/utils'
   ```
-- **Vuetify-компоненты** — авто-регистрируются плагином `Vuetify` (см. [vite.config.mts:81-86](../../vite.config.mts#L81-L86)) и доступны как `<v-btn>`, `<v-card>` и т.д. в шаблонах. В `<script>` явный импорт **не нужен**.
+- **Обёртки `shared/ui/base/*`** — явный импорт через barrel: `import { Button, Card, TextField } from '@/shared/ui/base'`.
 
 ## Авто-сканирование компонентов
 

@@ -104,8 +104,16 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Что:** VeeValidate + Zod-resolver (рекомендую) либо собственный `useForm`.
 **Триггер:** второй CRUD-экран.
 
-### [P2] Vuetify-обёртка в `shared/ui/base/` `done`
-Фаза 2.6 (поверх Vuetify) + Фаза 2.7 (замена реализации на shadcn-vue) закрыты по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md). 11 доменных обёрток (Spacer, Divider, Icon, Button, Alert, TextField, Card, Form, List, ListItem, Menu, Snackbar) реализованы на **reka-ui + shadcn-vue + Tailwind v4 + design tokens**. Иконки через `@lucide/vue` + словарь `MDI_TO_LUCIDE` (для совместимости с потребителями на `mdi-*` именах). `<v-app>` / `<v-app-bar>` / `<v-navigation-drawer>` / `<v-footer>` / `useTheme()` остаются в shell (`app/layouts/*`, `widgets/app-{header,sidebar,footer}/*`) — переезд в Фазу 2.8 (свой AppShell + ThemeProvider). После 2.8 → Фаза 2.9 удаления Vuetify-пакета.
+### [P2] Миграция с Vuetify на shadcn-vue `done` (2026-06-02)
+Полный цикл Фаз 2.5-2.9 закрыт по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md).
+
+- **2.5 Фундамент:** design tokens, Tailwind v4, Storybook 8, Vitest, ESLint-правило `no-direct-vuetify`.
+- **2.6 Слой обёрток:** 11 доменных обёрток в `shared/ui/base/` поверх Vuetify, миграция потребителей.
+- **2.7 Замена реализации:** обёртки переведены на shadcn-vue + reka-ui + Tailwind v4 + design tokens + `@lucide/vue` (словарь `MDI_TO_LUCIDE` для совместимости).
+- **2.8 Свой shell:** ThemeProvider (composable `useTheme()` + `.dark` class + localStorage), AppShell без `<v-app>`/`<v-main>`/`<v-app-bar>`/`<v-navigation-drawer>`/`<v-footer>` (Tailwind grid).
+- **2.9 Удаление Vuetify:** npm uninstall `vuetify @mdi/font @fontsource/roboto vite-plugin-vuetify sass-embedded unplugin-fonts`. Файлы провайдеров и assets/styles удалены. `npm ls vuetify` — пусто.
+
+Bundle gzipped: index 61.89 КБ + default 19.82 КБ (с ~84 КБ index до миграции).
 
 ### [P2] `processes/` для cross-entity сценариев `partial done`
 Создан `processes/auth-flow` с `loginFlow(email, password)` (auth.login → retryOn404 user.fetchCurrentUser + compensating rollback) и `logoutFlow()` (гарантированная очистка auth + user через try/finally). Потребители: LoginPage, LogoutPage и `setup-http-client.ts` `onUnauthorized` (последний раньше зовёл `auth.logout()`, оставляя осиротевший user-state — это был скрытый баг). Покрыто 4 unit-тестами через `vi.spyOn` на сторы. Session-refresh-flow отдельным процессом не нужен — refresh-mutex уже внутри HttpClient ([ADR-0006](docs/adr/0006-fetch-based-http-client.md)).

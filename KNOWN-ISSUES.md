@@ -1,6 +1,6 @@
 # Known Issues
 
-Реестр известных багов и тех-долга. Дата ревью: **2026-05-29**.
+Реестр известных багов и тех-долга. Дата ревью: **2026-06-02**.
 
 Уровни:
 - **P0** — ломает функциональность, фиксить срочно.
@@ -9,7 +9,7 @@
 
 Каждый пункт ссылается на конкретное место в коде. План устранения — в [ROADMAP.md](ROADMAP.md).
 
-> **Статус:** Фазы 0-2.7 закрыты — все P0/P1 устранены, инфраструктура (HTTP-клиент, env Zod, error-handler, notification, RBAC, Husky/lint-staged/commitlint, Vitest, Storybook) подключена, миграция UI на shadcn-vue завершена (ADR-0007). `npm run type-check` + `npm test` + `npm run build` — green.
+> **Статус:** Фазы 0-2.9 закрыты — все P0/P1 устранены, инфраструктура (HTTP-клиент, env Zod, error-handler, notification, RBAC, Husky/lint-staged/commitlint, Vitest, Storybook) подключена, миграция UI на shadcn-vue полностью завершена (ADR-0007), Vuetify удалён из проекта. `npm run type-check` + `npm test` + `npm run build` — green.
 
 ---
 
@@ -44,8 +44,8 @@
 - Нет Playwright / E2E-тестов (Vitest для unit подключён — Фаза 2.5) — Фаза 3.
 - Нет ESLint-boundaries для FSD-правил — Фаза 2 (proposed).
 - Нет CI (GitHub Actions) — Фаза 3 (proposed).
-- Нет своего AppShell + ThemeProvider — Фаза 2.8 (в работе по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md)).
 - Нет Sentry / observability — Фаза 3.
+- Нет полноценного Form architecture (VeeValidate + Zod-resolver) — Фаза 2 (по триггеру: первая CRUD-форма с серьёзной валидацией).
 
 ---
 
