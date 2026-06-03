@@ -7,9 +7,35 @@ export type SidebarItem = {
   icon?: string
 }
 
-export const sidebarItems: SidebarItem[] = [
-  { label: 'Users', to: '/users', permission: 'user.read', icon: 'mdi-account' },
-  { label: 'Roles', to: '/roles', permission: 'role.manage', icon: 'mdi-shield' },
-  { label: 'UiKit', to: '/ui-kit', icon: 'mdi-pencil-ruler' },
-  { label: 'Dashboard', to: '/dashboard', icon: 'mdi-view-dashboard-outline' },
+export type SidebarSection = {
+  /** Заголовок секции. Скрывается в rail-режиме (остаётся визуальный разделитель). */
+  title?: string
+  items: SidebarItem[]
+}
+
+/**
+ * Навигация сайдбара, сгруппированная в секции. Группировка снижает
+ * когнитивную нагрузку при росте числа пунктов (паттерн Linear/Notion).
+ * Фильтрация по permissions — на уровне AppSidebar (can()).
+ */
+export const sidebarSections: SidebarSection[] = [
+  {
+    title: 'Обзор',
+    items: [
+      { label: 'Dashboard', to: '/dashboard', icon: 'mdi-view-dashboard-outline' },
+    ],
+  },
+  {
+    title: 'Управление',
+    items: [
+      { label: 'Пользователи', to: '/users', permission: 'user.read', icon: 'mdi-account' },
+      { label: 'Роли', to: '/roles', permission: 'role.manage', icon: 'mdi-shield' },
+    ],
+  },
+  {
+    title: 'Разработка',
+    items: [
+      { label: 'UI Kit', to: '/ui-kit', icon: 'mdi-pencil-ruler' },
+    ],
+  },
 ]

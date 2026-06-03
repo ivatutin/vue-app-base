@@ -26,6 +26,7 @@ declare module 'vue-router/auto-routes' {
     'not-found': RouteRecordInfo<'not-found', '/system/not-found', Record<never, never>, Record<never, never>>,
     '/ui-kit/': RouteRecordInfo<'/ui-kit/', '/ui-kit', Record<never, never>, Record<never, never>>,
     '/ui-kit/buttons': RouteRecordInfo<'/ui-kit/buttons', '/ui-kit/buttons', Record<never, never>, Record<never, never>>,
+    '/ui-kit/card': RouteRecordInfo<'/ui-kit/card', '/ui-kit/card', Record<never, never>, Record<never, never>>,
     '/ui-kit/typography': RouteRecordInfo<'/ui-kit/typography', '/ui-kit/typography', Record<never, never>, Record<never, never>>,
   }
 
@@ -70,6 +71,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/ui-kit/buttons.vue': {
       routes: '/ui-kit/buttons'
+      views: never
+    }
+    'src/pages/ui-kit/card.vue': {
+      routes: '/ui-kit/card'
       views: never
     }
     'src/pages/ui-kit/typography.vue': {

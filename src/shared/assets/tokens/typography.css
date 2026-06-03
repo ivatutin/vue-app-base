@@ -1,12 +1,20 @@
 /**
- * Typography tokens. Roboto подключается через unplugin-fonts (см. vite.config.mts).
- * При смене шрифта — править здесь, потребители (Vuetify-тема + Tailwind) автоматически
- * подхватят через CSS-vars.
+ * Typography tokens. Inter Variable подключается через self-hosted
+ * `@fontsource-variable/inter` (import в src/app/main.ts) — без внешних
+ * запросов и без FOUC. При смене шрифта — править здесь, Tailwind подхватит
+ * через CSS-var (--font-sans → @theme --color/--font-sans в tailwind.css).
  */
 
 :root {
-  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Letter-spacing. Заголовки на крупных кеглях смотрятся «дороже» с лёгким
+     отрицательным трекингом (Linear/Vercel/Stripe-паттерн). */
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
 
   --font-size-xs: 0.75rem;       /* 12px */
   --font-size-sm: 0.875rem;      /* 14px */

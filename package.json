@@ -20,6 +20,7 @@
     "*.{ts,vue,js,mjs,cjs}": "eslint --fix"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@lucide/vue": "^1.17.0",
     "@tanstack/vue-query": "^5.100.14",
     "@vueuse/core": "^14.3.0",

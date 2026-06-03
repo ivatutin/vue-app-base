@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import { AppCommandPalette } from '@/widgets/app-command-palette'
   import { AppFooter } from '@/widgets/app-footer'
   import { AppHeader } from '@/widgets/app-header'
   import { AppNotifications } from '@/widgets/app-notifications'
@@ -7,7 +8,7 @@
 
 <template>
   <div class="grid grid-rows-[auto_1fr_auto] grid-cols-[auto_1fr] h-dvh bg-background text-foreground overflow-hidden">
-    <AppHeader class="col-span-2" :title="$route.meta?.title" />
+    <AppHeader class="col-span-2" />
     <AppSidebar />
     <main class="overflow-auto p-4">
       <router-view />
@@ -15,4 +16,5 @@
     <AppFooter class="col-span-2" />
   </div>
   <AppNotifications />
+  <AppCommandPalette />
 </template>

@@ -28,6 +28,9 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -55,6 +58,36 @@
   /* Typography */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  /* Letter-spacing utilities (tracking-tight / -tighter / -wide). */
+  --tracking-tighter: var(--tracking-tighter);
+  --tracking-tight: var(--tracking-tight);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: var(--tracking-wide);
+}
+
+/*
+ * Base layer — глобальная типографическая полировка. Inter лучше читается
+ * со сглаживанием и табличными OpenType-фичами; заголовкам даём лёгкий
+ * отрицательный трекинг (Linear/Vercel-эстетика). Brand используется для
+ * выделения текста (selection).
+ */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  h1, h2, h3 {
+    letter-spacing: var(--tracking-tight);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--brand) 22%, transparent);
+  }
 }
 
 /*
