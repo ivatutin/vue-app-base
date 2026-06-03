@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@lucide/vue": "^1.17.0",
+    "@tanstack/vue-query": "^5.100.14",
     "@vueuse/core": "^14.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -41,6 +42,7 @@
     "@storybook/addon-vitest": "^10.4.1",
     "@storybook/vue3-vite": "^10.4.1",
     "@tailwindcss/vite": "^4.3.0",
+    "@tanstack/vue-query-devtools": "^6.1.33",
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.9.0",
     "@vitejs/plugin-vue": "^6.0.1",
