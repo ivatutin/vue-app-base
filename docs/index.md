@@ -23,6 +23,7 @@
 - [adr/0006-fetch-based-http-client.md](adr/0006-fetch-based-http-client.md) — HTTP-клиент: fetch + DI auth-interceptor + refresh-mutex
 - [adr/0007-ui-stack-migration-from-vuetify.md](adr/0007-ui-stack-migration-from-vuetify.md) — целевой UI-стек (shadcn-vue + Tailwind + Radix; PrimeVue / AG Grid / TipTap / FullCalendar опционально для сложных компонентов) и стратегия миграции с Vuetify через strangler fig
 - [adr/0008-tanstack-query-for-server-state.md](adr/0008-tanstack-query-for-server-state.md) — TanStack Query как primary для серверного state параллельно Pinia (клиентский state). Разделение ответственности, queryKey-конвенции, bridge для RBAC.
+- [adr/0009-design-language-inter-brand-accent.md](adr/0009-design-language-inter-brand-accent.md) — дизайн-язык: Inter Variable + нейтральная база с индиго-акцентом `--brand`, primitives состояний и командная палитра
 
 ## Сделать конкретную задачу (How-to)
 

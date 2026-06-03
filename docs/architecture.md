@@ -10,6 +10,7 @@
 |------|-----------|--------------|
 | Каркас | Vue 3.5 (Composition API, `<script setup>`) | [vuejs.org](https://vuejs.org) |
 | UI | shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens (всё приложение, включая shell) | [shadcn-vue.com](https://www.shadcn-vue.com/) / [ADR-0007](adr/0007-ui-stack-migration-from-vuetify.md) |
+| Дизайн-язык | Inter Variable (self-hosted) + нейтральная база с индиго-акцентом `--brand` | [ADR-0009](adr/0009-design-language-inter-brand-accent.md) |
 | Тема | Собственный composable `useTheme()` в [shared/lib/theme/](../src/shared/lib/theme/) (mode + localStorage + `prefers-color-scheme` + `.dark` class) | — |
 | State | Pinia 3 (setup-stores) | [pinia.vuejs.org](https://pinia.vuejs.org) |
 | Routing | vue-router 4 + `unplugin-vue-router` | [router.vuejs.org](https://router.vuejs.org) |
@@ -19,6 +20,8 @@
 | DX | `unplugin-auto-import`, `unplugin-vue-components`, `@vueuse/core` | |
 
 Псевдоним `@/` → `src/` ([tsconfig.app.json:11](../tsconfig.app.json#L11), [vite.config.mts:108-111](../vite.config.mts#L108-L111)).
+
+Помимо базовых обёрток, в [shared/ui/base/](../src/shared/ui/base/) живут примитивы состояний `Skeleton` / `EmptyState` / `PageHeader` (единый паттерн loading/empty/заголовок страницы) и generic `CommandPalette` (cmdk на reka-ui Dialog + Listbox). Командная палитра ⌘K собирается в [widgets/app-command-palette](../src/widgets/app-command-palette/) (реестр навигации + действий с RBAC-фильтром), состояние открытия — singleton `useCommandPalette` в [shared/lib/command-palette/](../src/shared/lib/command-palette/).
 
 ### Главные принципы
 
@@ -297,8 +300,15 @@ export type Phone = z.infer<typeof phoneSchema>
 UI-фильтрация — пример в [src/widgets/app-sidebar/ui/AppSidebar.vue](../src/widgets/app-sidebar/ui/AppSidebar.vue):
 
 ```ts
-const visibleItems = computed(() =>
-  sidebarItems.filter((item) => !item.permission || can(item.permission)),
+// Навигация сгруппирована в секции; фильтруем пункты по permissions,
+// затем выбрасываем пустые секции.
+const visibleSections = computed(() =>
+  sidebarSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.permission || can(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0),
 )
 ```
 
@@ -359,7 +369,7 @@ export async function getX(): Promise<X> {
 
 Все три события идут в `report(err, source)` → `console.error` + `useNotificationStore().notifyError(humanize(err))`. `humanize` для `HttpError` берёт `message` (от бэка), для `Error` — `message`, иначе `'Что-то пошло не так'`.
 
-Notification-store — [src/entities/notification](../src/entities/notification/): простой setup-store с очередью. Default-timeout по kind (info/success — 4s, warning — 6s, error — sticky). Хост — [src/widgets/app-notifications/](../src/widgets/app-notifications/), `<v-snackbar>` стек, подключён в оба layout'а.
+Notification-store — [src/entities/notification](../src/entities/notification/): простой setup-store с очередью. Default-timeout по kind (info/success — 4s, warning — 6s, error — sticky). Хост — [src/widgets/app-notifications/](../src/widgets/app-notifications/), стек на обёртке `Snackbar` ([shared/ui/base](../src/shared/ui/base/)), подключён в оба layout'а.
 
 Дополнительно: ошибки внутри **бизнес-flow** (например, login form) ловятся **локально** через `try/catch` и показываются inline (например, `v-alert`). Глобальный handler нужен для не-обработанного: программных багов, выпавших promise'ов.
 
