@@ -41,6 +41,11 @@
 - [../KNOWN-ISSUES.md](../KNOWN-ISSUES.md) — найденные баги и тех-долг
 - [../CLAUDE.md](../CLAUDE.md) — руководство для AI-агентов
 
+## Auth/Registration suite (in planning)
+
+- [auth-roadmap.md](auth-roadmap.md) — дорожная карта фаз 0-5, milestones, parallelization, risk register
+- [backend-auth-implementation.md](backend-auth-implementation.md) — spec-level инструкция для backend dev (Keycloak realm setup + NestJS modules + per-endpoint спецификации)
+
 ---
 
 ## Как читать эту документацию
