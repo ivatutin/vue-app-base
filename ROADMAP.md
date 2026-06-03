@@ -83,11 +83,8 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 **Trade-off:** API ещё стабилизируется. Не подходит для глобального state.
 **Триггер:** появление 3+ list-страниц.
 
-### [P2] TanStack Query для серверного state `proposed`
-**Зачем:** дедупликация, кэш, фоновое обновление, инвалидация, optimistic updates. Окупается к 10-й API-странице.
-**Что:** `@tanstack/vue-query`, оставить Pinia только для клиентского state.
-**Trade-off:** +библиотека, +mental model.
-**Триггер:** в 3 местах один и тот же endpoint, или запрос «обновлять каждые N секунд».
+### [P2] TanStack Query для серверного state `partial done` (2026-06-03)
+Архитектурное решение зафиксировано в [ADR-0008](docs/adr/0008-tanstack-query-for-server-state.md): разделение server state (TanStack Query) ↔ client state (Pinia). Инфраструктура поднята: `@tanstack/vue-query` + devtools установлены, `setup-query-client.ts` provider подключён в `setupProviders` (дефолты: `staleTime 30s`, `refetchOnWindowFocus: false`, `retry: 1`). Pilot composable [useCurrentUserQuery](src/entities/user/api/use-current-user-query.ts) (`queryKey: ['users', 'me']`, `enabled` при активной сессии). `useUserStore` остаётся для RBAC. Постепенная миграция — по триггерам (новые list-страницы и mutations пишем сразу на TQ, не Pinia).
 
 ### [P2] Декларативная RBAC `proposed`
 **Зачем:** `v-if="can('user.delete')"` на 50 кнопках — нечитаемо и не грепается.
@@ -134,10 +131,8 @@ Husky 9 + lint-staged 17 + @commitlint/{cli,config-conventional} 21. Pre-commit 
 ### [P2] Vitest для shared/lib и сторов `done`
 Vitest 4 + @vue/test-utils 2 + happy-dom 20. Конфиг — отдельный [vitest.config.ts](vitest.config.ts) (без Vue/Vuetify-плагинов для скорости, но с `unplugin-auto-import` для совместимости с production-кодом). 36 тестов покрывают три паттерна: чистые функции (`plural`, `formatTimeInterval`, `normalizePhone`, `rolesToPermissions`), async с fake-timers (`retry`/`retryOn404`), Pinia setup-store (`notification.store`). Прогон — `npm test`, watch — `npm run test:watch`. Документация — [docs/reference/commands.md](docs/reference/commands.md) § Тестирование. Это Фаза 2.5 фундамента миграции по [ADR-0007](docs/adr/0007-ui-stack-migration-from-vuetify.md) — теперь обёртки `shared/ui/base/` пишутся **с тестами**, замена реализации делается безопасно.
 
-### [P2] `useAsyncStatus` или Query вместо разных loading-флагов `proposed`
-**Зачем:** сейчас `bootstrap` — FSM, `auth` — `isLoaded`, `user` — нет вообще. К 20-му стору — зоопарк.
-**Что:** общий composable `useAsyncStatus()` ИЛИ переход на TanStack Query (взаимоисключающие).
-**Триггер:** третий стор с асинхронной загрузкой.
+### [P2] `useAsyncStatus` или Query вместо разных loading-флагов `superseded`
+Закрыто через [ADR-0008](docs/adr/0008-tanstack-query-for-server-state.md) — выбрали TanStack Query как primary для серверного state. Pinia остаётся для **клиентского** state (auth/RBAC/notification/bootstrap/theme). Собственный `useAsyncStatus` не пишем — TQ закрывает эту нишу.
 
 ---
 
