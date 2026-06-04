@@ -3,8 +3,8 @@
  * shadcn-vue реализация Button — на reka-ui Primitive + CVA-варианты.
  *
  * Адаптирован под наш проектный API:
- * - variant: 'primary' | 'brand' | 'secondary' | 'tonal' | 'text' | 'destructive'
- * - size: 'sm' | 'md' | 'lg'
+ * - variant: 'primary' | 'brand' | 'secondary' | 'tonal' | 'outlined' | 'text' | 'destructive'
+ * - size: 'xs' | 'sm' | 'md' | 'lg'
  * - loading | disabled | block | type | icon
  *
  * Дизайн-токены: bg-primary/secondary/error + foreground'ы из
@@ -20,8 +20,8 @@
   import { cn } from '@/shared/lib/utils/cn'
   import Icon from '../icon/Icon.vue'
 
-  type Variant = 'primary' | 'brand' | 'secondary' | 'tonal' | 'text' | 'destructive'
-  type Size = 'sm' | 'md' | 'lg'
+  type Variant = 'primary' | 'brand' | 'secondary' | 'tonal' | 'outlined' | 'text' | 'destructive'
+  type Size = 'xs' | 'sm' | 'md' | 'lg'
 
   const props = withDefaults(defineProps<{
     variant?: Variant
@@ -44,7 +44,7 @@
   defineEmits<{ click: [event: MouseEvent] }>()
 
   const BASE_CLASS = [
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap',
+    'inline-flex items-center justify-center whitespace-nowrap cursor-pointer select-none',
     'rounded-md text-sm font-medium ring-offset-background transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     'focus-visible:ring-offset-2 disabled:pointer-events-none',
@@ -54,17 +54,19 @@
   const buttonVariants = cva(BASE_CLASS, {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        brand: 'bg-brand text-brand-foreground hover:bg-brand/90',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        tonal: 'bg-primary/10 text-primary hover:bg-primary/20',
-        text: 'hover:bg-accent hover:text-accent-foreground',
-        destructive: 'bg-error text-error-foreground hover:bg-error/90',
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+        brand: 'bg-brand text-brand-foreground hover:bg-brand/90 active:bg-brand/80',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70',
+        tonal: 'bg-primary/10 text-primary hover:bg-primary/15 active:bg-primary/20',
+        outlined: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground active:bg-accent/70',
+        text: 'hover:bg-accent hover:text-accent-foreground active:bg-accent/70',
+        destructive: 'bg-error text-error-foreground hover:bg-error/90 active:bg-error/80',
       },
       size: {
-        sm: 'h-9 px-3',
-        md: 'h-10 px-4 py-2',
-        lg: 'h-11 px-8',
+        xs: 'h-6 gap-1.5 px-2.5 text-xs',
+        sm: 'h-8 gap-1.5 px-3',
+        md: 'h-9 gap-2 px-4',
+        lg: 'h-10 gap-2 px-8',
       },
       iconOnly: {
         true: '!px-0',
@@ -83,9 +85,10 @@
   const iconOnlySquare = computed(() => {
     if (!iconOnly.value) return ''
     return {
-      sm: '!w-9',
-      md: '!w-10',
-      lg: '!w-11',
+      xs: '!w-6',
+      sm: '!w-8',
+      md: '!w-9',
+      lg: '!w-10',
     }[props.size]
   })
 
@@ -94,6 +97,7 @@
 
 <template>
   <Primitive
+    :aria-busy="loading || undefined"
     as="button"
     :class="cn(
       buttonVariants({ variant, size, iconOnly, block }),
