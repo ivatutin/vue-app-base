@@ -25,6 +25,7 @@
     href?: string
     active?: boolean
     disabled?: boolean
+    danger?: boolean
   }>(), {
     icon: undefined,
     title: undefined,
@@ -32,6 +33,7 @@
     href: undefined,
     active: false,
     disabled: false,
+    danger: false,
   })
 
   defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
@@ -43,14 +45,16 @@
   })
 
   const itemClass = computed(() => cn(
-    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
+    'flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium',
     'transition-colors',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-    'text-foreground',
-    !props.disabled && [
-      'hover:bg-accent hover:text-accent-foreground',
-      'router-link-exact-active:bg-accent router-link-exact-active:text-accent-foreground',
-    ],
+    props.danger ? 'text-error' : 'text-foreground',
+    !props.disabled && (props.danger
+      ? 'hover:bg-error/10 hover:text-error'
+      : [
+        'hover:bg-accent hover:text-accent-foreground',
+        'router-link-exact-active:bg-accent router-link-exact-active:text-accent-foreground',
+      ]),
     props.active && 'bg-accent text-accent-foreground',
     props.disabled && 'opacity-50 pointer-events-none',
   ))

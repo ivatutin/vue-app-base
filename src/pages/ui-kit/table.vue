@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { h } from 'vue'
-  import { Button, type ColumnDef, createColumnHelper, DataTable, Icon } from '@/shared/ui/base'
+  import { Button, type ColumnDef, createColumnHelper, DataTable, Icon, type RowAction, RowActions, StatusBadge } from '@/shared/ui/base'
 
   definePage({
     meta: { title: 'DataTable' },
@@ -31,18 +31,23 @@
   ]
 
   const STATUS = {
-    active: { label: 'Активен', dot: 'bg-success' },
-    invited: { label: 'Приглашён', dot: 'bg-warning' },
-    blocked: { label: 'Заблокирован', dot: 'bg-error' },
+    active: { label: 'Активен', tone: 'success' },
+    invited: { label: 'Приглашён', tone: 'warning' },
+    blocked: { label: 'Заблокирован', tone: 'error' },
   } as const
 
   function statusCell (value: User['status']) {
-    const s = STATUS[value]
-    // Цвет — не единственный сигнал: рядом текстовая метка (a11y).
-    return h('span', { class: 'inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground' }, [
-      h('span', { class: `size-1.5 rounded-full ${s.dot}` }),
-      s.label,
-    ])
+    return h(StatusBadge, { label: STATUS[value].label, tone: STATUS[value].tone })
+  }
+
+  // Демо-обработчик действий — пишем последнее действие под таблицу.
+  const lastAction = ref('')
+  function makeActions (u: User): RowAction[] {
+    return [
+      { label: 'Изменить', icon: 'mdi-pencil', onClick: () => (lastAction.value = `Изменить: ${u.name}`) },
+      { label: 'Копировать e-mail', icon: 'mdi-content-copy', onClick: () => (lastAction.value = `Скопирован e-mail: ${u.email}`) },
+      { label: 'Удалить', icon: 'mdi-delete', danger: true, dividerBefore: true, onClick: () => (lastAction.value = `Удалить: ${u.name}`) },
+    ]
   }
 
   const col = createColumnHelper<User>()
@@ -52,6 +57,11 @@
     col.accessor('role', { header: 'Роль', cell: i => i.getValue() }),
     col.accessor('status', { header: 'Статус', filterFn: 'equalsString', cell: i => statusCell(i.getValue()) }),
     col.accessor('createdAt', { header: 'Создан', cell: i => h('span', { class: 'tabular-nums text-muted-foreground' }, i.getValue()) }),
+    col.display({
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => h('div', { class: 'flex justify-end' }, h(RowActions, { actions: makeActions(row.original) })),
+    }),
   ] as ColumnDef<User, any>[]
 
   // --- демо-управление ---
@@ -156,6 +166,9 @@
 
     <p v-if="selected.length > 0" class="text-xs text-muted-foreground">
       Выбранные id: {{ selected.map(u => u.id).join(', ') }}
+    </p>
+    <p v-if="lastAction" class="text-xs text-muted-foreground">
+      Последнее действие: <span class="text-foreground">{{ lastAction }}</span>
     </p>
   </div>
 </template>
