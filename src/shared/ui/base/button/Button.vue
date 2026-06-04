@@ -92,7 +92,8 @@
     }[props.size]
   })
 
-  const innerIconSize = computed<'sm' | 'md'>(() => (props.size === 'lg' ? 'md' : 'sm'))
+  const SIZE_TO_ICON = { xs: 'xs', sm: 'xs', md: 'sm', lg: 'md' } as const
+  const innerIconSize = computed<'xs' | 'sm' | 'md'>(() => SIZE_TO_ICON[props.size])
 </script>
 
 <template>

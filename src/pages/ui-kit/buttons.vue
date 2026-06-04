@@ -67,7 +67,7 @@
           <div class="flex flex-wrap items-center gap-3">
             <Button v-for="s in sizes" :key="s" :size="s" variant="secondary">
               <template #prepend>
-                <Icon name="mdi-plus" :size="s === 'lg' ? 'md' : 'sm'" />
+                <Icon name="mdi-plus" :size="s === 'lg' ? 'md' : s === 'md' ? 'sm' : 'xs'" />
               </template>
               Создать
             </Button>
@@ -115,6 +115,19 @@
               variant="secondary"
               @click="fakeSubmit"
             />
+          </div>
+        </section>
+
+        <Divider />
+
+        <section class="space-y-2">
+          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Disabled · все варианты
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <Button v-for="v in variants" :key="v" disabled :variant="v">
+              {{ v }}
+            </Button>
           </div>
         </section>
 

@@ -48,7 +48,7 @@
     X,
   } from '@lucide/vue'
 
-  type Size = 'sm' | 'md' | 'lg' | 'xl'
+  type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
   const props = withDefaults(defineProps<{
     name: string
@@ -93,6 +93,7 @@
   }
 
   const SIZE_PX: Record<Size, number> = {
+    xs: 16,
     sm: 20,
     md: 24,
     lg: 28,
