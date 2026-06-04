@@ -16,7 +16,7 @@
       icon="mdi-lock"
       title="403 · Доступ запрещён"
     >
-      <Button variant="primary" @click="$router.replace({ name: '/dashboard' })">
+      <Button variant="brand" @click="$router.replace({ name: '/dashboard' })">
         На главную
       </Button>
     </EmptyState>

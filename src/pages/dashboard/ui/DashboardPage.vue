@@ -50,7 +50,7 @@
           </template>
           Обновить
         </Button>
-        <Button variant="primary">
+        <Button variant="brand">
           <template #prepend>
             <Icon name="mdi-plus" size="sm" />
           </template>

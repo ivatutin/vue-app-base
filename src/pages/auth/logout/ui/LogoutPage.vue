@@ -25,7 +25,7 @@
     Сессия завершена.
     <template #footer>
       <Spacer />
-      <Button variant="primary" @click="goToLogin">Войти снова</Button>
+      <Button variant="brand" @click="goToLogin">Войти снова</Button>
     </template>
   </Card>
 </template>

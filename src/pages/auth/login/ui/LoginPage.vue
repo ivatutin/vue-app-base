@@ -59,7 +59,7 @@
           :disabled="!email || !password"
           :loading="loading"
           type="submit"
-          variant="primary"
+          variant="brand"
         >
           Войти
         </Button>

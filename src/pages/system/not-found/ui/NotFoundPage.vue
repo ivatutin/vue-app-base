@@ -17,7 +17,7 @@
       icon="mdi-file-question"
       title="404 · Страница не найдена"
     >
-      <Button variant="primary" @click="$router.replace({ name: '/dashboard' })">
+      <Button variant="brand" @click="$router.replace({ name: '/dashboard' })">
         На главную
       </Button>
     </EmptyState>

@@ -19,6 +19,8 @@
 3. **Hairline-границы.** `--border`/`--input` — не сплошной zinc-шаг, а foreground/white с низкой альфой (граница «чувствуется, а не видится»). Light: border `rgb(9 9 11 / 0.06)`, input `/0.14`. Dark: border `rgb(255 255 255 / 0.14)`, input `/0.18` (input держим сильнее границы — affordance края поля).
 4. **Surface/elevation.** Light: канва `--background` = `rgb(250 250 250)` (слегка серая), приподнятые `--surface` (карточки) = `rgb(255 255 255)` (белые) — карточки «всплывают» тенью + hairline, а не «вдавлены». Card-тень снижена `shadow-sm → shadow-xs`. Dark-канва углублена и охлаждена (деликатный cool-tint, B>R): `--background` = `rgb(9 10 13)`, `--surface` = `rgb(22 24 29)`.
 5. **Токен `--sidebar`** (зарегистрирован в `@theme` как `--color-sidebar` → утилита `bg-sidebar`). Хром (AppSidebar + AppHeader + AppFooter) переведён с `bg-surface` на `bg-sidebar`. Light `rgb(246 247 249)`, dark `rgb(7 8 11)` — темнее канвы, хром «утопает», контент и карточки в фокусе. Иерархия глубины dark: sidebar(7 8 11) < канва(9 10 13) < карточки(22 24 29).
+6. **Главные CTA — в brand (уточняет ADR-0009).** ADR-0009 решал «первичные кнопки нейтральные». Для Linear-стиля главное целевое действие экрана теперь в акцентном emerald: добавлен `Button variant="brand"` (`bg-brand`), применён к ключевым CTA (login «Войти», dashboard «Создать отчёт», 403/404/logout recovery-кнопки). `variant="primary"` (нейтральный zinc) сохраняется для вторичных/нейтральных действий. Правило: **один** brand-CTA на экран — главное действие; остальное нейтральное/ghost.
+7. **Единый радиус поверхностей + мелочи.** Плавающие поверхности (Card, Menu, Popover) → `rounded-lg` (8px-токен), контролы остаются `rounded-md` (6px). Активная навигация в sidebar получила emerald-акцент-бар слева (`before`-псевдоэлемент). Браузерный autofill в инпутах гасится в `@layer base` (inset-тень под `--background`). Исправлен баг: `PopoverContent` использовал несуществующий токен `bg-popover` → переведён на `bg-surface` (как Menu).
 
 Источник истины — токены в [src/shared/assets/tokens/](../../src/shared/assets/tokens/). Цель — продуктовый стиль уровня Linear со своей изюминкой (зелёный вместо индиго).
 
@@ -30,5 +32,6 @@
 - **−** Альфа зашита в значение токена `--border`/`--input` — нельзя применять alpha-modifier (`border-border/50`) поверх; на практике border-утилиты их не используют.
 - **−** `--success` (green-500) теперь по hue ближе к brand-emerald. Рядом почти не встречаются (бренд — nav/links, success — toast/badge); при необходимости развести success в более тёплый/яркий зелёный.
 - **−** Возможен `--sidebar-foreground`, если текст на хроме потребует отдельного тона (пока переиспользуется `--surface-foreground`/`--muted-foreground`).
+- **−** Дисциплина CTA: **один** brand-CTA на экран (главное действие). Если на экране два «ярких» emerald-действия — теряется акцент; вторичные действия держать на `secondary`/`tonal`/`text`.
 
 Не отменяет [ADR-0009](0009-design-language-inter-brand-accent.md) и [ADR-0007](0007-ui-stack-migration-from-vuetify.md), а уточняет визуальный язык поверх них.
