@@ -4,6 +4,7 @@
   const pages = [
     { label: 'Card', to: '/ui-kit/card' },
     { label: 'Buttons', to: '/ui-kit/buttons' },
+    { label: 'DataTable', to: '/ui-kit/table' },
     { label: 'Typography', to: '/ui-kit/typography' },
   ]
 </script>

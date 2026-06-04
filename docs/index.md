@@ -29,6 +29,7 @@
 - [adr/0012-error-coding-contract.md](adr/0012-error-coding-contract.md) — дисциплина `HttpError.errorName`: registry в `shared/api/error-codes.ts`, `matchError(err, code)` helper, anti-enumeration policy
 - [adr/0013-keycloak-hybrid-integration.md](adr/0013-keycloak-hybrid-integration.md) — Strategy C: backend под капотом использует Keycloak Admin REST API, frontend single-page без redirect; полная boundary-таблица (25 capabilities)
 - [adr/0014-brand-emerald-surface-elevation.md](adr/0014-brand-emerald-surface-elevation.md) — brand indigo → emerald (AA/AAA), фикс Tailwind v4 border-color, hairline-границы, surface/elevation модель и токен `--sidebar` (amends ADR-0009)
+- [adr/0015-data-table-tanstack.md](adr/0015-data-table-tanstack.md) — DataTable на headless @tanstack/vue-table: презентационная обёртка в shared/ui/base, состояния/сортировка/выбор/пагинация, Linear-разметка
 
 ## Сделать конкретную задачу (How-to)
 

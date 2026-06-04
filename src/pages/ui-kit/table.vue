@@ -1,0 +1,145 @@
+<script setup lang="ts">
+  import { h } from 'vue'
+  import { Button, type ColumnDef, createColumnHelper, DataTable, Icon } from '@/shared/ui/base'
+
+  definePage({
+    meta: { title: 'DataTable' },
+  })
+
+  interface User {
+    id: string
+    name: string
+    email: string
+    role: string
+    status: 'active' | 'invited' | 'blocked'
+    createdAt: string
+  }
+
+  const ALL_USERS: User[] = [
+    { id: '1', name: 'Анна Кузнецова', email: 'anna@example.com', role: 'Admin', status: 'active', createdAt: '2026-01-12' },
+    { id: '2', name: 'Борис Петров', email: 'boris@example.com', role: 'Editor', status: 'active', createdAt: '2026-02-03' },
+    { id: '3', name: 'Вера Смирнова', email: 'vera@example.com', role: 'Viewer', status: 'invited', createdAt: '2026-02-20' },
+    { id: '4', name: 'Глеб Иванов', email: 'gleb@example.com', role: 'Editor', status: 'blocked', createdAt: '2026-03-01' },
+    { id: '5', name: 'Дарья Орлова', email: 'darya@example.com', role: 'Admin', status: 'active', createdAt: '2026-03-15' },
+    { id: '6', name: 'Егор Соколов', email: 'egor@example.com', role: 'Viewer', status: 'invited', createdAt: '2026-03-28' },
+    { id: '7', name: 'Жанна Морозова', email: 'zhanna@example.com', role: 'Editor', status: 'active', createdAt: '2026-04-05' },
+    { id: '8', name: 'Игорь Волков', email: 'igor@example.com', role: 'Viewer', status: 'blocked', createdAt: '2026-04-18' },
+    { id: '9', name: 'Ксения Зайцева', email: 'ksenia@example.com', role: 'Admin', status: 'active', createdAt: '2026-05-02' },
+    { id: '10', name: 'Лев Новиков', email: 'lev@example.com', role: 'Editor', status: 'active', createdAt: '2026-05-19' },
+    { id: '11', name: 'Мария Белова', email: 'maria@example.com', role: 'Viewer', status: 'invited', createdAt: '2026-05-30' },
+    { id: '12', name: 'Никита Гусев', email: 'nikita@example.com', role: 'Editor', status: 'active', createdAt: '2026-06-01' },
+  ]
+
+  const STATUS = {
+    active: { label: 'Активен', dot: 'bg-success' },
+    invited: { label: 'Приглашён', dot: 'bg-warning' },
+    blocked: { label: 'Заблокирован', dot: 'bg-error' },
+  } as const
+
+  function statusCell (value: User['status']) {
+    const s = STATUS[value]
+    // Цвет — не единственный сигнал: рядом текстовая метка (a11y).
+    return h('span', { class: 'inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground' }, [
+      h('span', { class: `size-1.5 rounded-full ${s.dot}` }),
+      s.label,
+    ])
+  }
+
+  const col = createColumnHelper<User>()
+  const columns = [
+    col.accessor('name', { header: 'Имя', cell: i => i.getValue() }),
+    col.accessor('email', { header: 'E-mail', cell: i => h('span', { class: 'text-muted-foreground' }, i.getValue()) }),
+    col.accessor('role', { header: 'Роль', cell: i => i.getValue() }),
+    col.accessor('status', { header: 'Статус', cell: i => statusCell(i.getValue()) }),
+    col.accessor('createdAt', { header: 'Создан', cell: i => h('span', { class: 'tabular-nums text-muted-foreground' }, i.getValue()) }),
+  ] as ColumnDef<User, any>[]
+
+  // --- демо-управление ---
+  type StateMode = 'data' | 'loading' | 'empty' | 'error'
+  const mode = ref<StateMode>('data')
+  const density = ref<'comfortable' | 'compact'>('comfortable')
+  const selected = ref<User[]>([])
+
+  const rows = computed(() => (mode.value === 'empty' ? [] : ALL_USERS))
+  const modes: { key: StateMode, label: string }[] = [
+    { key: 'data', label: 'Данные' },
+    { key: 'loading', label: 'Загрузка' },
+    { key: 'empty', label: 'Пусто' },
+    { key: 'error', label: 'Ошибка' },
+  ]
+</script>
+
+<template>
+  <div class="mx-auto max-w-5xl space-y-6">
+    <header class="space-y-1">
+      <h1 class="text-2xl font-semibold tracking-tight">
+        UI Kit · DataTable
+      </h1>
+      <p class="text-sm text-muted-foreground">
+        Headless TanStack Table + наша разметка: сортировка, выбор строк,
+        bulk-действия, пагинация, плотность и состояния.
+      </p>
+    </header>
+
+    <!-- Демо-переключатели -->
+    <div class="flex flex-wrap items-center gap-2">
+      <Button
+        v-for="m in modes"
+        :key="m.key"
+        size="xs"
+        :variant="mode === m.key ? 'brand' : 'outlined'"
+        @click="mode = m.key"
+      >
+        {{ m.label }}
+      </Button>
+      <div class="mx-2 h-5 w-px bg-border" />
+      <Button
+        size="xs"
+        :variant="density === 'comfortable' ? 'tonal' : 'outlined'"
+        @click="density = 'comfortable'"
+      >
+        Comfortable
+      </Button>
+      <Button
+        size="xs"
+        :variant="density === 'compact' ? 'tonal' : 'outlined'"
+        @click="density = 'compact'"
+      >
+        Compact
+      </Button>
+    </div>
+
+    <DataTable
+      :columns="columns"
+      :data="rows"
+      :density="density"
+      enable-pagination
+      enable-selection
+      :error="mode === 'error'"
+      :get-row-id="r => r.id"
+      :loading="mode === 'loading'"
+      :page-size="10"
+      @retry="mode = 'data'"
+      @selection-change="selected = $event"
+    >
+      <template #bulk-actions>
+        <Button size="xs" variant="outlined">
+          <template #prepend>
+            <Icon name="mdi-content-copy" size="sm" />
+          </template>
+          Экспорт
+        </Button>
+        <Button size="xs" variant="destructive">
+          <template #prepend>
+            <Icon name="mdi-delete" size="sm" />
+          </template>
+          Удалить
+        </Button>
+      </template>
+    </DataTable>
+
+    <p v-if="selected.length > 0" class="text-xs text-muted-foreground">
+      Выбранные id: {{ selected.map(u => u.id).join(', ') }}
+    </p>
+  </div>
+</template>
