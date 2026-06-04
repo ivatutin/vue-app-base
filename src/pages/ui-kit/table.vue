@@ -65,15 +65,21 @@
   ] as ColumnDef<User, any>[]
 
   // --- демо-управление ---
-  type StateMode = 'data' | 'loading' | 'empty' | 'error'
+  type StateMode = 'data' | 'loading' | 'refetch' | 'empty' | 'error'
   const mode = ref<StateMode>('data')
   const density = ref<'comfortable' | 'compact'>('comfortable')
   const selected = ref<User[]>([])
 
-  const rows = computed(() => (mode.value === 'empty' ? [] : ALL_USERS))
+  // 'loading' = первая загрузка (данных нет → skeleton);
+  // 'refetch' = обновление поверх данных (мягкий оверлей).
+  const rows = computed(() =>
+    (mode.value === 'empty' || mode.value === 'loading' ? [] : ALL_USERS),
+  )
+  const isLoading = computed(() => mode.value === 'loading' || mode.value === 'refetch')
   const modes: { key: StateMode, label: string }[] = [
     { key: 'data', label: 'Данные' },
     { key: 'loading', label: 'Загрузка' },
+    { key: 'refetch', label: 'Рефетч' },
     { key: 'empty', label: 'Пусто' },
     { key: 'error', label: 'Ошибка' },
   ]
@@ -127,7 +133,7 @@
       enable-selection
       :error="mode === 'error'"
       :get-row-id="r => r.id"
-      :loading="mode === 'loading'"
+      :loading="isLoading"
       :page-size="10"
       search-placeholder="Поиск по имени, e-mail…"
       searchable

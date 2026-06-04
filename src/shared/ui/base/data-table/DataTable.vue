@@ -43,6 +43,7 @@
     searchable?: boolean
     searchPlaceholder?: string
     pageSize?: number
+    pageSizeOptions?: number[]
     skeletonRows?: number
     maxHeight?: string
     emptyIcon?: string
@@ -59,6 +60,7 @@
     searchable: false,
     searchPlaceholder: 'Поиск…',
     pageSize: 10,
+    pageSizeOptions: () => [10, 25, 50],
     skeletonRows: 5,
     maxHeight: undefined,
     emptyIcon: 'mdi-inbox',
@@ -132,6 +134,12 @@
     props.density === 'compact' ? 'px-3 py-1.5' : 'px-3 py-2.5',
   )
 
+  /** Первая загрузка (данных ещё нет) → skeleton. */
+  const showSkeleton = computed(() => props.loading && props.data.length === 0)
+  /** Рефетч поверх существующих данных → не моргаем skeleton'ом, а
+   *  притушиваем строки + тонкая прогресс-линия (меньше дёрганья). */
+  const showOverlay = computed(() => props.loading && props.data.length > 0)
+
   const isEmpty = computed(() =>
     !props.loading && !props.error && props.data.length === 0,
   )
@@ -195,10 +203,11 @@
       <slot name="toolbar" :table="table" />
     </div>
 
-    <!-- Bulk-бар выбора -->
+    <!-- Bulk-бар выбора (sticky; непрозрачный фон, чтобы строки не
+         просвечивали при залипании поверх скролла) -->
     <div
       v-if="enableSelection && selectedCount > 0"
-      class="flex items-center gap-3 rounded-lg border bg-brand/5 px-3 py-2 text-sm"
+      class="sticky top-0 z-30 flex items-center gap-3 rounded-lg border bg-[color-mix(in_oklab,var(--brand)_6%,var(--surface))] px-3 py-2 text-sm shadow-sm"
     >
       <span class="font-medium text-brand">Выбрано: {{ selectedCount }}</span>
       <div class="flex items-center gap-2">
@@ -209,169 +218,196 @@
     </div>
 
     <!-- Контейнер таблицы -->
-    <div
-      class="overflow-auto rounded-lg border"
-      :style="maxHeight ? { maxHeight } : undefined"
-    >
-      <table class="w-full border-collapse text-sm">
-        <!-- Заголовок (sticky) -->
-        <thead class="sticky top-0 z-10 bg-surface">
-          <tr
-            v-for="headerGroup in table.getHeaderGroups()"
-            :key="headerGroup.id"
-            class="border-b"
-          >
-            <!-- Колонка выбора -->
-            <th v-if="enableSelection" class="w-10" :class="cellPad">
-              <input
-                :ref="el => { if (el) (el as HTMLInputElement).indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected() }"
-                aria-label="Выбрать все строки"
-                :checked="table.getIsAllPageRowsSelected()"
-                class="size-4 cursor-pointer accent-brand align-middle"
-                type="checkbox"
-                @change="table.getToggleAllPageRowsSelectedHandler()($event)"
-              >
-            </th>
-            <th
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :aria-sort="header.column.getCanSort() ? ariaSort(header.column.getIsSorted()) : undefined"
-              class="text-left align-middle font-medium text-muted-foreground"
-              :class="cellPad"
+    <div class="relative">
+      <!-- Тонкая прогресс-линия при рефетче поверх данных -->
+      <div
+        v-if="showOverlay"
+        aria-hidden="true"
+        class="absolute inset-x-0 top-0 z-20 h-0.5 animate-pulse rounded-t-lg bg-brand/70"
+      />
+      <div
+        class="overflow-auto rounded-lg border"
+        :style="maxHeight ? { maxHeight } : undefined"
+      >
+        <table class="w-full border-collapse text-sm">
+          <!-- Заголовок (sticky) -->
+          <thead class="sticky top-0 z-10 bg-surface">
+            <tr
+              v-for="headerGroup in table.getHeaderGroups()"
+              :key="headerGroup.id"
+              class="border-b"
             >
-              <button
-                v-if="!header.isPlaceholder && header.column.getCanSort()"
-                class="inline-flex items-center gap-1.5 cursor-pointer select-none rounded -mx-1 px-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                type="button"
-                @click="header.column.getToggleSortingHandler()?.($event)"
+              <!-- Колонка выбора -->
+              <th v-if="enableSelection" class="w-10" :class="cellPad">
+                <input
+                  :ref="el => { if (el) (el as HTMLInputElement).indeterminate = table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected() }"
+                  aria-label="Выбрать все строки"
+                  :checked="table.getIsAllPageRowsSelected()"
+                  class="size-4 cursor-pointer accent-brand align-middle"
+                  type="checkbox"
+                  @change="table.getToggleAllPageRowsSelectedHandler()($event)"
+                >
+              </th>
+              <th
+                v-for="header in headerGroup.headers"
+                :key="header.id"
+                :aria-sort="header.column.getCanSort() ? ariaSort(header.column.getIsSorted()) : undefined"
+                class="text-left align-middle font-medium text-muted-foreground"
+                :class="cellPad"
               >
-                <FlexRender :props="header.getContext()" :render="header.column.columnDef.header" />
-                <Icon
-                  v-if="header.column.getIsSorted() === 'asc'"
-                  name="mdi-chevron-double-up"
-                  size="sm"
+                <button
+                  v-if="!header.isPlaceholder && header.column.getCanSort()"
+                  class="group inline-flex items-center gap-1.5 cursor-pointer select-none rounded -mx-1 px-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  type="button"
+                  @click="header.column.getToggleSortingHandler()?.($event)"
+                >
+                  <FlexRender :props="header.getContext()" :render="header.column.columnDef.header" />
+                  <Icon
+                    v-if="header.column.getIsSorted() === 'asc'"
+                    name="mdi-chevron-double-up"
+                    size="sm"
+                  />
+                  <Icon
+                    v-else-if="header.column.getIsSorted() === 'desc'"
+                    class="rotate-180"
+                    name="mdi-chevron-double-up"
+                    size="sm"
+                  />
+                  <!-- Несортированная колонка: индикатор только при hover/focus заголовка (меньше шума). -->
+                  <Icon
+                    v-else
+                    class="opacity-0 transition-opacity group-hover:opacity-40 group-focus-visible:opacity-40"
+                    name="mdi-unfold-more-vertical"
+                    size="sm"
+                  />
+                </button>
+                <FlexRender
+                  v-else-if="!header.isPlaceholder"
+                  :props="header.getContext()"
+                  :render="header.column.columnDef.header"
                 />
-                <Icon
-                  v-else-if="header.column.getIsSorted() === 'desc'"
-                  class="rotate-180"
-                  name="mdi-chevron-double-up"
-                  size="sm"
-                />
-                <Icon v-else class="opacity-30" name="mdi-unfold-more-vertical" size="sm" />
-              </button>
-              <FlexRender
-                v-else-if="!header.isPlaceholder"
-                :props="header.getContext()"
-                :render="header.column.columnDef.header"
-              />
-            </th>
-          </tr>
-        </thead>
+              </th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <!-- Loading: skeleton-строки -->
-          <template v-if="loading">
-            <tr v-for="n in skeletonRows" :key="`sk-${n}`" class="border-b last:border-0">
-              <td v-if="enableSelection" :class="cellPad">
-                <Skeleton class="size-4" />
-              </td>
-              <td v-for="col in columns.length" :key="col" :class="cellPad">
-                <Skeleton class="h-4" :class="col === 1 ? 'w-2/3' : 'w-1/2'" />
+          <tbody :class="showOverlay && 'pointer-events-none opacity-60 transition-opacity'">
+            <!-- Loading: skeleton-строки (только первая загрузка; рефетч → оверлей) -->
+            <template v-if="showSkeleton">
+              <tr v-for="n in skeletonRows" :key="`sk-${n}`" class="border-b last:border-0">
+                <td v-if="enableSelection" :class="cellPad">
+                  <Skeleton class="size-4" />
+                </td>
+                <td v-for="col in columns.length" :key="col" :class="cellPad">
+                  <Skeleton class="h-4" :class="col === 1 ? 'w-2/3' : 'w-1/2'" />
+                </td>
+              </tr>
+            </template>
+
+            <!-- Error -->
+            <tr v-else-if="error">
+              <td :class="cellPad" :colspan="colSpan">
+                <slot name="error">
+                  <EmptyState
+                    description="Проверьте соединение и попробуйте ещё раз."
+                    icon="mdi-file-question"
+                    :title="errorText"
+                  >
+                    <Button size="sm" variant="outlined" @click="emit('retry')">
+                      <template #prepend>
+                        <Icon name="mdi-refresh" size="sm" />
+                      </template>
+                      Повторить
+                    </Button>
+                  </EmptyState>
+                </slot>
               </td>
             </tr>
-          </template>
 
-          <!-- Error -->
-          <tr v-else-if="error">
-            <td :class="cellPad" :colspan="colSpan">
-              <slot name="error">
-                <EmptyState
-                  description="Проверьте соединение и попробуйте ещё раз."
-                  icon="mdi-file-question"
-                  :title="errorText"
-                >
-                  <Button size="sm" variant="outlined" @click="emit('retry')">
-                    <template #prepend>
-                      <Icon name="mdi-refresh" size="sm" />
-                    </template>
-                    Повторить
-                  </Button>
-                </EmptyState>
-              </slot>
-            </td>
-          </tr>
+            <!-- Empty -->
+            <tr v-else-if="isEmpty">
+              <td :class="cellPad" :colspan="colSpan">
+                <slot name="empty">
+                  <EmptyState
+                    :description="emptyDescription"
+                    :icon="emptyIcon"
+                    :title="emptyTitle"
+                  />
+                </slot>
+              </td>
+            </tr>
 
-          <!-- Empty -->
-          <tr v-else-if="isEmpty">
-            <td :class="cellPad" :colspan="colSpan">
-              <slot name="empty">
-                <EmptyState
-                  :description="emptyDescription"
-                  :icon="emptyIcon"
-                  :title="emptyTitle"
-                />
-              </slot>
-            </td>
-          </tr>
+            <!-- No results (данные есть, фильтр пуст) -->
+            <tr v-else-if="isNoResults">
+              <td :class="cellPad" :colspan="colSpan">
+                <slot name="no-results" :reset="resetFilters">
+                  <EmptyState
+                    description="Измените запрос или сбросьте фильтры."
+                    icon="mdi-magnify"
+                    title="Ничего не найдено"
+                  >
+                    <Button size="sm" variant="outlined" @click="resetFilters">
+                      Сбросить фильтры
+                    </Button>
+                  </EmptyState>
+                </slot>
+              </td>
+            </tr>
 
-          <!-- No results (данные есть, фильтр пуст) -->
-          <tr v-else-if="isNoResults">
-            <td :class="cellPad" :colspan="colSpan">
-              <slot name="no-results" :reset="resetFilters">
-                <EmptyState
-                  description="Измените запрос или сбросьте фильтры."
-                  icon="mdi-magnify"
-                  title="Ничего не найдено"
-                >
-                  <Button size="sm" variant="outlined" @click="resetFilters">
-                    Сбросить фильтры
-                  </Button>
-                </EmptyState>
-              </slot>
-            </td>
-          </tr>
-
-          <!-- Данные -->
-          <tr
-            v-for="row in table.getRowModel().rows"
-            v-else
-            :key="row.id"
-            class="border-b last:border-0 transition-colors hover:bg-accent/50"
-            :class="row.getIsSelected() && 'bg-brand/5'"
-            @click="emit('row-click', row.original)"
-          >
-            <td v-if="enableSelection" :class="cellPad" @click.stop>
-              <input
-                aria-label="Выбрать строку"
-                :checked="row.getIsSelected()"
-                class="size-4 cursor-pointer accent-brand align-middle"
-                :disabled="!row.getCanSelect()"
-                type="checkbox"
-                @change="row.getToggleSelectedHandler()($event)"
-              >
-            </td>
-            <td
-              v-for="cell in row.getVisibleCells()"
-              :key="cell.id"
-              class="align-middle"
-              :class="cellPad"
+            <!-- Данные -->
+            <tr
+              v-for="row in table.getRowModel().rows"
+              v-else
+              :key="row.id"
+              class="border-b last:border-0 transition-colors hover:bg-accent/50"
+              :class="row.getIsSelected() && 'bg-brand/5'"
+              @click="emit('row-click', row.original)"
             >
-              <FlexRender :props="cell.getContext()" :render="cell.column.columnDef.cell" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <td v-if="enableSelection" :class="cellPad" @click.stop>
+                <input
+                  aria-label="Выбрать строку"
+                  :checked="row.getIsSelected()"
+                  class="size-4 cursor-pointer accent-brand align-middle"
+                  :disabled="!row.getCanSelect()"
+                  type="checkbox"
+                  @change="row.getToggleSelectedHandler()($event)"
+                >
+              </td>
+              <td
+                v-for="cell in row.getVisibleCells()"
+                :key="cell.id"
+                class="align-middle"
+                :class="cellPad"
+              >
+                <FlexRender :props="cell.getContext()" :render="cell.column.columnDef.cell" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Пагинация -->
     <div
-      v-if="enablePagination && !loading && !error && !isEmpty && !isNoResults"
+      v-if="enablePagination && !showSkeleton && !error && !isEmpty && !isNoResults"
       class="flex items-center justify-between gap-3 text-sm text-muted-foreground"
     >
-      <span class="tabular-nums">
-        Стр. {{ table.getState().pagination.pageIndex + 1 }} из {{ table.getPageCount() }}
-        · всего {{ table.getRowCount() }}
-      </span>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2">
+          <span class="sr-only">Строк на странице</span>
+          <select
+            aria-label="Строк на странице"
+            class="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            :value="table.getState().pagination.pageSize"
+            @change="table.setPageSize(Number(($event.target as HTMLSelectElement).value))"
+          >
+            <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }} / стр.</option>
+          </select>
+        </label>
+        <span class="tabular-nums">
+          Стр. {{ table.getState().pagination.pageIndex + 1 }} из {{ table.getPageCount() }}
+          · всего {{ table.getRowCount() }}
+        </span>
+      </div>
       <div class="flex items-center gap-2">
         <Button
           :disabled="!table.getCanPreviousPage()"
