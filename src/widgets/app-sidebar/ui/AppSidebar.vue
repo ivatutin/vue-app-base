@@ -18,7 +18,7 @@
   )
 
   const ITEM_BASE = 'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring'
-  const ITEM_ACTIVE = 'bg-brand/10 text-brand font-semibold'
+  const ITEM_ACTIVE = 'bg-brand/10 text-brand font-semibold before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-brand'
   const ITEM_INACTIVE = 'font-medium text-foreground/70 hover:bg-accent hover:text-foreground'
 </script>
 

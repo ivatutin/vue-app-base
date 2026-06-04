@@ -28,7 +28,7 @@
 
 <template>
   <div
-    class="rounded border bg-surface text-surface-foreground shadow-xs flex flex-col"
+    class="rounded-lg border bg-surface text-surface-foreground shadow-2xs flex flex-col"
     :style="width ? { width: typeof width === 'number' ? `${width}px` : width } : undefined"
   >
     <div v-if="slots.header || title" class="p-6">

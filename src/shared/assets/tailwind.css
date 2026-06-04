@@ -89,6 +89,25 @@
     border-color: var(--border);
   }
 
+  /*
+   * Браузерный autofill красит фон поля жёлтым (Chrome) поверх наших токенов.
+   * Гасим: перекрываем фон inset-тенью под цвет поля (--background) и
+   * фиксируем цвет текста/каретки в обе темы. transition 9999s — известный
+   * трюк, чтобы браузер не перерисовывал свой фон поверх.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+    box-shadow: 0 0 0 1000px var(--background) inset;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

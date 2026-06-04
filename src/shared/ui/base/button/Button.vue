@@ -3,7 +3,7 @@
  * shadcn-vue реализация Button — на reka-ui Primitive + CVA-варианты.
  *
  * Адаптирован под наш проектный API:
- * - variant: 'primary' | 'secondary' | 'tonal' | 'text' | 'destructive'
+ * - variant: 'primary' | 'brand' | 'secondary' | 'tonal' | 'text' | 'destructive'
  * - size: 'sm' | 'md' | 'lg'
  * - loading | disabled | block | type | icon
  *
@@ -20,7 +20,7 @@
   import { cn } from '@/shared/lib/utils/cn'
   import Icon from '../icon/Icon.vue'
 
-  type Variant = 'primary' | 'secondary' | 'tonal' | 'text' | 'destructive'
+  type Variant = 'primary' | 'brand' | 'secondary' | 'tonal' | 'text' | 'destructive'
   type Size = 'sm' | 'md' | 'lg'
 
   const props = withDefaults(defineProps<{
@@ -55,6 +55,7 @@
     variants: {
       variant: {
         primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        brand: 'bg-brand text-brand-foreground hover:bg-brand/90',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         tonal: 'bg-primary/10 text-primary hover:bg-primary/20',
         text: 'hover:bg-accent hover:text-accent-foreground',
