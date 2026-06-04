@@ -1,7 +1,8 @@
-# 0009. Дизайн-язык: Inter + нейтральная база с индиго-акцентом
+# 0009. Дизайн-язык: Inter + нейтральная база с акцентом
 
 - **Status:** accepted
 - **Date:** 2026-06-03
+- **Amended by:** [ADR-0014](0014-brand-emerald-surface-elevation.md) (brand-цвет изменён indigo → emerald; добавлены surface/elevation модель и токен `--sidebar`; индиго-значения ниже — историческое состояние на момент 0009)
 
 ## Context
 

@@ -23,11 +23,12 @@
 - [adr/0006-fetch-based-http-client.md](adr/0006-fetch-based-http-client.md) — HTTP-клиент: fetch + DI auth-interceptor + refresh-mutex
 - [adr/0007-ui-stack-migration-from-vuetify.md](adr/0007-ui-stack-migration-from-vuetify.md) — целевой UI-стек (shadcn-vue + Tailwind + Radix; PrimeVue / AG Grid / TipTap / FullCalendar опционально для сложных компонентов) и стратегия миграции с Vuetify через strangler fig
 - [adr/0008-tanstack-query-for-server-state.md](adr/0008-tanstack-query-for-server-state.md) — TanStack Query как primary для серверного state параллельно Pinia (клиентский state). Разделение ответственности, queryKey-конвенции, bridge для RBAC.
-- [adr/0009-design-language-inter-brand-accent.md](adr/0009-design-language-inter-brand-accent.md) — дизайн-язык: Inter Variable + нейтральная база с индиго-акцентом `--brand`, primitives состояний и командная палитра
+- [adr/0009-design-language-inter-brand-accent.md](adr/0009-design-language-inter-brand-accent.md) — дизайн-язык: Inter Variable + нейтральная база с акцентом `--brand`, primitives состояний и командная палитра (brand-цвет уточнён в ADR-0014)
 - [adr/0010-form-architecture-vee-validate-zod.md](adr/0010-form-architecture-vee-validate-zod.md) — VeeValidate 4 + `@vee-validate/zod` как primary form-инструмент; backward-compatible расширение `<Form :schema>` + `<TextField :name>` через field-context inject
 - [adr/0011-otp-verification-model.md](adr/0011-otp-verification-model.md) — 6-digit OTP для phone (Redis + argon2id + SMS provider), email через Keycloak `sendVerifyEmail` magic link; unified `OtpChannel` + `OtpPurpose` контракт
 - [adr/0012-error-coding-contract.md](adr/0012-error-coding-contract.md) — дисциплина `HttpError.errorName`: registry в `shared/api/error-codes.ts`, `matchError(err, code)` helper, anti-enumeration policy
 - [adr/0013-keycloak-hybrid-integration.md](adr/0013-keycloak-hybrid-integration.md) — Strategy C: backend под капотом использует Keycloak Admin REST API, frontend single-page без redirect; полная boundary-таблица (25 capabilities)
+- [adr/0014-brand-emerald-surface-elevation.md](adr/0014-brand-emerald-surface-elevation.md) — brand indigo → emerald (AA/AAA), фикс Tailwind v4 border-color, hairline-границы, surface/elevation модель и токен `--sidebar` (amends ADR-0009)
 
 ## Сделать конкретную задачу (How-to)
 

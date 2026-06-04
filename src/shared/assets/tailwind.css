@@ -24,6 +24,7 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-sidebar: var(--sidebar);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -73,6 +74,21 @@
  * выделения текста (selection).
  */
 @layer base {
+  /*
+   * КРИТИЧНО: в Tailwind v4 у класса `border` цвет по умолчанию —
+   * `currentColor` (а не серый, как было в v3). Без этого сброса любой
+   * «голый» `border`/`border-t`/... берёт цвет ТЕКСТА → в dark-теме это
+   * почти-белые сплошные рамки. Стандартный shadcn-сброс: все границы по
+   * умолчанию = `--border` (наш low-alpha hairline). Явные утилиты
+   * (border-input, border-brand, ...) лежат в utilities-слое и
+   * переопределяют это правило.
+   */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

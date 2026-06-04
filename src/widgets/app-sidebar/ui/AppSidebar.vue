@@ -24,7 +24,7 @@
 
 <template>
   <aside
-    class="flex flex-col border-r bg-surface text-surface-foreground overflow-hidden transition-[width] duration-200 ease-in-out"
+    class="flex flex-col border-r bg-sidebar text-surface-foreground overflow-hidden transition-[width] duration-200 ease-in-out"
     :class="collapsed ? 'w-16' : 'w-60'"
   >
     <!-- Brand / collapse -->

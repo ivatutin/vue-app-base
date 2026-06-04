@@ -41,7 +41,7 @@
 </script>
 
 <template>
-  <header class="flex items-center gap-2 h-14 px-4 border-b bg-surface text-surface-foreground">
+  <header class="flex items-center gap-2 h-14 px-4 border-b bg-sidebar text-surface-foreground">
     <!-- Breadcrumbs -->
     <nav aria-label="Хлебные крошки" class="flex items-center gap-1 min-w-0 text-sm">
       <RouterLink

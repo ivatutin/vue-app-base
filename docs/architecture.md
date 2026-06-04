@@ -10,7 +10,7 @@
 |------|-----------|--------------|
 | Каркас | Vue 3.5 (Composition API, `<script setup>`) | [vuejs.org](https://vuejs.org) |
 | UI | shadcn-vue + reka-ui + Tailwind v4 + @lucide/vue + design tokens (всё приложение, включая shell) | [shadcn-vue.com](https://www.shadcn-vue.com/) / [ADR-0007](adr/0007-ui-stack-migration-from-vuetify.md) |
-| Дизайн-язык | Inter Variable (self-hosted) + нейтральная база с индиго-акцентом `--brand` | [ADR-0009](adr/0009-design-language-inter-brand-accent.md) |
+| Дизайн-язык | Inter Variable (self-hosted) + нейтральная база с emerald-акцентом `--brand`, surface/elevation + токен `--sidebar` | [ADR-0009](adr/0009-design-language-inter-brand-accent.md), [ADR-0014](adr/0014-brand-emerald-surface-elevation.md) |
 | Тема | Собственный composable `useTheme()` в [shared/lib/theme/](../src/shared/lib/theme/) (mode + localStorage + `prefers-color-scheme` + `.dark` class) | — |
 | State | Pinia 3 (setup-stores) | [pinia.vuejs.org](https://pinia.vuejs.org) |
 | Routing | vue-router 4 + `unplugin-vue-router` | [router.vuejs.org](https://router.vuejs.org) |
