@@ -50,7 +50,7 @@
     col.accessor('name', { header: 'Имя', cell: i => i.getValue() }),
     col.accessor('email', { header: 'E-mail', cell: i => h('span', { class: 'text-muted-foreground' }, i.getValue()) }),
     col.accessor('role', { header: 'Роль', cell: i => i.getValue() }),
-    col.accessor('status', { header: 'Статус', cell: i => statusCell(i.getValue()) }),
+    col.accessor('status', { header: 'Статус', filterFn: 'equalsString', cell: i => statusCell(i.getValue()) }),
     col.accessor('createdAt', { header: 'Создан', cell: i => h('span', { class: 'tabular-nums text-muted-foreground' }, i.getValue()) }),
   ] as ColumnDef<User, any>[]
 
@@ -119,9 +119,25 @@
       :get-row-id="r => r.id"
       :loading="mode === 'loading'"
       :page-size="10"
+      search-placeholder="Поиск по имени, e-mail…"
+      searchable
       @retry="mode = 'data'"
       @selection-change="selected = $event"
     >
+      <template #toolbar="{ table }">
+        <select
+          aria-label="Фильтр по статусу"
+          class="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          :value="(table.getColumn('status')?.getFilterValue() as string) ?? ''"
+          @change="table.getColumn('status')?.setFilterValue(($event.target as HTMLSelectElement).value || undefined)"
+        >
+          <option value="">Все статусы</option>
+          <option value="active">Активен</option>
+          <option value="invited">Приглашён</option>
+          <option value="blocked">Заблокирован</option>
+        </select>
+      </template>
+
       <template #bulk-actions>
         <Button size="xs" variant="outlined">
           <template #prepend>

@@ -14,12 +14,14 @@
    */
   import type {
     ColumnDef,
+    ColumnFiltersState,
     RowSelectionState,
     SortingState,
   } from '@tanstack/vue-table'
   import {
     FlexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
     useVueTable,
@@ -38,6 +40,8 @@
     enableSorting?: boolean
     enableSelection?: boolean
     enablePagination?: boolean
+    searchable?: boolean
+    searchPlaceholder?: string
     pageSize?: number
     skeletonRows?: number
     maxHeight?: string
@@ -52,6 +56,8 @@
     enableSorting: true,
     enableSelection: false,
     enablePagination: false,
+    searchable: false,
+    searchPlaceholder: 'Поиск…',
     pageSize: 10,
     skeletonRows: 5,
     maxHeight: undefined,
@@ -69,6 +75,8 @@
 
   const sorting = ref<SortingState>([])
   const rowSelection = ref<RowSelectionState>({})
+  const globalFilter = ref('')
+  const columnFilters = ref<ColumnFiltersState>([])
 
   const table = useVueTable({
     get data () {
@@ -84,6 +92,12 @@
       get rowSelection () {
         return rowSelection.value
       },
+      get globalFilter () {
+        return globalFilter.value
+      },
+      get columnFilters () {
+        return columnFilters.value
+      },
     },
     enableRowSelection: () => props.enableSelection,
     getRowId: props.getRowId,
@@ -94,7 +108,14 @@
       rowSelection.value = typeof updater === 'function' ? updater(rowSelection.value) : updater
       emit('selection-change', table.getSelectedRowModel().rows.map(r => r.original))
     },
+    onGlobalFilterChange: updater => {
+      globalFilter.value = typeof updater === 'function' ? updater(globalFilter.value) : updater
+    },
+    onColumnFiltersChange: updater => {
+      columnFilters.value = typeof updater === 'function' ? updater(columnFilters.value) : updater
+    },
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: props.enableSorting ? getSortedRowModel() : undefined,
     getPaginationRowModel: props.enablePagination ? getPaginationRowModel() : undefined,
     initialState: {
@@ -115,6 +136,17 @@
     !props.loading && !props.error && props.data.length === 0,
   )
 
+  /** Данные есть, но фильтр/поиск ничего не вернул — это не «пусто». */
+  const isNoResults = computed(() =>
+    !props.loading && !props.error && props.data.length > 0
+    && table.getFilteredRowModel().rows.length === 0,
+  )
+
+  function resetFilters () {
+    globalFilter.value = ''
+    table.resetColumnFilters()
+  }
+
   const errorText = computed(() =>
     typeof props.error === 'string' ? props.error : 'Не удалось загрузить данные.',
   )
@@ -128,13 +160,39 @@
     if (state === 'desc') return 'descending'
     return 'none'
   }
+
+  // Доступ к инстансу таблицы из toolbar-слота (:table) и через ref.
+  defineExpose({ table })
 </script>
 
 <template>
   <div class="space-y-3">
-    <!-- Тулбар (поиск / фильтры) -->
-    <div v-if="$slots.toolbar" class="flex items-center gap-2">
-      <slot name="toolbar" />
+    <!-- Тулбар: поиск + пользовательские фильтры -->
+    <div v-if="searchable || $slots.toolbar" class="flex flex-wrap items-center gap-2">
+      <div v-if="searchable" class="relative">
+        <Icon
+          class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          name="mdi-magnify"
+          size="sm"
+        />
+        <input
+          v-model="globalFilter"
+          aria-label="Поиск по таблице"
+          class="h-9 w-64 max-w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          :placeholder="searchPlaceholder"
+          type="text"
+        >
+        <button
+          v-if="globalFilter"
+          aria-label="Очистить поиск"
+          class="absolute right-1.5 top-1/2 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded text-muted-foreground hover:text-foreground"
+          type="button"
+          @click="globalFilter = ''"
+        >
+          <Icon name="mdi-close" size="sm" />
+        </button>
+      </div>
+      <slot name="toolbar" :table="table" />
     </div>
 
     <!-- Bulk-бар выбора -->
@@ -256,6 +314,23 @@
             </td>
           </tr>
 
+          <!-- No results (данные есть, фильтр пуст) -->
+          <tr v-else-if="isNoResults">
+            <td :class="cellPad" :colspan="colSpan">
+              <slot name="no-results" :reset="resetFilters">
+                <EmptyState
+                  description="Измените запрос или сбросьте фильтры."
+                  icon="mdi-magnify"
+                  title="Ничего не найдено"
+                >
+                  <Button size="sm" variant="outlined" @click="resetFilters">
+                    Сбросить фильтры
+                  </Button>
+                </EmptyState>
+              </slot>
+            </td>
+          </tr>
+
           <!-- Данные -->
           <tr
             v-for="row in table.getRowModel().rows"
@@ -290,7 +365,7 @@
 
     <!-- Пагинация -->
     <div
-      v-if="enablePagination && !loading && !error && !isEmpty"
+      v-if="enablePagination && !loading && !error && !isEmpty && !isNoResults"
       class="flex items-center justify-between gap-3 text-sm text-muted-foreground"
     >
       <span class="tabular-nums">
