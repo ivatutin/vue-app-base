@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import { VueRouterAutoImports } from 'unplugin-vue-router'
 import { defineConfig } from 'vitest/config'
@@ -6,9 +7,8 @@ import { defineConfig } from 'vitest/config'
 /**
  * Лёгкий конфиг для Vitest: только то, что нужно тестам.
  *
- * Vue + Vuetify плагины НЕ подключены намеренно — для unit-тестов на
- * чистые функции / сторы / lib они избыточны и тормозят старт. Когда
- * понадобятся тесты на .vue с full-render — добавим Vue-плагин точечно.
+ * Vue plugin подключён для тестов с full-render .vue компонентов
+ * (Form, TextField, OtpInput, etc — см. ADR-0010 после M0.B).
  *
  * AutoImport обязателен: production-код опирается на глобальные
  * defineStore / ref / computed / storeToRefs (см. vite.config.mts).
@@ -16,12 +16,12 @@ import { defineConfig } from 'vitest/config'
  * `ReferenceError: defineStore is not defined`.
  *
  * Storybook addon-vitest НЕ подключаем — он требует playwright-browser
- * режим и Vue-плагин, что несовместимо с лёгким конфигом. Stories
- * проверяются через `npm run build-storybook`, визуальный smoke — через
- * `npm run storybook`.
+ * режим, что несовместимо с лёгким конфигом. Stories проверяются через
+ * `npm run build-storybook`, визуальный smoke — через `npm run storybook`.
  */
 export default defineConfig({
   plugins: [
+    vue(),
     AutoImport({
       imports: [
         'vue',
