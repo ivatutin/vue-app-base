@@ -103,15 +103,45 @@
     <!-- Меню аккаунта -->
     <Menu location="bottom end">
       <template #activator="{ props }">
-        <Button v-bind="props" icon="mdi-account" variant="text" />
+        <!--
+          Иконочная кнопка без текста: без title/aria-label скринридер
+          объявляет просто «кнопка», а Playwright/пользователь не могут
+          найти её по имени. `title` даёт и подсказку при наведении,
+          и accessible name.
+        -->
+        <Button
+          v-bind="props"
+          aria-label="Меню аккаунта"
+          icon="mdi-account"
+          title="Меню аккаунта"
+          variant="text"
+        />
       </template>
 
       <List density="compact">
-        <!-- TODO: profile action (ROADMAP, Фаза 1 — auth flow) -->
-        <ListItem icon="mdi-account-edit-outline" title="Мой профиль" />
+        <!--
+          Страницы профиля пока нет. Пункт помечен disabled, а не оставлен
+          «живым»: кнопка, которая молча ничего не делает, хуже отсутствующей —
+          пользователь считает, что сломалось приложение.
+        -->
+        <ListItem
+          disabled
+          icon="mdi-account-edit-outline"
+          title="Мой профиль"
+        />
         <Divider />
-        <!-- TODO: logout action (ROADMAP, Фаза 1 — auth flow) -->
-        <ListItem icon="mdi-exit-run" title="Выйти" />
+        <!--
+          Ведём на /auth/logout, а не зовём logoutFlow отсюда: страница —
+          единственное место, где выход выполняется, и она же показывает
+          подтверждение. Дублировать сценарий в шапке значило бы иметь
+          два пути выхода, которые разъедутся.
+        -->
+        <ListItem
+          danger
+          icon="mdi-exit-run"
+          title="Выйти"
+          :to="{ name: '/auth/logout' }"
+        />
       </List>
     </Menu>
   </header>
