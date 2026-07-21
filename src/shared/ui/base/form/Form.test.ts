@@ -50,9 +50,14 @@ describe('Form + TextField (vee-validate + Zod)', () => {
     await waitForVeeValidate()
 
     await wrapper.find('form').trigger('submit')
-    await waitForVeeValidate()
 
-    expect(wrapper.vm.submitted).toHaveLength(1)
+    // Опрос по условию вместо фиксированной паузы: validate() у
+    // vee-validate асинхронна, и на загруженной машине (холодный импорт,
+    // параллельный type-check) `setTimeout(0)` до неё не доживает.
+    await vi.waitFor(() => {
+      expect(wrapper.vm.submitted).toHaveLength(1)
+    })
+
     expect(wrapper.vm.submitted[0]!.values).toEqual({
       email: 'user@example.com',
       password: 'correct-horse-battery-staple',
@@ -69,10 +74,12 @@ describe('Form + TextField (vee-validate + Zod)', () => {
     await waitForVeeValidate()
 
     await wrapper.find('form').trigger('submit')
-    await waitForVeeValidate()
+
+    await vi.waitFor(() => {
+      expect(wrapper.vm.invalid).toHaveLength(1)
+    })
 
     expect(wrapper.vm.submitted).toHaveLength(0)
-    expect(wrapper.vm.invalid).toHaveLength(1)
     const errorMsgs = wrapper.findAll('p.text-error').map(p => p.text())
     expect(errorMsgs.length).toBeGreaterThan(0)
   })
@@ -109,8 +116,10 @@ describe('Form + TextField (vee-validate + Zod)', () => {
     const wrapper = mount(Wrapper)
     await waitForVeeValidate()
     wrapper.vm.formRef!.setFieldError('email', 'Email уже занят')
-    await nextTick()
-    expect(wrapper.text()).toContain('Email уже занят')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Email уже занят')
+    })
   })
 })
 

@@ -167,8 +167,9 @@ Phase 0 (foundation)
 - ✅ ADR-0010, ADR-0011, ADR-0012, ADR-0013 committed (M0.A)
 - ✅ `docs/integration-backend.md` — раздел «Auth endpoints planned» добавлен
 - ✅ Компоненты `<Form>`/`<TextField>`, `<Tabs>`, `<OtpInput>`, `<PasswordInput>`, `<PhoneInput>` реализованы и покрыты тестами (M0.B)
-- ⬜ Stories для `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>`, `<Tabs>` — **не написаны**
-- ⬜ Компоненты M0.B не выведены в barrel `@/shared/ui/base` и не имеют потребителей
+- ✅ Stories для `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>`, `<Tabs>` написаны; сборка Storybook добавлена в CI
+- ✅ Компоненты M0.B выведены в barrel `@/shared/ui/base`; инвариант закреплён тестом `public-api.test.ts`
+- ⬜ Потребителей у компонентов M0.B по-прежнему нет — появятся на экранах Phase 1-2
 - ⬜ `entities/otp-challenge` (FSM-store) и `entities/auth-provider` — **не созданы** (M0.C)
 - ⬜ MSW handlers (`VITE_USE_MSW=true`) — **не сделаны**, пакет `msw` не установлен (M0.C)
 - ⬜ Backend: `KeycloakAdminService` создаёт test-user через `users.create` + удаляет (интегр. тест) — статус на стороне `njs-server`, здесь не подтверждён

@@ -46,6 +46,11 @@ jobs:
       - name: Test
         run: npm run test:coverage
 
+      # Stories — витрина дизайн-системы и acceptance-критерий Phase 0.
+      # Без сборки в CI они тихо ломаются: обычные тесты их не трогают.
+      - name: Build Storybook
+        run: npm run build-storybook
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
