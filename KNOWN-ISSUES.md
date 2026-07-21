@@ -79,7 +79,7 @@ RBAC фактически держится на скрытых пунктах с
 - Нет i18n (UI на русском, тексты вшиты в шаблоны) — Фаза 2 (proposed).
 - Нет Playwright / E2E-тестов (Vitest для unit подключён — Фаза 2.5) — Фаза 3.
 - Нет ESLint-boundaries для FSD-правил — Фаза 2 (proposed).
-- Нет CI (GitHub Actions) — Фаза 3 (proposed).
+- ~~Нет CI (GitHub Actions)~~ — закрыто 2026-07-21, см. ROADMAP Фаза 1.5.
 - Нет Sentry / observability — Фаза 3.
 - Нет полноценного Form architecture (VeeValidate + Zod-resolver) — Фаза 2 (по триггеру: первая CRUD-форма с серьёзной валидацией).
 

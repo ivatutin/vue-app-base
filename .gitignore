@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 *storybook.log
 storybook-static
+
+# test coverage
+/coverage

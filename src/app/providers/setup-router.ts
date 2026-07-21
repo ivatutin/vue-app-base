@@ -20,19 +20,25 @@ export function setupRouter (app: App, options: SetupRouterOptions = {}): Router
     routes: setupLayouts(routes),
   })
 
-  // Workaround for https://github.com/vitejs/vite/issues/11804
-  router.onError((err, to) => {
-    if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-      if (localStorage.getItem('vuetify:dynamic-reload')) {
-        console.error('Dynamic import error, reloading page did not fix it', err)
-      } else {
-        console.log('Reloading page to fix dynamic import error')
-        localStorage.setItem('vuetify:dynamic-reload', 'true')
-        location.assign(to.fullPath)
-      }
-    } else {
-      console.error(err)
+  // Workaround for https://github.com/vitejs/vite/issues/11804:
+  // после деплоя старый чанк исчезает, lazy-import маршрута падает.
+  // Перезагружаем страницу один раз; флаг в localStorage не даёт
+  // зациклиться, если перезагрузка не помогла.
+  const RELOAD_FLAG = 'app:dynamic-reload'
+
+  router.onError((error, to) => {
+    if (!error?.message?.includes?.('Failed to fetch dynamically imported module')) {
+      console.error(error)
+      return
     }
+
+    if (localStorage.getItem(RELOAD_FLAG)) {
+      console.error('Dynamic import error, reloading page did not fix it', error)
+      return
+    }
+
+    localStorage.setItem(RELOAD_FLAG, 'true')
+    location.assign(to.fullPath)
   })
 
   router.beforeEach(async to => {
@@ -58,9 +64,13 @@ export function setupRouter (app: App, options: SetupRouterOptions = {}): Router
     }
   })
 
-  router.isReady().then(() => {
-    localStorage.removeItem('vuetify:dynamic-reload')
-  })
+  // Навигация состоялась — значит чанки грузятся, флаг перезагрузки
+  // можно снять. `catch` обязателен: isReady() реджектится, если
+  // первая навигация упала, и без него это unhandled rejection.
+  void router
+    .isReady()
+    .then(() => localStorage.removeItem(RELOAD_FLAG))
+    .catch(() => {})
 
   app.use(router)
 

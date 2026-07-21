@@ -15,4 +15,30 @@ import storybook from 'eslint-plugin-storybook'
 export default [
   ...(await vuetify()),
   ...storybook.configs['flat/recommended'],
+
+  /**
+   * Type-aware правила. Базовый конфиг работает без информации о типах,
+   * поэтому целый класс ошибок ему не виден — в первую очередь
+   * «забытый await». Для проекта с async-bootstrap, refresh-мьютексом
+   * и auth-flow это главный источник тихих багов: промис уходит
+   * в unhandled rejection, а поток продолжается как ни в чём не бывало.
+   *
+   * `projectService` дороже по времени, поэтому включён точечно —
+   * только на исходники, без конфигов и stories.
+   */
+  {
+    files: ['src/**/*.ts', 'src/**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.vue'],
+      },
+    },
+    rules: {
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
 ]

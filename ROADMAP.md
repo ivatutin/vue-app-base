@@ -95,8 +95,18 @@ Guard принимал решение по пустому user-стору (пе�
 ### [P1] Статусы пользователя ≠ `active` `planned`
 `isAuthorized` требует `status === 'active'`, поэтому пользователь в `pending_verification` успешно логинится и тут же возвращается на login — бесконечно и без объяснения. Разделить `isAuthenticated` / `isAuthorized`, вести на экран верификации. Блокирует Phase 1 auth-suite (регистрация), где этот статус станет основным.
 
-### [P1] CI и type-aware линтинг `planned`
-CI отсутствует: pre-commit гоняет только `eslint --fix`, поэтому сломанные типы, падающие тесты и сломанная сборка проходят свободно. Плюс `run-p` в `build` даёт гонку между `vue-tsc` и генерацией `typed-router.d.ts`, а `vitest.config.ts` перезаписывает `auto-imports.d.ts` урезанной версией. Фикс: workflow lint → type-check → test → build, `run-s`, `dts: false` в vitest-конфиге, flat-блок ESLint с `projectService` и `no-floating-promises`.
+### [P1] CI и type-aware линтинг `done` (2026-07-21)
+CI отсутствовал: pre-commit гонял только `eslint --fix`, поэтому сломанные типы, падающие тесты и сломанная сборка проходили свободно.
+
+Сделано:
+- **[.github/workflows/ci.yml](.github/workflows/ci.yml)** — lint:check → type-check → build-only → проверка генерируемых файлов → test:coverage, на push в main и на все PR. Шаги разнесены, чтобы имя упавшего сразу называло проблему.
+- **`.husky/pre-push`** — `type-check` + `test`. Промежуточный рубеж: pre-commit остаётся лёгким.
+- **`run-p` → `run-s`** в `build` — устранена гонка, где `vite build` перезаписывал `typed-router.d.ts` / `auto-imports.d.ts` в момент чтения их `vue-tsc`.
+- **`dts: false` в vitest-конфиге** — прогон тестов урезал коммитнутый `auto-imports.d.ts` со 151 до 79 строк, вырезая блок `ComponentCustomProperties`. Латентная поломка: авто-импорты в `<template>` переставали типизироваться. Файл восстановлен.
+- **Type-aware блок ESLint** (`projectService` на `src/**`): `no-floating-promises`, `no-misused-promises`, `await-thenable`. Сразу нашёл 5 забытых промисов — в том числе `router.replace()` в LogoutPage и `router.isReady().then()` без `catch`. Попутно вычищен мусор от удалённого Vuetify (ключ `vuetify:dynamic-reload`).
+- **Покрытие** — `npm run test:coverage`, пороги как храповик против регресса (общепроектный замер, ~36% строк на момент включения).
+
+Не покрыто CI: сборка Storybook, E2E (их нет), аудит зависимостей.
 
 ---
 
@@ -177,8 +187,8 @@ Vitest 4 + @vue/test-utils 2 + happy-dom 20. Конфиг — отдельный
 ### [P2] Storybook для `shared/ui/base/` `done` (поднят из Фазы 3 как Фаза 2.5.4)
 Storybook 8 для Vue + Vite (`@storybook/vue3-vite`). Конфиг `.storybook/{main,preview}.ts`. Stories рядом с компонентами по паттерну `src/**/*.stories.@(js|ts)`. В preview подключены design tokens + Tailwind, Vuetify-стили намеренно не импортируются (будущие обёртки `shared/ui/base/` должны рендериться без Vuetify). Аддоны: `addon-a11y` (warnings), `addon-docs`, `addon-vitest`, `chromatic-com`. Демо — `widgets/app-preloader/ui/AppPreloader.stories.ts` с Light/Dark. Команды: `npm run storybook` (dev :6006), `npm run build-storybook`.
 
-### [P3] CI (lint + type-check + test + build) `proposed`
-**Что:** GitHub Actions или эквивалент. Превью PR — опционально.
+### [P3] CI (lint + type-check + test + build) `done` (2026-07-21)
+Поднят раньше срока — как предусловие для остальных пунктов Фазы 1.5. Детали там же. Осталось опциональным: превью PR, сборка Storybook в CI, `npm audit` в пайплайне.
 
 ### [P3] Design tokens `proposed`
 **Зачем:** Vuetify-theme — vendor-specific. Дизайн-токены отделяют бренд от UI-фреймворка.

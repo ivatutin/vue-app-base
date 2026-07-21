@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Новый пуш в ту же ветку отменяет предыдущий прогон — незачем
+# держать очередь на устаревшем коммите.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Шаги разнесены намеренно: по имени упавшего сразу видно,
+      # что именно сломано, без чтения логов.
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Type-check
+        run: npm run type-check
+
+      # Проверяем, что закоммиченные генерируемые файлы соответствуют
+      # конфигам. Иначе `auto-imports.d.ts` / `typed-router.d.ts`
+      # тихо разъезжаются с кодом, и локально всё зелёное, а у соседа нет.
+      - name: Generated files are up to date
+        run: |
+          npm run build-only
+          git diff --exit-code -- src/auto-imports.d.ts src/typed-router.d.ts src/components.d.ts
+
+      - name: Test
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore

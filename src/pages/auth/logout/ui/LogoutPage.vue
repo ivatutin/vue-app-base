@@ -16,7 +16,7 @@
   })
 
   function goToLogin () {
-    router.replace({ name: '/auth/login' })
+    void router.replace({ name: '/auth/login' })
   }
 </script>
 

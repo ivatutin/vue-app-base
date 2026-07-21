@@ -30,13 +30,47 @@ export default defineConfig({
           pinia: ['defineStore', 'storeToRefs'],
         },
       ],
-      dts: 'src/auto-imports.d.ts',
+      // dts НЕ генерируем: vite.config.mts пишет тот же (коммитнутый)
+      // файл с `vueTemplate: true`, а этот конфиг — без него, и урезал
+      // его со 151 строки до 79, вырезая блок ComponentCustomProperties.
+      // Тестам d.ts не нужен — типы проверяет vue-tsc по vite-конфигу.
+      dts: false,
     }),
   ],
   test: {
     globals: true,
     environment: 'happy-dom',
     include: ['src/**/*.{test,spec}.{ts,js}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'lcov'],
+      include: ['src/**/*.{ts,vue}'],
+      exclude: [
+        'src/**/*.{test,spec}.{ts,js}',
+        'src/**/*.stories.ts',
+        'src/**/index.ts',
+        'src/**/*.d.ts',
+        'src/app/main.ts',
+      ],
+      /**
+       * Пороги — храповик против регресса, а не цель. Выставлены чуть
+       * ниже фактических значений на момент включения (2026-07-21:
+       * statements 35.8 / branches 29.4 / functions 25.6 / lines 36.1).
+       *
+       * Замер общепроектный (`include` покрывает весь src, а не только
+       * файлы, которых коснулись тесты). Так цифру нельзя улучшить,
+       * просто не написав тест: новый непокрытый модуль её опускает.
+       * Отсюда и скромные значения — они честные.
+       *
+       * Поднимай пороги вслед за ростом покрытия, вручную.
+       */
+      thresholds: {
+        statements: 34,
+        branches: 28,
+        functions: 24,
+        lines: 34,
+      },
+    },
   },
   resolve: {
     alias: {

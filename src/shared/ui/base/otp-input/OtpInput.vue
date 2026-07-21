@@ -106,7 +106,7 @@
       }
       commit()
       const lastFilled = Math.min(digits.length, props.length) - 1
-      nextTick(() => focusIndex(lastFilled + 1))
+      void nextTick(() => focusIndex(lastFilled + 1))
       return
     }
 
@@ -115,7 +115,7 @@
     commit()
 
     if (raw && i < props.length - 1) {
-      nextTick(() => focusIndex(i + 1))
+      void nextTick(() => focusIndex(i + 1))
     }
   }
 
@@ -152,7 +152,7 @@
       cells.value[j] = digits[j] ?? ''
     }
     commit()
-    nextTick(() => focusIndex(Math.min(digits.length, props.length - 1)))
+    void nextTick(() => focusIndex(Math.min(digits.length, props.length - 1)))
   }
 
   function onBlur () {
