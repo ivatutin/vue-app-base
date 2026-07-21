@@ -1,5 +1,11 @@
 <script setup lang="ts">
-  import { Button, Card, Divider } from '@/shared/ui/base'
+  // Относительные пути, а не '@/shared/ui/base': импорт barrel'а слоя,
+  // внутри которого лежит сам компонент, даёт цикл
+  // base/index.ts → code-viewer/index.ts → CodeViewer.vue → base/index.ts.
+  // Остальные компоненты base импортируют соседей относительно — так же.
+  import Button from '../../button/Button.vue'
+  import Card from '../../card/Card.vue'
+  import Divider from '../../divider/Divider.vue'
   import { escapeHtml } from '../lib/escape-html'
 
   const codeMode = ref(false)

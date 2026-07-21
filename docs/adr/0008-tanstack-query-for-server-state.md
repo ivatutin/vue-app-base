@@ -94,7 +94,13 @@ Pinia `useUserStore` остаётся как **синхронный источн
 
 Иерархия даёт групповую инвалидацию: `invalidateQueries({ queryKey: ['users'] })` сбросит **все** запросы про пользователей.
 
-**Размещение composables**: `src/entities/<slice>/api/use-<name>-query.ts` или `use-<name>-mutation.ts`. Через barrel `entities/<slice>` не экспортируем (это implementation detail сегмента api).
+**Размещение composables**: `src/entities/<slice>/api/use-<name>-query.ts` или `use-<name>-mutation.ts`. Экспортируем через barrel слайса — `import { useCurrentUserQuery } from '@/entities/user'`.
+
+> **Поправка от 2026-07-21.** Изначально здесь было «через barrel `entities/<slice>` не экспортируем (это implementation detail сегмента api)». Формулировка ошибочна и создавала тупик: [ADR-0001](0001-feature-sliced-design.md) и [CONTRIBUTING](../../CONTRIBUTING.md) требуют отдавать наружу **только** через `index.ts` слайса, а это правило запрещало туда что-либо класть — пересечение пусто, легального импорта не существовало. На практике `useCurrentUserQuery` документировался примером с запрещённым deep-import'ом.
+>
+> Query-composable, который вызывают страницы и виджеты, — это и есть публичный API слайса. Деталь реализации — то, что под ним: `getCurrentUser`, DTO-схема и маппер; они наружу не идут.
+>
+> Следствие: composable **не должен** импортировать соседние слайсы ради условий запуска. Условие передаётся параметром (`enabled`), оркестрация — на вызывающей стороне.
 
 **Дефолты** ([setup-query-client.ts](../../src/app/providers/setup-query-client.ts)):
 - `staleTime: 30_000` — 30 секунд (B2B-инструмент, не лента соцсети, частые refresh не нужны).

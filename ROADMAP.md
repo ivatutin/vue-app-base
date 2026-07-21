@@ -161,6 +161,18 @@ Guard принимал решение по пустому user-стору (пе�
 
 Остаётся долг: stories нет у `DataTable`, `EmptyState`, `Skeleton`, `PageHeader`, `StatusBadge`, `CommandPalette`, `CodeViewer`, `Form`. И у компонентов M0.B пока нет потребителей — появятся на экранах Phase 1-2.
 
+### [P1] `useCurrentUserQuery` не имел легального пути импорта `done` (2026-07-21)
+JSDoc composable'а учил импортировать напрямую из файла — форма, которую CONTRIBUTING помечает как ❌. Но правильного варианта и не существовало: символ не экспортировался из `entities/user/index.ts`, а [ADR-0008](docs/adr/0008-tanstack-query-for-server-state.md) прямо запрещал его туда добавлять («implementation detail сегмента api»).
+
+**Два ADR противоречили друг другу**: ADR-0001 и CONTRIBUTING требуют отдавать наружу только через `index.ts` слайса, ADR-0008 запрещал туда класть. Пересечение пусто — комментарий честно документировал единственный работающий (и запрещённый) путь.
+
+Разрешено в пользу ADR-0001: composable, который вызывают страницы и виджеты, — это и есть публичный API слайса, а не деталь реализации (деталь — `getCurrentUser`, DTO-схема и маппер под ним). Формулировка в ADR-0008 помечена как ошибочная, с обоснованием.
+
+Попутно:
+- Убран кросс-слайсовый импорт `entities/user → entities/auth` (запрещён CONTRIBUTING): условие запуска передаётся параметром `enabled`, оркестрация — на вызывающей стороне.
+- Устранены два рантайм-цикла: `entities/user/index.ts ↔ lib/can.ts` и `shared/ui/base/index.ts ↔ CodeViewer.vue`. Оба не взрывались лишь потому, что обращение к импорту отложено до вызова функции.
+- Заведён [import-rules.test.ts](src/shared/lib/architecture/import-rules.test.ts) — автомат под правила импортов (см. Фазу 2).
+
 ### [P1] CI и type-aware линтинг `done` (2026-07-21)
 CI отсутствовал: pre-commit гонял только `eslint --fix`, поэтому сломанные типы, падающие тесты и сломанная сборка проходили свободно.
 
@@ -227,9 +239,10 @@ Bundle gzipped: index 61.89 КБ + default 19.82 КБ (с ~84 КБ index до м
 **Что:** vue-i18n + словари `shared/i18n/locales/{ru,en}.json` + setup-провайдер.
 **Триггер:** до того, как накопится 50+ страниц.
 
-### [P2] ESLint-boundaries для FSD `proposed`
+### [P2] ESLint-boundaries для FSD `partial done`
 **Зачем:** без автомата человеческая дисциплина проседает на 3-й месяц. FSD ломается тихо.
-**Что:** `eslint-plugin-boundaries` или `@feature-sliced/eslint-config`. Запрет нарушения слоёв + запрет импорта в обход barrel.
+**Что сделано (2026-07-21):** [import-rules.test.ts](src/shared/lib/architecture/import-rules.test.ts) проверяет четыре правила из CONTRIBUTING: направление слоёв, deep-import в обход barrel, импорт соседнего слайса и цикл через собственный barrel. Тест окупился сразу — поймал цикл `base/index.ts → CodeViewer.vue → base/index.ts`, который жил в проекте с миграции на shadcn.
+**Что осталось:** `eslint-plugin-boundaries` или `@feature-sliced/eslint-config` — правила прямо в редакторе, а не только в прогоне тестов.
 **Триггер:** в команде появился 3-й разработчик.
 
 ### [P2] Husky + lint-staged + commitlint `done`
