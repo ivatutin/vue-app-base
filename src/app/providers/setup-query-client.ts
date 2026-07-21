@@ -1,5 +1,6 @@
 import type { App } from 'vue'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { setQueryClient } from '@/shared/api'
 
 /**
  * TanStack Query provider (pilot, ROADMAP Фаза 2 — partial done).
@@ -27,6 +28,8 @@ export function setupQueryClient (app: App): QueryClient {
   })
 
   app.use(VueQueryPlugin, { queryClient })
+  // Чтобы `logoutFlow` мог почистить кэш вне компонентного контекста.
+  setQueryClient(queryClient)
 
   return queryClient
 }

@@ -16,9 +16,10 @@ import { getCurrentUser } from './get-current-user'
  * - Запрос выполняется только если есть валидная сессия
  *   (`auth.isSessionActive`), иначе query disabled — `data` = undefined,
  *   network call не идёт.
- * - QueryKey — стабильный массив `['users', 'me']`. При logout
- *   потребитель должен вызвать `queryClient.removeQueries({ queryKey:
- *   ['users', 'me'] })` через свой `useQueryClient()`.
+ * - QueryKey — стабильный массив `['users', 'me']`. Чистить кэш при
+ *   выходе потребителю НЕ нужно: `logoutFlow` (и `loginFlow`) делают
+ *   `queryClient.clear()` централизованно, иначе данные предыдущего
+ *   пользователя переживали бы смену аккаунта.
  * - staleTime берётся из глобальных defaults (30s в setup-query-client).
  *
  * Использование:

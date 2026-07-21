@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/entities/auth'
 import { useUserStore } from '@/entities/user'
+import { peekQueryClient } from '@/shared/api'
 import { retryOn404 } from '@/shared/lib/async'
 
 /**
@@ -20,6 +21,12 @@ export async function loginFlow (email: string, password: string): Promise<void>
   const user = useUserStore()
 
   await auth.login(email, password)
+
+  // Симметрично logoutFlow: сессия могла закончиться и без явного
+  // выхода (протухший refresh), тогда кэш предыдущего пользователя
+  // остался. Чистим сразу после логина — до того, как queries
+  // среагируют на ставший активным `isSessionActive`.
+  peekQueryClient()?.clear()
 
   try {
     await retryOn404(() => user.fetchCurrentUser(), { attempts: 3, delay: 500 })

@@ -1,8 +1,9 @@
+import { QueryClient } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/entities/auth'
 import { useUserStore } from '@/entities/user'
-import { HttpError } from '@/shared/api'
+import { HttpError, setQueryClient } from '@/shared/api'
 import { loginFlow } from './login-flow'
 
 describe('loginFlow', () => {
@@ -82,5 +83,28 @@ describe('loginFlow', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
     expect(logoutSpy).not.toHaveBeenCalled()
     expect(resetSpy).not.toHaveBeenCalled()
+  })
+
+  /**
+   * Симметрично logoutFlow: сессия может закончиться и без явного
+   * выхода (протух refresh), тогда кэш предыдущего пользователя
+   * остаётся. Чистим на входе, а не надеемся на чистый logout.
+   */
+  it('чистит кэш предыдущей сессии до загрузки профиля', async () => {
+    const queryClient = new QueryClient()
+    setQueryClient(queryClient)
+    queryClient.setQueryData(['users', 'me'], { id: 'предыдущий-пользователь' })
+
+    const auth = useAuthStore()
+    const user = useUserStore()
+    vi.spyOn(auth, 'login').mockResolvedValue()
+    vi.spyOn(user, 'fetchCurrentUser').mockImplementation(async () => {
+      // К моменту загрузки профиля чужих данных быть уже не должно.
+      expect(queryClient.getQueryData(['users', 'me'])).toBeUndefined()
+    })
+
+    await loginFlow('test@test.com', 'secret')
+
+    expect(queryClient.getQueryData(['users', 'me'])).toBeUndefined()
   })
 })

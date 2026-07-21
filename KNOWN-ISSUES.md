@@ -17,23 +17,7 @@
 
 ## Открытые дефекты
 
-Подтверждены воспроизведением в ходе ревью 2026-07-21. Два P0 того же ревью (guard решал до bootstrap; `failed` = вечный прелоадер) уже закрыты — см. [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md).
-
-### [P0] `PhoneInput` портит номер при посимвольном вводе
-
-**Файлы:** [src/shared/ui/base/phone-input/PhoneInput.vue:81](src/shared/ui/base/phone-input/PhoneInput.vue), [src/shared/model/phone/phone.lib.ts:16](src/shared/model/phone/phone.lib.ts)
-
-`commit()` зовёт `normalizePhone` на **недонабранном** номере. На 9-й цифре в строке оказывается ровно 10 цифр → ветка `digits.length === 10` дописывает `+7` к тому, что уже начинается с 7. Watch видит расхождение и перезаписывает `display`, дальнейший набор идёт поверх испорченной строки.
-
-Воспроизведение: набрать `9991234567` по одной цифре → наружу уходит `+779991234567` вместо `+79991234567`. Значение проходит `E164_REGEX`, то есть **валидный номер чужого абонента без единой ошибки валидации**.
-
-Тесты не ловят, потому что везде одноразовый `setValue('весь номер')`, а не посимвольный ввод. Фикс: не нормализовать, пока номер неполный; тест — на посимвольный набор.
-
-### [P0] Кэш TanStack Query не чистится при logout
-
-**Файл:** [src/processes/auth-flow/logout-flow.ts](src/processes/auth-flow/logout-flow.ts)
-
-Ни `queryClient.clear()`, ни `removeQueries` не вызываются нигде в `src/` — инструкция в [use-current-user-query.ts:20](src/entities/user/api/use-current-user-query.ts) адресована потребителю, которого нет. После смены аккаунта в одной вкладке пользователь B первые `staleTime` (30 с) видит данные пользователя A. Сейчас затронут один ключ, с ростом числа queries станет системной утечкой.
+Подтверждены воспроизведением в ходе ревью 2026-07-21. Все четыре P0 того же ревью уже закрыты: guard решал до bootstrap и `failed` = вечный прелоадер (см. [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md)), порча номера в `PhoneInput` и утечка кэша между аккаунтами (ROADMAP, Фаза 1.5).
 
 ### [P1] `meta.permissions` не задан ни на одном маршруте
 
