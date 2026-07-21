@@ -115,6 +115,12 @@ import { useUserStore } from '@/entities/user/model/user.store'
 
 **`permissions`** — guard зовёт `userStore.hasPermission(p)` для каждого; не хватает прав → редирект на `/system/forbidden`. Маппинг ролей в permissions — `shared/model/permission/role-permissions.ts`.
 
+> ⚠ **Скрыл пункт в сайдбаре по праву — обязан выставить `meta.permissions` на странице.**
+>
+> Фильтрация в [sidebar-items.ts](../../src/widgets/app-sidebar/model/sidebar-items.ts) прячет ссылку, но не защищает маршрут: прямой ввод URL или `router.push` из кода обходят её целиком. Пока `meta.permissions` не проставлен, RBAC держится на «защите сокрытием ссылки».
+>
+> Инвариант проверяется тестом [sidebar-permissions.test.ts](../../src/widgets/app-sidebar/model/sidebar-permissions.test.ts) — он же следит, чтобы пункт меню не вёл на несуществующую страницу.
+
 **`layout`** — Layout'ы лежат в [src/app/layouts/](../../src/app/layouts/). Доступны `default.vue` (с навигацией) и `auth.vue` (центрированная карточка без навигации).
 
 ---
@@ -146,6 +152,7 @@ function goHome() {
 - [ ] `npm run lint` без ошибок.
 - [ ] Импорты только через barrel.
 - [ ] Если страница защищённая — `meta.noAuth` **не** установлен.
+- [ ] Если пункт сайдбара скрывается по праву — на странице стоит `meta.permissions` с тем же кодом.
 - [ ] Если есть locale-строки — на русском (i18n ещё не подключён, [ROADMAP](../../ROADMAP.md) Фаза 2).
 - [ ] `console.log` удалены.
 

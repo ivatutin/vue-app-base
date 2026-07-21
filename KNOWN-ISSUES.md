@@ -17,16 +17,16 @@
 
 ## Открытые дефекты
 
-Подтверждены воспроизведением в ходе ревью 2026-07-21. Все четыре P0 того же ревью уже закрыты: guard решал до bootstrap и `failed` = вечный прелоадер (см. [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md)), порча номера в `PhoneInput` и утечка кэша между аккаунтами (ROADMAP, Фаза 1.5).
+Нет. Все дефекты ревью 2026-07-21 закрыты — детали в [ROADMAP.md](ROADMAP.md), Фаза 1.5:
 
-### [P1] `meta.permissions` не задан ни на одном маршруте
+- guard принимал решение до bootstrap (F5 выкидывал на login) и отказ bootstrap давал вечный прелоадер — [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md);
+- `PhoneInput` подменял номер при посимвольном вводе;
+- кэш TanStack Query переживал смену аккаунта;
+- redirect-loop для статусов ≠ `active`;
+- `meta.permissions` не стоял ни на одном маршруте;
+- отсутствовал catch-all.
 
-RBAC фактически держится на скрытых пунктах сайдбара: ветка проверки прав в [setup-router.ts](src/app/providers/setup-router.ts) есть, но `meta.permissions` не выставлен нигде (`grep` по `src/pages` — пусто). Прямой ввод URL обходит проверку целиком.
-
-### [P1] Нет catch-all маршрута
-
-`NotFoundPage` существует, но `src/pages/[...path].vue` — нет. Неизвестный URL даёт пустой `matched`, `meta.noAuth === undefined`, и guard уводит на login. Туда же ведут пункты сайдбара `/users` и `/roles`, которых нет в роутере.
-
+Оставшийся тех-долг (не дефекты) — в разделах ниже и в ROADMAP.
 
 ---
 

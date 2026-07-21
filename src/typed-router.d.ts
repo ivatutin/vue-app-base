@@ -19,17 +19,19 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    'not-found': RouteRecordInfo<'not-found', '/:path(.*)', { path: ParamValue<true> }, { path: ParamValue<false> }>,
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/logout': RouteRecordInfo<'/auth/logout', '/auth/logout', Record<never, never>, Record<never, never>>,
     '/dashboard': RouteRecordInfo<'/dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
+    '/roles': RouteRecordInfo<'/roles', '/roles', Record<never, never>, Record<never, never>>,
     '/system/account-status': RouteRecordInfo<'/system/account-status', '/system/account-status', Record<never, never>, Record<never, never>>,
     '/system/forbidden': RouteRecordInfo<'/system/forbidden', '/system/forbidden', Record<never, never>, Record<never, never>>,
-    'not-found': RouteRecordInfo<'not-found', '/system/not-found', Record<never, never>, Record<never, never>>,
     '/ui-kit/': RouteRecordInfo<'/ui-kit/', '/ui-kit', Record<never, never>, Record<never, never>>,
     '/ui-kit/buttons': RouteRecordInfo<'/ui-kit/buttons', '/ui-kit/buttons', Record<never, never>, Record<never, never>>,
     '/ui-kit/card': RouteRecordInfo<'/ui-kit/card', '/ui-kit/card', Record<never, never>, Record<never, never>>,
     '/ui-kit/table': RouteRecordInfo<'/ui-kit/table', '/ui-kit/table', Record<never, never>, Record<never, never>>,
     '/ui-kit/typography': RouteRecordInfo<'/ui-kit/typography', '/ui-kit/typography', Record<never, never>, Record<never, never>>,
+    '/users': RouteRecordInfo<'/users', '/users', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -47,6 +49,10 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
+    'src/pages/[...path].vue': {
+      routes: 'not-found'
+      views: never
+    }
     'src/pages/auth/login/ui/LoginPage.vue': {
       routes: '/auth/login'
       views: never
@@ -59,16 +65,16 @@ declare module 'vue-router/auto-routes' {
       routes: '/dashboard'
       views: never
     }
+    'src/pages/roles/ui/RolesPage.vue': {
+      routes: '/roles'
+      views: never
+    }
     'src/pages/system/account-status/ui/AccountStatusPage.vue': {
       routes: '/system/account-status'
       views: never
     }
     'src/pages/system/forbidden/ui/ForbiddenPage.vue': {
       routes: '/system/forbidden'
-      views: never
-    }
-    'src/pages/system/not-found/ui/NotFoundPage.vue': {
-      routes: 'not-found'
       views: never
     }
     'src/pages/ui-kit/index.vue': {
@@ -89,6 +95,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/ui-kit/typography.vue': {
       routes: '/ui-kit/typography'
+      views: never
+    }
+    'src/pages/users/ui/UsersPage.vue': {
+      routes: '/users'
       views: never
     }
   }
