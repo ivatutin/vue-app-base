@@ -5,14 +5,19 @@
  * Поведение:
  * - Live-маска через libphonenumber-js AsYouType('RU') — пользователь
  *   печатает цифры, маска подставляется: `+7 999 123-45-67`
- * - На blur и при emit — отдаём НОРМАЛИЗОВАННОЕ значение E.164
- *   (`+79991234567`) через shared/model/phone normalizePhone
- * - Поддержка ввода в любом формате (8-960, 7-960, +7-960, 960) —
- *   normalizePhone приведёт к +7
+ * - Приведение к российской форме делает `maskFromRaw`: любой ввод
+ *   (8-960, 7-960, +7-960, 960) разворачивается в `+7...`
+ * - Наружу отдаём `+` + цифры маски. На полном номере это готовый
+ *   E.164 (`+79991234567`), на недонаборе — короткий префикс
+ *
+ * **Компонент RU-only.** Международные номера не поддерживаются:
+ * `+49 30 123456` будет молча превращён в `+7 49 30 123456`. Нужен
+ * мультистрановой ввод — это отдельный компонент с выбором страны.
  *
  * Контракт modelValue:
- * - Внешне (на выходе и входе) — нормализованный E.164 (или пустая
- *   строка)
+ * - Внешне — `+` и цифры. Полным (валидным E.164) значение становится
+ *   только когда номер донабран; промежуточные значения тоже эмитятся,
+ *   чтобы схема могла показать «неполный номер», а не «поле пустое»
  * - Внутри — masked display state
  *
  * Интеграция с Form: с :name внутри <Form :schema> — useField (схема
@@ -22,7 +27,6 @@
   import { useField } from 'vee-validate'
   import { inject, ref, watch } from 'vue'
   import { cn } from '@/shared/lib/utils/cn'
-  import { normalizePhone } from '@/shared/model/phone'
   import { FORM_CONTEXT_KEY } from '../form/form-context'
   import Label from '../label/Label.vue'
 
@@ -76,13 +80,22 @@
 
   const display = ref<string>(maskFromRaw(props.modelValue))
 
+  /**
+   * `maskFromRaw` уже привёл цифры к российской форме (`7` + 10 цифр),
+   * поэтому наружу достаточно отдать `+` + эти цифры. Прогонять их
+   * ЕЩЁ РАЗ через `normalizePhone` нельзя: на недонабранном номере
+   * (9 введённых цифр → ровно 10 в строке) срабатывала его ветка
+   * «10 цифр = номер без кода страны», и к уже существующей `7`
+   * дописывалась вторая. Наружу уходил `+779991234567` — валидный
+   * по E164_REGEX номер чужого абонента, без единой ошибки валидации.
+   */
   function commit () {
-    const raw = display.value.replace(/\D/g, '')
-    const normalized = raw ? normalizePhone(display.value) : ''
+    const digits = display.value.replace(/\D/g, '')
+    const value = digits ? `+${digits}` : ''
     if (field) {
-      field.handleChange(normalized)
+      field.handleChange(value)
     } else {
-      emit('update:modelValue', normalized)
+      emit('update:modelValue', value)
     }
   }
 
