@@ -45,6 +45,10 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 Стор bootstrap — это **конечный автомат** ([entities/bootstrap/bootstrap.store.ts](src/entities/bootstrap/bootstrap.store.ts) со status + error + actions `start/finish/fail/reset`. Держи `entities/bootstrap` (состояние) и `processes/app-bootstrap` (оркестрация) раздельно.
 
+**Три исхода и ожидание guard'а** ([ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md)). Отсутствие сессии и 401 — это `ready` (guard уведёт на login), а не `failed`; retryable-отказ (сеть/таймаут/5xx) даёт два тихих повтора и экран [widgets/app-bootstrap-error](src/widgets/app-bootstrap-error/); `contract` — `failed` без кнопки «Повторить». Причину отказа классифицирует `classifyFailure` из [shared/api/failure.ts](src/shared/api/failure.ts).
+
+Auth-guard **ждёт** `whenSessionRestored()` — первая навигация стартует синхронно внутри `app.use(router)`, до bootstrap, и без ожидания уводила залогиненного пользователя на login при каждом F5. Два инварианта, которые легко сломать: сигнал разрешается **до** `router.isReady()` (иначе дедлок), а при retryable-отказе намеренно **остаётся неразрешённым** (иначе успешный повтор оставит пользователя на логине). Экран ошибки рендерится вне `<router-view>` — layout, snackbar и навигация ему недоступны.
+
 ### Маршрутизация — file-based с FSD-aware резолвером пути
 
 Маршруты генерирует `unplugin-vue-router`. Кастомный резолвер в [vite.config.mts](vite.config.mts) маппит `src/pages/<group>/ui/<Name>Page.vue` → URL `/<group>`, чтобы страница могла быть FSD-слайсом со своими сегментами `ui/`, `model/`, ..., а не плоским файлом. Обычные файлы вроде `src/pages/ui-kit/buttons.vue` обрабатываются стандартной логикой.
@@ -58,7 +62,7 @@ shared/     переиспользуемая инфраструктура: lib/u
 
 Все сторы — в композиционном стиле `defineStore('name', () => { ... })` с `ref/computed/function` (не Options API). `defineStore`, `storeToRefs`, `ref`, `computed` и т. д. **авто-импортируются** — не добавляй явных `import` для них.
 
-**HTTP-клиент.** В [shared/api/](src/shared/api/) — `class HttpClient` (fetch, [ADR-0006](docs/adr/0006-fetch-based-http-client.md)) с DI auth-interceptor и single-flight refresh-mutex. Использовать через `getHttpClient()` из `@/shared/api`. Инстанс собирается в [app/providers/setup-http-client.ts](src/app/providers/setup-http-client.ts), не создавай вручную. Контракт backend и `HttpError`-формат — [docs/integration-backend.md](docs/integration-backend.md).
+**HTTP-клиент.** В [shared/api/](src/shared/api/) — `class HttpClient` (fetch, [ADR-0006](docs/adr/0006-fetch-based-http-client.md)) с DI auth-interceptor и single-flight refresh-mutex. Дефолтный таймаут 30 c (`timeoutMs: 0` отключает), reject `fetch` оборачивается в `HttpError` со `status: 0` — наверх всегда прилетает `HttpError`, а не сырой `TypeError` ([ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md)). Отмену через собственный `signal` клиент пробрасывает как есть. Использовать через `getHttpClient()` из `@/shared/api`. Инстанс собирается в [app/providers/setup-http-client.ts](src/app/providers/setup-http-client.ts), не создавай вручную. Контракт backend и `HttpError`-формат — [docs/integration-backend.md](docs/integration-backend.md).
 
 Модель авторизации живёт в [entities/user](src/entities/user/):
 - **DTO ↔ Domain.** Контракт backend и domain-модель разделены ([ADR-0005](docs/adr/0005-dto-domain-mapping.md)): `api/user.dto.ts` описывает форму ответа `UserResponseDto` (camelCase, status enum, nullable email/phone, см. [docs/integration-backend.md](docs/integration-backend.md)), `schema/user.schema.ts` — Domain-модель `User = z.infer<typeof userSchema>`, `api/user.mapper.ts` — `toUser(dto)`. В [api/index.ts](src/entities/user/api/index.ts) `GET /users/me` → `userDtoSchema.safeParse` → mapper. `UserDto` за пределы `api/`-сегмента **не выходит**.

@@ -22,8 +22,10 @@ Vocabulary прав вынесено в `shared/model/permission/` ([ADR-0004](d
 ### [P0] Доделать `entities/auth/auth.store.ts` `done`
 Возвращён `return` из setup, реализован `init()` (явное чтение токенов из storage), `login`/`refresh` как чёткие заглушки `throw Error('not implemented yet')` с TODO на HTTP-клиент (Фаза 1), `logout` чистит state + storage. Опечатка `emaiil_or_phone` → `emailOrPhone`, `isLoaded` → `isLoading`. `entities/auth/index.ts` заполнен.
 
-### [P0] Починить auth-guard `done`
-`useUserStore()` перенесён внутрь `router.beforeEach`, обёрнут в `storeToRefs` — реактивность восстановлена, ref'ы обновляются по мере наполнения стора bootstrap'ом.
+### [P0] Починить auth-guard `done` (обоснование уточнено 2026-07-21)
+`useUserStore()` перенесён внутрь `router.beforeEach`, обёрнут в `storeToRefs`.
+
+> **Поправка.** Исходное обоснование — «ref'ы обновляются по мере наполнения стора bootstrap'ом» — оказалось неверным и само стало причиной P0 в июле: `beforeEach` вызывается один раз на навигацию и задним числом не перезапускается, а первая навигация стартует синхронно внутри `app.use(router)`, то есть до bootstrap. Реактивности здесь недостаточно, guard обязан **ждать** восстановления сессии. Закрыто в [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md).
 
 ### [P0] Заменить `sleep(3000)` в bootstrap на реальный pipeline `done`
 Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurrentUser()` → `router.isReady()`. Env-валидация остаётся на Фазу 1.
@@ -66,6 +68,35 @@ Pipeline: `auth.init()` → если `auth.isSessionActive` то `user.fetchCurr
 
 ### [P1] RBAC в guard + roles→permissions mapping `done`
 `shared/model/permission/role-permissions.ts` — статическая таблица `ROLE_PERMISSIONS` (admin/manager/user) + `rolesToPermissions(roles)`. `useUserStore` снова экспортирует `permissions` (computed) и `hasPermission(p)`. `can()` восстановлен. Router-guard расширен: после auth-check проверяет `meta.permissions`, при нехватке прав — редирект на `/system/forbidden`.
+
+---
+
+## Фаза 1.5 — Стабилизация по ревью 2026-07-21 `in-progress`
+
+Ревью прошло не по реализации, а по непройденным сценариям: перезагрузка страницы, упавший бэкенд, смена аккаунта, посимвольный ввод. Именно там нашлись дефекты, которых предыдущие аудиты не видели. Детали каждого открытого пункта — в [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+
+### [P0] Устойчивость старта: guard ждёт сессию + недоступность API `done` (2026-07-21)
+Guard принимал решение по пустому user-стору (первая навигация стартует синхронно внутри `app.use(router)`, до bootstrap) — F5 на защищённой странице выкидывал залогиненного пользователя на login. Отказ bootstrap при этом давал вечный прелоадер: ошибка попадала в notification-стор, который рендерится внутри layout'а, то есть внутри `<router-view>`, которого при `!isReady` нет.
+
+Закрыто: классификатор отказов `shared/api/failure.ts`, дефолтный таймаут HTTP-клиента, три исхода bootstrap (401 → `ready`, retryable → тихие повторы + экран, contract → fatal), ожидание `whenSessionRestored()` в guard через DI, виджет `app-bootstrap-error` с авто-повтором и реакцией на `online`. Решение — [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md). +24 теста.
+
+### [P0] `PhoneInput` портит номер при посимвольном вводе `planned`
+`normalizePhone` вызывается на недонабранном номере: на 9-й цифре получается 10 цифр, срабатывает ветка «российский без кода» и дописывает лишнюю `7`. Наружу уходит валидный по `E164_REGEX` номер **чужого абонента**. Фикс: не нормализовать неполный ввод + тест на посимвольный набор (существующие тесты используют `setValue` целой строкой и потому слепы).
+
+### [P0] Чистка кэша TanStack Query при logout `planned`
+`queryClient.clear()` не вызывается нигде — после смены аккаунта в одной вкладке новый пользователь видит данные предыдущего в течение `staleTime`. Фикс: очистка в `logoutFlow` (и симметрично в `loginFlow`).
+
+### [P1] `meta.permissions` на защищённых маршрутах `planned`
+Ветка проверки прав в guard есть, но `meta.permissions` не задан ни на одной странице — RBAC держится только на скрытых пунктах сайдбара, прямой ввод URL его обходит. Фикс: проставить meta + тест «пункт сайдбара с `permission` ⇒ у страницы есть `meta.permissions`».
+
+### [P1] Catch-all маршрут `planned`
+`src/pages/[...path].vue` отсутствует, поэтому `NotFoundPage` недостижима, а неизвестный URL уводит на login. Туда же ведут пункты сайдбара `/users` и `/roles`, которых нет в роутере.
+
+### [P1] Статусы пользователя ≠ `active` `planned`
+`isAuthorized` требует `status === 'active'`, поэтому пользователь в `pending_verification` успешно логинится и тут же возвращается на login — бесконечно и без объяснения. Разделить `isAuthenticated` / `isAuthorized`, вести на экран верификации. Блокирует Phase 1 auth-suite (регистрация), где этот статус станет основным.
+
+### [P1] CI и type-aware линтинг `planned`
+CI отсутствует: pre-commit гоняет только `eslint --fix`, поэтому сломанные типы, падающие тесты и сломанная сборка проходят свободно. Плюс `run-p` в `build` даёт гонку между `vue-tsc` и генерацией `typed-router.d.ts`, а `vitest.config.ts` перезаписывает `auto-imports.d.ts` урезанной версией. Фикс: workflow lint → type-check → test → build, `run-s`, `dts: false` в vitest-конфиге, flat-блок ESLint с `projectService` и `no-floating-promises`.
 
 ---
 

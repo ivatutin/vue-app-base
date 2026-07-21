@@ -9,7 +9,43 @@
 
 Каждый пункт ссылается на конкретное место в коде. План устранения — в [ROADMAP.md](ROADMAP.md).
 
-> **Статус:** Фазы 0-2.9 закрыты — все P0/P1 устранены, инфраструктура (HTTP-клиент, env Zod, error-handler, notification, RBAC, Husky/lint-staged/commitlint, Vitest, Storybook) подключена, миграция UI на shadcn-vue полностью завершена (ADR-0007), Vuetify удалён из проекта. `npm run type-check` + `npm test` + `npm run build` — green.
+> **Статус:** Фазы 0-2.9 закрыты, инфраструктура (HTTP-клиент, env Zod, error-handler, notification, RBAC, Husky/lint-staged/commitlint, Vitest, Storybook) подключена, миграция UI на shadcn-vue полностью завершена (ADR-0007), Vuetify удалён из проекта. `npm run type-check` + `npm test` + `npm run build` — green.
+>
+> Ревью 2026-07-21 выявило дефекты, которых предыдущий аудит не видел: они не в реализации, а в непройденных сценариях (перезагрузка страницы, упавший бэкенд, смена аккаунта, посимвольный ввод). Два P0 закрыты, открытые — в разделе ниже.
+
+---
+
+## Открытые дефекты
+
+Подтверждены воспроизведением в ходе ревью 2026-07-21. Два P0 того же ревью (guard решал до bootstrap; `failed` = вечный прелоадер) уже закрыты — см. [ADR-0016](docs/adr/0016-failure-classification-and-bootstrap-outcomes.md).
+
+### [P0] `PhoneInput` портит номер при посимвольном вводе
+
+**Файлы:** [src/shared/ui/base/phone-input/PhoneInput.vue:81](src/shared/ui/base/phone-input/PhoneInput.vue), [src/shared/model/phone/phone.lib.ts:16](src/shared/model/phone/phone.lib.ts)
+
+`commit()` зовёт `normalizePhone` на **недонабранном** номере. На 9-й цифре в строке оказывается ровно 10 цифр → ветка `digits.length === 10` дописывает `+7` к тому, что уже начинается с 7. Watch видит расхождение и перезаписывает `display`, дальнейший набор идёт поверх испорченной строки.
+
+Воспроизведение: набрать `9991234567` по одной цифре → наружу уходит `+779991234567` вместо `+79991234567`. Значение проходит `E164_REGEX`, то есть **валидный номер чужого абонента без единой ошибки валидации**.
+
+Тесты не ловят, потому что везде одноразовый `setValue('весь номер')`, а не посимвольный ввод. Фикс: не нормализовать, пока номер неполный; тест — на посимвольный набор.
+
+### [P0] Кэш TanStack Query не чистится при logout
+
+**Файл:** [src/processes/auth-flow/logout-flow.ts](src/processes/auth-flow/logout-flow.ts)
+
+Ни `queryClient.clear()`, ни `removeQueries` не вызываются нигде в `src/` — инструкция в [use-current-user-query.ts:20](src/entities/user/api/use-current-user-query.ts) адресована потребителю, которого нет. После смены аккаунта в одной вкладке пользователь B первые `staleTime` (30 с) видит данные пользователя A. Сейчас затронут один ключ, с ростом числа queries станет системной утечкой.
+
+### [P1] `meta.permissions` не задан ни на одном маршруте
+
+RBAC фактически держится на скрытых пунктах сайдбара: ветка проверки прав в [setup-router.ts](src/app/providers/setup-router.ts) есть, но `meta.permissions` не выставлен нигде (`grep` по `src/pages` — пусто). Прямой ввод URL обходит проверку целиком.
+
+### [P1] Нет catch-all маршрута
+
+`NotFoundPage` существует, но `src/pages/[...path].vue` — нет. Неизвестный URL даёт пустой `matched`, `meta.noAuth === undefined`, и guard уводит на login. Туда же ведут пункты сайдбара `/users` и `/roles`, которых нет в роутере.
+
+### [P1] Пользователь не в статусе `active` попадает в redirect-loop
+
+`isAuthorized` требует `status === 'active'` ([user.store.ts:15](src/entities/user/model/user.store.ts)). Пользователь со `status: 'pending_verification'` успешно логинится, но guard возвращает его на login — без объяснения, бесконечно. Станет основным сценарием после запуска регистрации (Phase 1 auth-suite).
 
 ---
 

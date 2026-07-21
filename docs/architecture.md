@@ -141,6 +141,20 @@ idle  →  initializing  →  ready
 
 **Важно:** оркестрация (`processes/app-bootstrap`) и состояние (`entities/bootstrap`) **разделены**. Это каноническое FSD-решение. Многие проекты сливают это в один файл — у нас не так.
 
+### Три исхода, а не два
+
+Статусов в FSM по-прежнему два терминальных, но **решений** процесс принимает три ([ADR-0016](adr/0016-failure-classification-and-bootstrap-outcomes.md)):
+
+| Ситуация | Исход | Почему так |
+|---|---|---|
+| Сессии нет / сессия истекла (401) | `ready` | Не отказ приложения, а нормальный путь: guard уведёт на login. Экран ошибки здесь был бы враньём |
+| Сеть, таймаут, 5xx | `failed`, `error.retryable === true` | Инфраструктура. Два тихих повтора (0.5 c, 2 c), затем экран с авто-повтором |
+| Сломанный контракт (Zod), прочее | `failed`, `error.retryable === false` | Повтор бесполезен — кнопку «Повторить» не показываем |
+
+При `failed` рендерится [widgets/app-bootstrap-error](../src/widgets/app-bootstrap-error/). Виджет живёт **вне** `<router-view>`, поэтому ему недоступны ни layout, ни `<AppNotifications/>` — он обязан быть самодостаточным. Это не стилистическое требование: раньше ошибка bootstrap попадала в notification-стор, который рендерится внутри layout'а, и показать её было физически нечем — пользователь видел вечный прелоадер.
+
+Классификация причины отказа — общая для всего приложения, живёт в [shared/api/failure.ts](../src/shared/api/failure.ts) (`classifyFailure` / `isRetryableFailure`).
+
 Полная sequence-диаграмма потока — [diagrams/bootstrap-flow.md](diagrams/bootstrap-flow.md).
 
 ---
@@ -190,7 +204,8 @@ definePage({
 [src/app/providers/setup-router.ts](../src/app/providers/setup-router.ts) — `router.beforeEach`:
 
 ```ts
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  await options.waitForSession?.()      // ← дождаться восстановления сессии
   const userStore = useUserStore()
   const { isAuthorized } = storeToRefs(userStore)
   if (!to.meta.noAuth && !isAuthorized.value) return { name: '/auth/login' }
@@ -200,7 +215,18 @@ router.beforeEach((to) => {
 })
 ```
 
-`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `storeToRefs` сохраняет реактивность state — стор может быть пустым на момент регистрации guard'а и наполниться bootstrap'ом до первого реального перехода. `hasPermission` — метод, безопасно деструктурировать без `storeToRefs`.
+`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `hasPermission` — метод, безопасно деструктурировать без `storeToRefs`.
+
+#### Почему guard обязан ждать
+
+Первая навигация стартует **синхронно внутри `app.use(router)`**, то есть до `app.mount()` и задолго до `runBootstrapProcess`. Реактивности `storeToRefs` здесь недостаточно: `beforeEach` — одноразовая функция на навигацию, она не перезапустится, когда стор позже наполнится. Guard принимал решение по пустому `user`-стору и уводил залогиненного пользователя на login при каждом F5.
+
+Поэтому guard ждёт `whenSessionRestored()` из [processes/app-bootstrap](../src/processes/app-bootstrap/). Две неочевидные детали:
+
+- **Внедряется через DI** (`setupRouter(app, { waitForSession })`), а не импортируется напрямую. Окружения без bootstrap — тесты, Storybook — иначе зависли бы на вечно ожидающем промисе.
+- **Сигнал разрешается до `router.isReady()`**, а не после. Guard ждёт bootstrap, bootstrap ждёт `isReady()` — если совместить их в один сигнал, получится дедлок. Поэтому «сессия восстановлена» и «bootstrap завершён» — два разных события.
+
+При retryable-отказе сигнал намеренно **остаётся неразрешённым**: успешный повтор должен перезапустить guard с уже восстановленным состоянием, иначе пользователь окажется на логине при живой сессии. Оба инварианта закреплены тестами в [bootstrap.process.test.ts](../src/processes/app-bootstrap/bootstrap.process.test.ts).
 
 ### Layouts
 

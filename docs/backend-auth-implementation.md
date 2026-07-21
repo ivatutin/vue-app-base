@@ -1,6 +1,6 @@
 # Backend Auth Implementation Guide (spec-level)
 
-> Spec-level инструкция для backend dev'а по реализации auth/registration API в [njs-server](https://github.com/...) (NestJS + Keycloak + Postgres + Redis). Архитектура — [Strategy C (Hybrid Keycloak Admin)](#strategy-c-recap), см. [plan-файл](C:/Users/vim/.claude/plans/10-luminous-mist.md) и [auth-roadmap.md](auth-roadmap.md).
+> Spec-level инструкция для backend dev'а по реализации auth/registration API в [njs-server](https://github.com/...) (NestJS + Keycloak + Postgres + Redis). Архитектура — [Strategy C (Hybrid Keycloak Admin)](#strategy-c-recap), см. [ADR-0013](adr/0013-keycloak-hybrid-integration.md) и [auth-roadmap.md](auth-roadmap.md).
 >
 > **Уровень детализации:** spec-level — endpoint контракты, Keycloak Admin interactions, DTO, error mapping. Полные NestJS файлы не приводим — senior backend dev напишет сам, опираясь на текущий FSD-стиль njs-server.
 
@@ -10,7 +10,7 @@
 
 **Принцип:** делегируем Keycloak максимум того, что он делает нативно. Custom код пишем только там, где нативной поддержки нет.
 
-**Боундари Keycloak vs наш код** — полная таблица в [plan-файле § Keycloak Integration Boundary](C:/Users/vim/.claude/plans/10-luminous-mist.md).
+**Боундари Keycloak vs наш код** — полная таблица в [ADR-0013 § Boundary table](adr/0013-keycloak-hybrid-integration.md).
 
 Кратко:
 - **Делегируем Keycloak:** email verification (magic link), forgot/change password (Required Action), Google/GitHub/Apple, VK ID + Yandex (попытка через Generic OIDC), Account Console (sessions/linked/delete/2FA), audit auth events (Events API), password policy, brute force, CAPTCHA, i18n, WebAuthn.
@@ -718,7 +718,7 @@ Frontend читает (или полагается на env-config). Backend rea
 
 - [auth-roadmap.md](auth-roadmap.md) — timeline + milestones
 - [integration-backend.md](integration-backend.md) — текущий контракт + раздел «planned» обновляется по мере фаз
-- [plan-файл](C:/Users/vim/.claude/plans/10-luminous-mist.md) — полная архитектура
+- [ADR-0013](adr/0013-keycloak-hybrid-integration.md) — Strategy C и boundary-таблица Keycloak (заменяет утраченный plan-файл)
 
 ## История изменений
 

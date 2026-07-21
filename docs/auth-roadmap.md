@@ -1,6 +1,8 @@
 # Auth / Registration Roadmap
 
-> Дорожная карта реализации auth/registration suite. Полная архитектура — в [plan-файле](C:/Users/vim/.claude/plans/10-luminous-mist.md), детальный backend-контракт — в [backend-auth-implementation.md](backend-auth-implementation.md).
+> Дорожная карта реализации auth/registration suite. Детальный backend-контракт — в [backend-auth-implementation.md](backend-auth-implementation.md).
+
+> ⚠️ **Исходный plan-файл утрачен.** Документ писался как выжимка из внешнего плана (`~/.claude/plans/10-luminous-mist.md`), которого больше не существует. Уцелевшие источники истины по архитектуре auth-suite: [ADR-0010](adr/0010-form-architecture-vee-validate-zod.md) (формы), [ADR-0011](adr/0011-otp-verification-model.md) (OTP-модель), [ADR-0012](adr/0012-error-coding-contract.md) (коды ошибок), [ADR-0013](adr/0013-keycloak-hybrid-integration.md) (Strategy C и boundary-таблица Keycloak) и [backend-auth-implementation.md](backend-auth-implementation.md). Детализация фаз 1-5, которой не было в ADR, восстановлению не подлежит — при возврате к работе планируй заново от этих документов.
 
 ## Цель
 
@@ -158,13 +160,18 @@ Phase 0 (foundation)
 ## Acceptance criteria по Phase
 
 ### Phase 0
+
+Статус на 2026-07-21: **M0.A и M0.B закрыты, M0.C не начат.**
+
 - ✅ `npm run lint` + `type-check` + `test` + `build` green
-- ✅ Все `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>` в Storybook
-- ✅ ≥3 новых unit-теста (otp-challenge store, password schema, error-codes)
-- ✅ MSW handlers работают: `npm run dev` + `VITE_USE_MSW=true` → OTP send/verify через моки
-- ✅ ADR-0009, ADR-0010, ADR-0011, ADR-0014 committed
+- ✅ ADR-0010, ADR-0011, ADR-0012, ADR-0013 committed (M0.A)
 - ✅ `docs/integration-backend.md` — раздел «Auth endpoints planned» добавлен
-- ✅ Backend: `KeycloakAdminService` создаёт test-user через `users.create` + удаляет (интегр. тест)
+- ✅ Компоненты `<Form>`/`<TextField>`, `<Tabs>`, `<OtpInput>`, `<PasswordInput>`, `<PhoneInput>` реализованы и покрыты тестами (M0.B)
+- ⬜ Stories для `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>`, `<Tabs>` — **не написаны**
+- ⬜ Компоненты M0.B не выведены в barrel `@/shared/ui/base` и не имеют потребителей
+- ⬜ `entities/otp-challenge` (FSM-store) и `entities/auth-provider` — **не созданы** (M0.C)
+- ⬜ MSW handlers (`VITE_USE_MSW=true`) — **не сделаны**, пакет `msw` не установлен (M0.C)
+- ⬜ Backend: `KeycloakAdminService` создаёт test-user через `users.create` + удаляет (интегр. тест) — статус на стороне `njs-server`, здесь не подтверждён
 
 ### Phase 1
 - ✅ Регистрация через `/auth/register-email` создаёт реального user в Keycloak realm
@@ -284,13 +291,12 @@ MSW моки активируются через `VITE_USE_MSW=true` в `.env.lo
 
 ## Связанные документы
 
-- [plan-файл](C:/Users/vim/.claude/plans/10-luminous-mist.md) — полная архитектура с детальными фазами
+- ~~plan-файл~~ — утрачен (см. предупреждение в начале документа)
 - [docs/backend-auth-implementation.md](backend-auth-implementation.md) — spec-level инструкция для backend
 - [docs/integration-backend.md](integration-backend.md) — текущий backend контракт + раздел «planned endpoints» обновляется по мере фаз
-- ADR'ы будут созданы в Phase 0:
-  - ADR-0009 — Form architecture (VeeValidate + Zod)
-  - ADR-0010 — OTP-based verification model (phone-only, email через Keycloak magic link)
-  - ADR-0011 — Error coding contract
-  - ADR-0014 — Keycloak Hybrid Integration (Strategy C)
-- ADR-0012 в Phase 3 — Social provider abstraction
-- ADR-0013 в Phase 4 — Contact change challenge model
+- ADR'ы Phase 0 — **приняты** (номера отличаются от изначально запланированных: 0009 и 0014 к моменту написания уже были заняты дизайн-язычными решениями):
+  - [ADR-0010](adr/0010-form-architecture-vee-validate-zod.md) — Form architecture (VeeValidate + Zod)
+  - [ADR-0011](adr/0011-otp-verification-model.md) — OTP-based verification model (phone-only, email через Keycloak magic link)
+  - [ADR-0012](adr/0012-error-coding-contract.md) — Error coding contract
+  - [ADR-0013](adr/0013-keycloak-hybrid-integration.md) — Keycloak Hybrid Integration (Strategy C)
+- Social provider abstraction (Phase 3) и Contact change challenge model (Phase 4) — номера будут выданы при создании, следующий свободный после [ADR-0016](adr/0016-failure-classification-and-bootstrap-outcomes.md).

@@ -55,7 +55,9 @@
 
 ## Авто-сканирование компонентов
 
-Плагин `unplugin-vue-components` сканирует **только** [src/shared/components/](../../src/shared/components/) (см. [vite.config.mts:70-76](../../vite.config.mts#L70-L76)). Компоненты в `widgets/`, `pages/`, `shared/ui/` **не** сканируются — импортируй вручную через `index.ts`.
+Плагин `unplugin-vue-components` настроен на `src/shared/components/` (см. [vite.config.mts:70-76](../../vite.config.mts#L70-L76)). Компоненты в `widgets/`, `pages/`, `shared/ui/` **не** сканируются — импортируй вручную через `index.ts`.
+
+> **Фактически авто-регистрация не работает:** директории `src/shared/components/` в проекте нет, плагин сканирует пустоту и генерирует пустой `components.d.ts`. То есть **все** компоненты импортируются явно. Решение — либо завести директорию, либо убрать плагин; зафиксировано в [ROADMAP.md](../../ROADMAP.md), Фаза 1.5.
 
 Типы — в [src/components.d.ts](../../src/components.d.ts) (закоммичено, не редактировать).
 
