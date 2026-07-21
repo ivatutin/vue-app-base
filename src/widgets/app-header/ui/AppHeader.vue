@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import { storeToRefs } from 'pinia'
+  import { useUserStore } from '@/entities/user'
   import { useCommandPalette } from '@/shared/lib/command-palette'
   import { useTheme } from '@/shared/lib/theme'
   import { Button, Divider, Icon, List, ListItem, Menu, Spacer } from '@/shared/ui/base'
@@ -6,6 +8,14 @@
   const { isDark, toggle } = useTheme()
   const palette = useCommandPalette()
   const route = useRoute()
+
+  /**
+   * Ориентируемся на `isAuthenticated` (профиль загружен), а не на
+   * `isAuthorized` (статус `active`): пользователю в `pending_verification`
+   * или `suspended` меню как раз нужно — чтобы выйти. Предлагать ему
+   * «Войти», когда он уже вошёл, было бы бессмыслицей.
+   */
+  const { isAuthenticated } = storeToRefs(useUserStore())
 
   // Подсказка шортката: ⌘K на macOS, Ctrl K на остальных.
   const isMac = typeof navigator !== 'undefined'
@@ -100,8 +110,23 @@
       @click="toggle()"
     />
 
+    <!--
+      Гостю меню аккаунта не показываем вовсе — ему нечего в нём делать,
+      а «Мой профиль»/«Выйти» без сессии выглядят как сломанный интерфейс.
+      Шапка видна анонимам на публичных страницах с default-layout:
+      404 и /system/forbidden.
+    -->
+    <Button
+      v-if="!isAuthenticated"
+      size="sm"
+      :to="{ name: '/auth/login' }"
+      variant="brand"
+    >
+      Войти
+    </Button>
+
     <!-- Меню аккаунта -->
-    <Menu location="bottom end">
+    <Menu v-else location="bottom end">
       <template #activator="{ props }">
         <!--
           Иконочная кнопка без текста: без title/aria-label скринридер

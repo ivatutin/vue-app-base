@@ -14,9 +14,11 @@
  * контента (disabled на кнопке параллельно). Icon-only: рендерим
  * <Icon> из shared/ui/base, скрываем default slot.
  */
+  import type { RouteLocationRaw } from 'vue-router'
   import { Loader2 } from '@lucide/vue'
   import { cva } from 'class-variance-authority'
   import { Primitive } from 'reka-ui'
+  import { RouterLink } from 'vue-router'
   import { cn } from '@/shared/lib/utils/cn'
   import Icon from '../icon/Icon.vue'
 
@@ -31,6 +33,13 @@
     block?: boolean
     type?: 'button' | 'submit' | 'reset'
     icon?: string
+    /**
+     * Навигация: с `to` рендерится RouterLink, а не button.
+     * Кнопка, которая ведёт на другой экран, обязана быть ссылкой —
+     * иначе теряются Ctrl+клик, «открыть в новой вкладке» и адрес
+     * для скринридера. Обработчик `@click` при этом продолжает работать.
+     */
+    to?: RouteLocationRaw
   }>(), {
     variant: 'primary',
     size: 'md',
@@ -39,9 +48,22 @@
     block: false,
     type: 'button',
     icon: undefined,
+    to: undefined,
   })
 
   defineEmits<{ click: [event: MouseEvent] }>()
+
+  const isLink = computed(() => props.to !== undefined)
+
+  /**
+   * Атрибуты собираются по тегу. Передавать `disabled`/`type` в
+   * RouterLink нельзя: на `<a>` они бессмысленны, а явный `undefined`
+   * в fallthrough-атрибутах затирает собственные props компонента —
+   * ровно так `ListItem` терял `href` (см. ListItem.test.ts).
+   */
+  const tagAttrs = computed(() => (isLink.value
+    ? { to: props.to }
+    : { type: props.type, disabled: props.disabled || props.loading }))
 
   const BASE_CLASS = [
     'inline-flex items-center justify-center whitespace-nowrap cursor-pointer select-none',
@@ -99,13 +121,14 @@
 <template>
   <Primitive
     :aria-busy="loading || undefined"
-    as="button"
+    :aria-disabled="isLink && disabled ? true : undefined"
+    :as="isLink ? RouterLink : 'button'"
+    v-bind="tagAttrs"
     :class="cn(
       buttonVariants({ variant, size, iconOnly, block }),
       iconOnlySquare,
+      isLink && disabled && 'pointer-events-none opacity-50',
     )"
-    :disabled="disabled || loading"
-    :type="type"
     @click="$emit('click', $event)"
   >
     <Loader2 v-if="loading" class="animate-spin" :size="innerIconSize === 'md' ? 20 : 16" />
