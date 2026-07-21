@@ -1,6 +1,18 @@
+import { classifyFailure, type FailureKind, getFailureMessage, isRetryableFailure } from '@/shared/api'
+
 export interface BootstrapError {
+  /** Текст для пользователя — без технических деталей. */
   message: string
   code?: string
+  /** Причина отказа; определяет и текст, и наличие кнопки «Повторить». */
+  kind: FailureKind
+  /**
+   * Инфраструктурный сбой (сеть/таймаут/5xx) против невосстановимого
+   * (сломанный контракт, баг). Повтор предлагаем только в первом случае.
+   */
+  retryable: boolean
+  /** Исходная ошибка — для `<details>` и логов, не для основного текста. */
+  technical?: string
 }
 
 export type BootstrapStatus
@@ -63,9 +75,12 @@ export const useBootstrapStore = defineStore('bootstrap', () => {
 })
 
 function normalizeError (e: unknown): BootstrapError {
-  if (e instanceof Error) {
-    return { message: e.message }
-  }
+  const kind = classifyFailure(e)
 
-  return { message: 'Unknown bootstrap error' }
+  return {
+    message: getFailureMessage(e),
+    kind,
+    retryable: isRetryableFailure(kind),
+    technical: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+  }
 }

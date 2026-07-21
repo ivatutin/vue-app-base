@@ -1,1 +1,1 @@
-export { runBootstrapProcess } from './bootstrap.process'
+export { runBootstrapProcess, whenSessionRestored } from './bootstrap.process'

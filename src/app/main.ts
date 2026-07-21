@@ -12,9 +12,18 @@ import '@/shared/assets/tailwind.css'
 
 async function bootstrapApplication () {
   const app = createApp(App)
+  // `app.use(router)` внутри стартует первую навигацию синхронно, но её
+  // guard дожидается восстановления сессии (whenSessionRestored), поэтому
+  // порядок «провайдеры → mount → bootstrap» безопасен и сохраняет
+  // мгновенный splash: App.vue рисует прелоадер, пока идёт bootstrap.
   const { router } = setupProviders(app)
   app.mount('#app')
   await runBootstrapProcess({ router })
 }
 
-bootstrapApplication()
+// runBootstrapProcess сам переводит стор в failed и не пробрасывает
+// отказ дальше — этот catch на случай падения самих провайдеров,
+// когда показать что-либо средствами приложения уже нельзя.
+bootstrapApplication().catch((error: unknown) => {
+  console.error('[bootstrap] fatal', error)
+})

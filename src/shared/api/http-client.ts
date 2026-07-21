@@ -1,7 +1,17 @@
 import { HttpError } from './http-error'
 
+/**
+ * Недоступный API чаще проявляется тишиной, чем отказом соединения:
+ * DPI-блокировка, повисший сокет, чёрная дыра мобильной сети. Без
+ * таймаута такой отказ неотличим от «медленно» и вешает single-flight
+ * refresh-мьютекс навсегда.
+ */
+const DEFAULT_TIMEOUT_MS = 30_000
+
 export interface HttpClientOptions {
   baseUrl: string
+  /** Дефолтный таймаут запроса в мс. `0` — отключить. */
+  timeoutMs?: number
   getAccessToken?: () => string | null
   /**
    * Возвращает `true`, если можно повторить запрос с новым токеном;
@@ -92,12 +102,66 @@ export class HttpClient {
       bodyInit = JSON.stringify(body)
     }
 
-    return fetch(url, {
-      method,
-      headers,
-      body: bodyInit,
-      signal: options.signal,
-    })
+    try {
+      return await fetch(url, {
+        method,
+        headers,
+        body: bodyInit,
+        signal: this.buildSignal(options.signal),
+      })
+    } catch (error) {
+      throw this.toTransportError(error, options.signal)
+    }
+  }
+
+  /**
+   * Совмещает таймаут клиента с сигналом вызывающего кода: отменить
+   * запрос может любой из двух.
+   */
+  private buildSignal (external?: AbortSignal): AbortSignal | undefined {
+    const timeoutMs = this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+
+    if (timeoutMs <= 0) {
+      return external
+    }
+
+    const timeoutSignal = AbortSignal.timeout(timeoutMs)
+
+    if (!external) {
+      return timeoutSignal
+    }
+
+    // AbortSignal.any появился только в Safari 17.4 / Firefox 124 —
+    // на границе baseline. Фолбэк дешевле, чем runtime-краш на чуть
+    // более старом браузере.
+    if (typeof AbortSignal.any === 'function') {
+      return AbortSignal.any([external, timeoutSignal])
+    }
+
+    const controller = new AbortController()
+    const abort = (reason: unknown) => controller.abort(reason)
+    external.addEventListener('abort', () => abort(external.reason), { once: true })
+    timeoutSignal.addEventListener('abort', () => abort(timeoutSignal.reason), { once: true })
+    return controller.signal
+  }
+
+  /**
+   * `fetch` реджектится сырым `TypeError`/`DOMException`, из-за чего
+   * рвутся все проверки `instanceof HttpError` вверх по стеку, а в UI
+   * утекает англоязычное «Failed to fetch». Приводим к единому типу.
+   */
+  private toTransportError (error: unknown, external?: AbortSignal): unknown {
+    // Отмену инициировал вызывающий код — это не отказ сети,
+    // пробрасываем как есть, чтобы caller мог её распознать.
+    if (external?.aborted) {
+      return error
+    }
+
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return HttpError.timeout(this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error)
+    }
+
+    return HttpError.network(error)
   }
 
   private async parseResponse<T>(response: Response): Promise<T> {

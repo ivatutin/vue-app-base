@@ -83,9 +83,13 @@ describe('Form + TextField (vee-validate + Zod)', () => {
 
     await emailInput.setValue('not-an-email')
     await emailInput.trigger('blur')
-    await waitForVeeValidate()
 
-    expect(wrapper.text()).toContain('Некорректный email')
+    // Не waitForVeeValidate(): фиксированного `setTimeout(0)` не хватает
+    // при холодном импорте модулей, тест падал примерно раз на три прогона.
+    // Опрос по условию убирает зависимость от скорости машины.
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Некорректный email')
+    })
   })
 
   it('setFieldError через defineExpose ставит ошибку поля', async () => {

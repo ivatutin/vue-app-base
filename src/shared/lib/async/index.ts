@@ -1,2 +1,2 @@
-export { retry, retryOn404 } from './retry'
+export { retry, retryOn404, sleep } from './retry'
 export type { RetryOptions } from './retry'
