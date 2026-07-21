@@ -11,8 +11,18 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Getters
    */
+  /** Профиль загружен — сессия есть. Ничего не говорит о её пригодности. */
   const isAuthenticated = computed(() => user.value !== null)
+
+  /**
+   * Пригоден к работе. `pending_verification`, `suspended` и `deleted` —
+   * это НЕ «неаутентифицирован»: такого пользователя нельзя отправлять
+   * на login, он там снова успешно войдёт и снова упрётся в отказ.
+   * Разбор по статусу — в guard, см. `resolveGuard`.
+   */
   const isAuthorized = computed(() => user.value !== null && user.value.status === 'active')
+
+  const status = computed(() => user.value?.status ?? null)
 
   const roles = computed(() => user.value?.roles ?? [])
   const permissions = computed<PermissionCode[]>(() => rolesToPermissions(roles.value))
@@ -49,6 +59,7 @@ export const useUserStore = defineStore('user', () => {
     /** getters */
     isAuthenticated,
     isAuthorized,
+    status,
     roles,
     permissions,
     fullName,

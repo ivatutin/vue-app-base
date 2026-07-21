@@ -22,6 +22,7 @@ declare module 'vue-router/auto-routes' {
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/logout': RouteRecordInfo<'/auth/logout', '/auth/logout', Record<never, never>, Record<never, never>>,
     '/dashboard': RouteRecordInfo<'/dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
+    '/system/account-status': RouteRecordInfo<'/system/account-status', '/system/account-status', Record<never, never>, Record<never, never>>,
     '/system/forbidden': RouteRecordInfo<'/system/forbidden', '/system/forbidden', Record<never, never>, Record<never, never>>,
     'not-found': RouteRecordInfo<'not-found', '/system/not-found', Record<never, never>, Record<never, never>>,
     '/ui-kit/': RouteRecordInfo<'/ui-kit/', '/ui-kit', Record<never, never>, Record<never, never>>,
@@ -56,6 +57,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/ui/DashboardPage.vue': {
       routes: '/dashboard'
+      views: never
+    }
+    'src/pages/system/account-status/ui/AccountStatusPage.vue': {
+      routes: '/system/account-status'
       views: never
     }
     'src/pages/system/forbidden/ui/ForbiddenPage.vue': {

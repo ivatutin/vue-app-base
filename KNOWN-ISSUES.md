@@ -27,9 +27,6 @@ RBAC фактически держится на скрытых пунктах с
 
 `NotFoundPage` существует, но `src/pages/[...path].vue` — нет. Неизвестный URL даёт пустой `matched`, `meta.noAuth === undefined`, и guard уводит на login. Туда же ведут пункты сайдбара `/users` и `/roles`, которых нет в роутере.
 
-### [P1] Пользователь не в статусе `active` попадает в redirect-loop
-
-`isAuthorized` требует `status === 'active'` ([user.store.ts:15](src/entities/user/model/user.store.ts)). Пользователь со `status: 'pending_verification'` успешно логинится, но guard возвращает его на login — без объяснения, бесконечно. Станет основным сценарием после запуска регистрации (Phase 1 auth-suite).
 
 ---
 

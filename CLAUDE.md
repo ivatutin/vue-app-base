@@ -54,7 +54,7 @@ Auth-guard **ждёт** `whenSessionRestored()` — первая навигац�
 Маршруты генерирует `unplugin-vue-router`. Кастомный резолвер в [vite.config.mts](vite.config.mts) маппит `src/pages/<group>/ui/<Name>Page.vue` → URL `/<group>`, чтобы страница могла быть FSD-слайсом со своими сегментами `ui/`, `model/`, ..., а не плоским файлом. Обычные файлы вроде `src/pages/ui-kit/buttons.vue` обрабатываются стандартной логикой.
 
 - Внутри страницы meta задаётся через макрос `definePage({ meta: { ... } })` (авто-импорт), а не правкой записей маршрутов.
-- Auth-guard ([app/providers/setup-router.ts](src/app/providers/setup-router.ts)) работает как **whitelist по `meta.noAuth`** — любой маршрут без `noAuth: true` требует `useUserStore().isAuthorized`.
+- Auth-guard ([app/providers/setup-router.ts](src/app/providers/setup-router.ts)) работает как **whitelist по `meta.noAuth`** — любой маршрут без `noAuth: true` требует `useUserStore().isAuthorized`. Решение вынесено чистой функцией `resolveGuard` ([resolve-guard.ts](src/app/providers/resolve-guard.ts)) и имеет **три** исхода: нет сессии → `/auth/login`; сессия есть, но статус ≠ `active` → `/system/account-status`; не хватает прав → `/system/forbidden`. Не сливай первые два: пользователь со статусом `pending_verification` на login войдёт снова и снова упрётся в отказ — это бесконечный цикл.
 - Сгенерированные типы маршрутов лежат в `src/typed-router.d.ts` (закоммичено, регенерируется при `dev`/`build` — руками не редактируй). `RouteMeta` расширен в `src/router-meta.d.ts` (`title?`, `noAuth?`, `permissions?`).
 - Лэйауты подключает `vite-plugin-vue-layouts-next` из `src/app/layouts/`; `default.vue` — это оболочка (sidebar + header + `<router-view/>` + footer).
 

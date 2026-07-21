@@ -206,16 +206,26 @@ definePage({
 ```ts
 router.beforeEach(async (to) => {
   await options.waitForSession?.()      // ← дождаться восстановления сессии
-  const userStore = useUserStore()
-  const { isAuthorized } = storeToRefs(userStore)
-  if (!to.meta.noAuth && !isAuthorized.value) return { name: '/auth/login' }
-  if (to.meta.permissions?.length && !to.meta.permissions.every(userStore.hasPermission)) {
-    return { name: '/system/forbidden' }
-  }
+  const target = resolveGuard({ requiresAuth: !to.meta.noAuth, ... })
+  return target ? { name: target } : undefined
 })
 ```
 
-`useUserStore()` вызывается **внутри** `beforeEach` (не на верхнем уровне `setupRouter`), `hasPermission` — метод, безопасно деструктурировать без `storeToRefs`.
+Само решение вынесено чистой функцией `resolveGuard` ([app/providers/resolve-guard.ts](../src/app/providers/resolve-guard.ts)) — так его проверяют тесты без поднятия роутера, а `beforeEach` остаётся тонкой обёрткой. `useUserStore()` вызывается **внутри** guard'а, не на верхнем уровне `setupRouter`.
+
+#### Три исхода, а не два
+
+| Состояние | Куда ведём | Почему |
+|---|---|---|
+| Не аутентифицирован | `/auth/login` | Сессии нет — нужен вход |
+| Аутентифицирован, статус ≠ `active` | `/system/account-status` | Вход уже пройден успешно; на форму его отправлять нельзя |
+| Аутентифицирован, не хватает прав | `/system/forbidden` | Дело в правах, а не в аккаунте |
+
+Различие между вторым и первым — не косметика. Пока они сливались в один редирект, пользователь со статусом `pending_verification` попадал в **бесконечный цикл**: логин проходил, guard возвращал на форму, форма снова принимала те же данные — и так без единого слова о причине. После запуска регистрации ([auth-roadmap](auth-roadmap.md), Phase 1) этот статус станет исходным у всех новых пользователей.
+
+Порядок проверок значим: статус аккаунта проверяется **раньше** прав, иначе заблокированному пользователю сообщали бы про нехватку прав вместо настоящей причины.
+
+Страница [`/system/account-status`](../src/pages/system/account-status/ui/AccountStatusPage.vue) помечена `noAuth: true` намеренно — она обязана быть достижимой для того, кого guard как раз не пускает, иначе редирект зациклится уже на ней. Активного пользователя и неаутентифицированного она уводит сама.
 
 #### Почему guard обязан ждать
 

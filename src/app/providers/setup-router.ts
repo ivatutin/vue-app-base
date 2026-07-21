@@ -4,6 +4,7 @@ import { setupLayouts } from 'virtual:generated-layouts'
 import { createRouter, createWebHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
 import { useUserStore } from '@/entities/user'
+import { resolveGuard } from './resolve-guard'
 
 export interface SetupRouterOptions {
   /**
@@ -49,17 +50,31 @@ export function setupRouter (app: App, options: SetupRouterOptions = {}): Router
     await options.waitForSession?.()
 
     const userStore = useUserStore()
-    const { isAuthorized } = storeToRefs(userStore)
+    const { isAuthenticated, isAuthorized } = storeToRefs(userStore)
 
-    if (!to.meta.noAuth && !isAuthorized.value) {
-      return { name: '/auth/login' }
-    }
+    const target = resolveGuard({
+      requiresAuth: !to.meta.noAuth,
+      isAuthenticated: isAuthenticated.value,
+      isAuthorized: isAuthorized.value,
+      requiredPermissions: to.meta.permissions ?? [],
+      hasPermission: p => userStore.hasPermission(p),
+    })
 
-    const required = to.meta.permissions
-    if (required?.length) {
-      const ok = required.every(p => userStore.hasPermission(p))
-      if (!ok) {
+    // Разворачиваем union в литералы: типизированный роутер принимает
+    // только конкретное имя, а заодно проверяет, что все три маршрута
+    // действительно существуют — опечатка в resolve-guard не соберётся.
+    switch (target) {
+      case '/auth/login': {
+        return { name: '/auth/login' }
+      }
+      case '/system/account-status': {
+        return { name: '/system/account-status' }
+      }
+      case '/system/forbidden': {
         return { name: '/system/forbidden' }
+      }
+      default: {
+        return undefined
       }
     }
   })
