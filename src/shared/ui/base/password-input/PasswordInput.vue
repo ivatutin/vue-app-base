@@ -5,13 +5,13 @@
  * Strength scale (опц., :show-strength) — 4 уровня:
  * 0 weak (< 8 chars) — красный
  * 1 fair (≥ 8 chars) — оранжевый
- * 2 good (≥ 12 chars) — желтый
+ * 2 good (≥ 10 chars) — желтый
  * 3 strong (≥ 12 chars + diversity 3+ типов) — зелёный
  * 4 strong (≥ 16 chars + diversity 3+ типов) — emerald (brand)
  *
  * Это **подсказка**, не строгая валидация. NIST SP 800-63B рекомендует
  * длину как primary metric. Реальная политика — Keycloak realm
- * (length(12)).
+ * (`length(10) and notUsername and notEmail`, сверено 16.10.2026).
  *
  * Интеграция с Form: с :name внутри <Form :schema> — useField, иначе
  * controlled v-model + dev-warn (как TextField / OtpInput).

@@ -49,7 +49,7 @@ Production: SES / SendGrid / Postmark.
 
 #### A.2 Password Policy (Realm Settings → Authentication → Policies)
 NIST SP 800-63B compliant:
-- `length(12)` — минимум 12 символов
+- `length(10) and notUsername and notEmail` — минимум 10 символов (актуальная политика реалма, сверено с живым стендом 16.10.2026)
 - НЕ устанавливать: passwordHistory, expiration, composition rules
 - Опционально: HIBP check через extension `keycloak-password-blacklists`
 

@@ -67,7 +67,7 @@ export const WithError: Story = {
     setup: () => ({ value: ref('123') }),
     template: `
       <div style="max-width: 320px;">
-        <PasswordInput v-model="value" label="Пароль" error="Минимум 12 символов" />
+        <PasswordInput v-model="value" label="Пароль" error="Минимум 10 символов" />
       </div>
     `,
   }),

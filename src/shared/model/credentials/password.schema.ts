@@ -1,20 +1,23 @@
 import { z } from 'zod'
 
 /**
- * Политика пароля по NIST SP 800-63B (синхронизировано с Keycloak realm
- * `length(12)` — см. ADR-0013):
+ * Политика пароля — **сверена с живым реалмом `app`** (16.10.2026):
+ * `length(10) and notUsername and notEmail`.
  *
- * - минимум 12 символов
- * - максимум 128 символов (DoS-защита от длинных хешей)
- * - НЕ требуем uppercase/lowercase/digit/special — NIST явно против
+ * - минимум 10 символов (раньше здесь стояло 12 — фронт был строже бэкенда и
+ *   отклонял пароли, которые Keycloak принял бы; истина — за реалмом);
+ * - максимум 128 символов (DoS-защита от длинных хешей);
+ * - НЕ требуем uppercase/lowercase/digit/special — NIST SP 800-63B против
  *   композиционных правил, они снижают энтропию (пользователь добавляет
- *   `!1` в конец и думает что усилил)
- * - blocklist слабых паролей и HIBP — на стороне backend (Keycloak)
+ *   `!1` в конец и думает что усилил);
+ * - `notUsername` для пользователя недостижим (логин в Keycloak — генерируемый
+ *   handle, ADR-0017 ред. 2), а `notEmail` проверяется кросс-полевым правилом
+ *   формы регистрации — в эту схему email не приходит.
  *
- * Реальная валидация (включая HIBP) живёт на backend — frontend ловит
- * `422 PasswordPolicyViolation` через ErrorCode.
+ * Реальная валидация (blocklist, HIBP) живёт на backend — frontend ловит
+ * `422 PasswordPolicyViolation` через ErrorCode и показывает свой текст.
  */
-export const PASSWORD_MIN_LENGTH = 12
+export const PASSWORD_MIN_LENGTH = 10
 export const PASSWORD_MAX_LENGTH = 128
 
 export const passwordSchema = z

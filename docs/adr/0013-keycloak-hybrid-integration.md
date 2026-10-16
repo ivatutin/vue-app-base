@@ -27,7 +27,7 @@ Backend `njs-server` использует Keycloak 24 как IdP — но **то
 | **Email verification** | **Keycloak `sendVerifyEmail`** (magic link) | `users.sendVerifyEmail(id)` |
 | **Phone signup** | Наш OTP + Keycloak Admin | OTP verify → `users.create({attributes: {phoneNumber, phoneVerified: 'true'}, credentials: []})` |
 | **Phone verification** | **Наш** OTP service | Keycloak не имеет нативного phone-OTP без Java SPI |
-| **Password storage / policy** | **Keycloak realm Password Policy** | NIST-compliant: length(12), no expiration, no composition rules |
+| **Password storage / policy** | **Keycloak realm Password Policy** | NIST-compliant: `length(10) and notUsername and notEmail`, no expiration, no composition rules |
 | **Login email+password** | Keycloak password grant | существующий pattern |
 | **Login phone+OTP** | Наш OTP verify + **Keycloak Token Exchange (RFC 8693)** | service-account token exchange `requested_subject=keycloakId` |
 | **Login refresh** | Keycloak | существующий refresh-mutex |
@@ -53,7 +53,7 @@ Backend `njs-server` использует Keycloak 24 как IdP — но **то
 
 #### Keycloak Realm Configuration
 - SMTP в realm (Mailpit для dev, SES/SendGrid для prod) — критично для email verify + forgot password + change email
-- Password Policy: `length(12)`, no expiration, no composition (NIST)
+- Password Policy: `length(10) and notUsername and notEmail`, no expiration, no composition (NIST; сверено с живым реалмом 16.10.2026)
 - Brute Force Detection: 5 failures → 5min wait
 - Internationalization: ru, en; default ru
 - User Profile: добавить attributes `phoneNumber` (E.164 regex) и `phoneVerified`

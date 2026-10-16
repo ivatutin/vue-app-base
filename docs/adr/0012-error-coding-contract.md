@@ -30,7 +30,7 @@ catch (error_) {
 - `409 ContactAlreadyExists` при signup → показать «Email уже зарегистрирован. Войти?»
 - `422 OtpInvalid` → «Неверный код, осталось N попыток»
 - `422 OtpRateLimited` с `details.retryAfter: 60` → «Слишком частые запросы, повторите через 0:45»
-- `422 PasswordPolicyViolation` с `details.policy: 'length', required: 12` → «Пароль должен быть не менее 12 символов»
+- `422 PasswordPolicyViolation` (в `details.message` — ключ/формулировка Keycloak, напр. `invalidPasswordMinLengthMessage`) → «Пароль должен быть не менее 10 символов»
 
 Без structured error coding каждая страница лепит свой `if (err.message.includes('email'))` — brittle, не переводится, не grep'ается.
 
