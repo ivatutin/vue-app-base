@@ -14,11 +14,19 @@ import { HttpError } from './http-error'
 export const ErrorCode = {
   // Auth / credentials
   INVALID_CREDENTIALS: 'InvalidCredentials',
+  // Общий отказ токена: истёк / отозван / не тот клиент (контракт v1.1, ADR-0018)
+  INVALID_TOKEN: 'InvalidToken',
 
   // Contacts (email / phone)
   CONTACT_ALREADY_EXISTS: 'ContactAlreadyExists',
   CONTACT_NOT_FOUND: 'ContactNotFound',
   CONTACT_ALREADY_VERIFIED: 'ContactAlreadyVerified',
+  // Нарушен инвариант контактов: нет ни email, ни телефона (контракт v1.1)
+  INVALID_CONTACTS: 'InvalidContacts',
+
+  // Users
+  // Локальной записи пользователя нет (контракт v1.1; в основном админские операции)
+  USER_NOT_FOUND: 'UserNotFound',
 
   // OTP
   OTP_INVALID: 'OtpInvalid',
@@ -66,10 +74,14 @@ export function matchError (err: unknown, code: ErrorCode): boolean {
  */
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_CREDENTIALS]: 'Неверные учётные данные',
+  [ErrorCode.INVALID_TOKEN]: 'Сессия истекла, войдите снова',
 
   [ErrorCode.CONTACT_ALREADY_EXISTS]: 'Этот контакт уже зарегистрирован',
   [ErrorCode.CONTACT_NOT_FOUND]: 'Контакт не найден',
   [ErrorCode.CONTACT_ALREADY_VERIFIED]: 'Контакт уже подтверждён',
+  [ErrorCode.INVALID_CONTACTS]: 'Не хватает контакта (email или телефон)',
+
+  [ErrorCode.USER_NOT_FOUND]: 'Пользователь не найден',
 
   [ErrorCode.OTP_INVALID]: 'Неверный код подтверждения',
   [ErrorCode.OTP_EXPIRED]: 'Срок действия кода истёк, запросите новый',
