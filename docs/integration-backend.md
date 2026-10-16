@@ -202,6 +202,8 @@ interface ErrorResponseBody {
 
 > **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.4**. Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
 >
+> ✅ в таблицах = «эндпоинт есть и работает на бэкенде» (сверено по роутам контроллеров; конвенция согласована 16.10.2026). После живой приёмки с фронта в разделе появляется строка «проверено с фронта <дата>».
+>
 > Архитектура — [ADR-0013 Keycloak Hybrid (Strategy C)](adr/0013-keycloak-hybrid-integration.md). Полные backend specs (Keycloak Admin calls, NestJS module structure, error mapping) — в [backend-auth-implementation.md](backend-auth-implementation.md). Timeline — в [auth-roadmap.md](auth-roadmap.md).
 >
 > Имя раздела оставлено историческим: на «Auth endpoints planned» ссылаются контракт (v1.4) и ADR-0013.
@@ -300,7 +302,7 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 type PhoneCallChallengeResponse = {
   challengeId: string,
   channel: 'phone',
-  method: 'call',        // отличает звонковый челлендж от OTP-челленджа
+  method: 'call',        // отличает звонковый челлендж от OTP (есть в ответе backend; в тексте контракта не описано — уточняется у координатора)
   callTo: string,        // общий сервисный номер, напр. '+7 (800) 500-8275'
   expiresAt: string,     // ISO; окно на звонок — 5 минут
   cooldownSeconds: number,
@@ -436,12 +438,14 @@ Backend dev **обязан** использовать ровно эти `errorNa
 | `VerificationTokenExpired` | 422 | TTL истёк (10 min) |
 | `ChangeTokenExpired` | 422 | change request не верифицирован за 15 min |
 | `ContactChangeAlreadyPending` | 422 | active change request уже есть |
-| `PasswordPolicyViolation` | 422 | Keycloak policy fail; `details.message` от Keycloak |
+| `PasswordPolicyViolation` | 422 | политика Keycloak не пройдена; `details.message` — **ключ/формулировка Keycloak** (напр. `invalidPasswordMinLengthMessage`), а не готовый текст → показываем свой текст, значение — в консоль |
 | `TermsNotAccepted` | 422 | sign-up без `acceptedTerms: true` |
 | `ReauthTokenInvalid` | 401 | X-Reauth-Token wrong / consumed |
 | `ReauthTokenExpired` | 401 | 5 min TTL истёк |
 | `SocialAuthFailed` ⟵ *v1.3* | 422 | provider не подтвердил доказательство (wrong HMAC, expired token) — роутов на backend пока нет (Phase 3 вне объёма) |
 | `ProviderAccountLinked` | 409 | этот provider account уже привязан к другому local user |
+
+> **Зарезервированные (спящие) коды:** `ContactNotFound` и `ContactAlreadyVerified` в проде не бросаются — проверено координатором по всему `njs-server` (16.10.2026). Из реестра не удаляем (удаление кода — формально ломающее изменение), **UI-веток под них не делаем**.
 
 ### Anti-enumeration policy (важно)
 

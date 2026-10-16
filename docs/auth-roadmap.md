@@ -81,17 +81,27 @@ Phase 0 (foundation)
 ### M1 — Email Registration Live (после Phase 1)
 
 **Frontend:**
-- `/auth/register-email` — wizard email + password + terms
-- `/auth/verify-email` — экран «Проверьте почту» с polling `/users/me` + resend button
+- `/auth/register` (табы «E-mail» / «Телефон»; email-таб — Phase 1, phone-таб — Phase 2) — email + password + terms
+- `/auth/verify-email` — **статичный** экран «Проверьте почту» + маскированный email + `resend` (всегда `202`) + «войти».
+  Polling **не делаем**: `sign-up/email` токенов не отдаёт (`{ user, verifyEmailSent }`), а `GET /users/me` protected —
+  опрашивать нечем (решение координатора 16.10.2026, вариант A)
+- параметры из письма экран **не принимает**: ссылка `VERIFY_EMAIL` уводит на страницу Keycloak и в приложение не
+  возвращает (`send-verify-email` без `client_id`/`redirect_uri`) → `?verified=1` не заводим
+- `verifyEmailSent === false` → отдельный текст «письмо не ушло, отправьте ещё раз»
+- `409 ContactAlreadyExists` при повторном sign-up → тот же экран verify-email + `resend`, текст «аккаунт с таким адресом
+  уже есть — проверьте почту» (для sign-up занятость показываем осознанно — как в `otp/send`)
 - Router guard блокирует `/dashboard` для `pending_verification` users
-- LoginPage имеет ссылку «Создать аккаунт»
+- LoginPage имеет ссылку «Создать аккаунт»; `401` сразу после sign-up показываем подсказкой «проверьте почту»
+  (не завязываться на точный код ошибки)
 
 **Backend:**
 - `POST /auth/sign-up/email` — `keycloakAdmin.users.create({requiredActions: ['VERIFY_EMAIL']})` + `sendVerifyEmail`
 - Event listener подхватывает Keycloak `VERIFY_EMAIL` event → обновляет Postgres shadow user
 - `POST /auth/verify-email/resend` — повторная отправка magic link
 
-**Acceptance:** Регистрируется реальный user, приходит email от Keycloak, клик активирует аккаунт, frontend автоматически переходит на `/dashboard`.
+**Acceptance:** Регистрируется реальный user, письмо `VERIFY_EMAIL` появляется в **Mailpit** (`http://localhost:8025`),
+клик подтверждает аккаунт на странице Keycloak; после подтверждения вход по email/паролю даёт `status: active` и
+`/dashboard`. Подтверждение в UI — попыткой входа (polling-а нет).
 
 ### M1.5 — Password Recovery Live (после Phase 1.5)
 
@@ -106,8 +116,8 @@ Phase 0 (foundation)
 ### M2 — Phone Auth Live (после Phase 2)
 
 **Frontend:**
-- `/auth/register-phone` — phone input + OTP (passwordless)
-- LoginPage расширен tabs «Email» / «Телефон», phone-tab делает OTP login
+- `/auth/register` (phone-таб) — phone input + OTP (passwordless)
+- LoginPage расширен табами «E-mail» / «Телефон», phone-таб делает OTP login
 - `<OtpInput>` интегрирован с phone WebOTP API (auto-fill из SMS)
 
 **Backend:**
@@ -184,23 +194,23 @@ Phase 0 (foundation)
 - ✅ Backend auth-suite (OTP, звонковый канал, регистрация email/phone, Phase 4) реализован и проверен на живом стеке (16.10.2026)
 
 ### Phase 1
-- ✅ Регистрация через `/auth/register-email` создаёт реального user в Keycloak realm
-- ✅ Magic link приходит на email (тестируется через Mailpit в dev)
-- ✅ После клика — frontend автоматически переключается с `/auth/verify-email` на `/dashboard` (через polling)
+- ✅ Регистрация через `/auth/register` (email-таб) создаёт реального user в Keycloak realm
+- ✅ Письмо `VERIFY_EMAIL` приходит (dev — **Mailpit**, `http://localhost:8025`)
+- ✅ После подтверждения пользователь входит по email/паролю и попадает на `/dashboard` (polling-а нет, см. M1)
 - ✅ Router guard блокирует pending user от `/dashboard` напрямую
-- ✅ Тесты: `signupEmailFlow`, `verifyContactFlow`, smoke `RegisterEmailPage`
+- ✅ Тесты: `registerEmailFlow`, smoke `RegisterPage`; живая проверка доставки письма — «проверено с фронта <дата>»
 
 ### Phase 1.5
 - ✅ Forgot password flow работает end-to-end
 - ✅ Anti-enumeration: одинаковый ответ для существующего и несуществующего email
-- ✅ Magic link от Keycloak позволяет установить новый пароль через Keycloak page
+- ✅ Magic link от Keycloak позволяет установить новый пароль на странице Keycloak; возврат — `/auth/login?reset=success`
 
 ### Phase 2
-- ✅ Регистрация через `/auth/register-phone` создаёт user (passwordless)
-- ✅ SMS реально приходит (Twilio test number / SMS.ru sandbox в dev)
-- ✅ Phone login через LoginPage tabs работает
+- ✅ Регистрация через `/auth/register` (phone-таб) создаёт user (passwordless)
+- ✅ SMS-код приходит (dev — `[dev-sms]` в логе бэкенда; звонковый канал — dev-заглушка ~15 с)
+- ✅ Phone login через таб «Телефон» на `/auth/login` работает
 - ✅ WebOTP API авто-заполняет OTP на Android (manual test)
-- ✅ Тесты: `signupPhoneFlow`, `loginPhoneFlow`
+- ✅ Тесты: `registerPhoneFlow`, `loginPhoneFlow`
 
 ### Phase 3
 - ✅ Хотя бы один из {VK ID, Yandex} работает через Generic OIDC в Keycloak (без custom backend)
@@ -252,6 +262,52 @@ Week 4:    Phase 5 + integration tests
 
 ---
 
+## Карта экранов фронта (зафиксирована 16.10.2026)
+
+Принята координатором целиком (обоснование — `sessions/vue-app-base/questions/routes-and-screens-freeze.md`, ответ — `replies/routes-and-screens-freeze.md`).
+
+| Маршрут | Экран | Заметки |
+|---|---|---|
+| `/auth/login` | вход | табы «E-mail» / «Телефон» + ссылки «Создать аккаунт», «Забыли пароль?» |
+| `/auth/register` | регистрация | табы «E-mail» / «Телефон», диплинк `?tab=phone` |
+| `/auth/verify-email` | «Проверьте почту» | **статичный**: `resend` (202) + «войти»; параметров из письма не принимает |
+| `/auth/forgot-password` | сброс пароля | второе состояние экрана — «письмо отправлено»; после ссылки → `/auth/login?reset=success` |
+| `/auth/logout` | «Вы вышли» | уже есть |
+| `/account/profile` | профиль | имя/фамилия (`PATCH /users/:id/profile`) |
+| `/account/security` | безопасность | пароль + смена контакта + «выйти на всех устройствах» + ссылки в Keycloak Account Console |
+
+- **Экрана нового пароля нет** (`/auth/reset-password` не заводим): required action `UPDATE_PASSWORD` рисует Keycloak,
+  возврат — `/auth/login?reset=success`. Та же логика, что у подтверждения email.
+- `/account/*` — **без `meta.permissions`**: бэкенд отдаёт только Keycloak-роли, бизнес-permissions в токене нет →
+  с `meta.permissions` обычный пользователь уедет на `/system/forbidden`. Достаточно авторизации.
+- Кнопок соцпровайдеров нет (Phase 3 вне объёма); i18n не тянем — тексты по-русски.
+
+### Решения до Phase 0 (согласованы 16.10.2026)
+
+- Модели: новый `shared/model/otp/` — `OtpPurpose` (6 значений, дословно как на бэкенде) + `OtpDelivery = 'otp' | 'call'`
+  (внутренний словарь UI; на проводе такого поля **нет** — канал различается эндпоинтом). В ответе
+  `POST /auth/phone/call` бэкенд отдаёт собственное поле `method: 'call'` — это про ответ, а не про enum способа.
+  `shared/model/contact-channel` не расширяем.
+- Раскладка: `entities/otp-challenge` (FSM, cooldown, попытки, `challengeId`, маскированный `target`) →
+  `processes/auth-flow` (сценарии) → `pages/auth/*` (UI). Слой `features` не заводим.
+- `verificationToken` — **только in-memory** в рамках флоу (TTL 10 мин, одноразовый); в Pinia/storage не кладём.
+  Побочный эффект принят осознанно: перезагрузка страницы начинает шаг заново.
+- ADR: детали FSM и кросс-канального вытеснения — **amend ADR-0011** (поведение звонкового канала — ADR-0014);
+  новый ADR не заводим, пока нет решения, которого там нет.
+
+### Стенд и входные данные приёмки (16.10.2026)
+
+- Dev-провайдеры: SMS-коды и коды смены контакта — в логе бэкенда (`[dev-sms]` / `[dev-email]`); письма регистрации и
+  сброса пароля — в **Mailpit** (`http://localhost:8025`, профиль `mail`, см. `start.md`); звонковый канал —
+  `ConsolePhoneCallProvider`: «звонок» подтверждается сам через `SMSRU_DEV_CONFIRM_AFTER_SECONDS` (15 с).
+  Ключ SMS.ru для приёмки не нужен.
+- Тестовых аккаунтов и сидов нет — заводим сами реальными потоками; **удалять за собой** (иначе drift-детектор даст
+  `identity_missing`). Пароль `test@test.com` — у владельца.
+- Политика пароля реалма: `length(10) and notUsername and notEmail`. `PasswordPolicyViolation.details.message` —
+  **ключ/формулировка Keycloak, не готовый текст** → показываем свой текст, значение уходит в консоль.
+- **Блокер части приёмки:** на реалме нет ролей `admin` / `user` → RBAC-сценарии и `suspended` (`@Roles('admin')`)
+  проверить нечем; ждём задания бэкенд-сессии. RBAC-часть приёмки до этого не закрываем.
+
 ## Risk register
 
 | Риск | Вероятность | Impact | Mitigation |
@@ -264,7 +320,7 @@ Week 4:    Phase 5 + integration tests
 | **Account Console branding отнимает время** | Средняя | Низкий | Использовать default Keycloak theme на старте; кастомизация — отдельная задача после Phase 5 |
 | **WebOTP API не работает на iOS** | Высокая | Низкий | Apple не поддерживает WebOTP полноценно. На iOS — manual OTP entry (стандарт). Документировано в `<OtpInput>` |
 | **Phone-OTP race condition при resend** | Средняя | Низкий | FSM-store `useOtpChallengeStore` блокирует resend по cooldown. Backend invalidate'ит старый challenge при создании нового |
-| **Email magic link expires (по Keycloak default 5 min)** | Высокая | Низкий | UX message «Ссылка действительна 5 минут». Кнопка resend всегда доступна. В Keycloak можно настроить дольше (до 24h) |
+| **Email magic link истекает** | Высокая | Низкий | Письмо `VERIFY_EMAIL` шлётся **админским** вызовом → ориентир **12 ч** (`actionTokenGeneratedByAdminLifespan = 43200`, проверено координатором на живом реалме), а не 5 мин. На экране срок **не обещаем** («ссылка действует ограниченное время»); кнопка resend всегда доступна |
 | **MSW моки расходятся с реальным backend** | — | — | ~~Риск снят~~: MSW не заводится (бэкенд готов, 16.10.2026). Контракт-тесты Phase 5 (Playwright против real backend) остаются в силе |
 
 ---
