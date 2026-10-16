@@ -1,4 +1,4 @@
-import type { OtpChallenge, OtpVerification } from '../schema/otp-challenge.schema'
+import type { OtpChallenge, OtpVerification, PhoneCallChallenge, PhoneCallResult } from '../schema/otp-challenge.schema'
 import type { OtpPurpose } from '@/shared/model/otp'
 import { getHttpClient } from '@/shared/api'
 import {
@@ -8,6 +8,8 @@ import {
   verifyOtpBodyDtoSchema,
 } from './otp-challenge.dto'
 import { toOtpChallenge, toOtpVerification } from './otp-challenge.mapper'
+import { phoneCallChallengeDtoSchema, phoneCallStatusDtoSchema, startPhoneCallBodyDtoSchema } from './phone-call.dto'
+import { toPhoneCallChallenge, toPhoneCallResult } from './phone-call.mapper'
 
 /**
  * Запрос кода на телефон — `POST /auth/otp/send` (публичный).
@@ -45,4 +47,42 @@ export async function verifyOtp (challengeId: string, code: string): Promise<Otp
   }
 
   return toOtpVerification(parsed.data)
+}
+
+/**
+ * Старт звонкового челленджа — `POST /auth/phone/call` (публичный, контракт v1.2).
+ *
+ * Anti-enumeration как у `otp/send`: для `purpose='sign-in'` бэкенд отвечает `200`
+ * и на незарегистрированный номер. `callTo` — общий сервисный номер.
+ */
+export async function startPhoneCall (phone: string, purpose: OtpPurpose): Promise<PhoneCallChallenge> {
+  const body = startPhoneCallBodyDtoSchema.parse({ phone, purpose })
+  const raw = await getHttpClient().post<unknown>('/auth/phone/call', body, { auth: false })
+
+  const parsed = phoneCallChallengeDtoSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw parsed.error
+  }
+
+  return toPhoneCallChallenge(parsed.data)
+}
+
+/**
+ * Опрос звонкового челленджа — `GET /auth/phone/call/:challengeId` (публичный).
+ *
+ * Всегда `200`: терминальные состояния (`expired`, `failed`) приходят полем `status`,
+ * новых кодов ошибок контракт v1.2 не заводит.
+ */
+export async function getPhoneCallStatus (challengeId: string): Promise<PhoneCallResult> {
+  const raw = await getHttpClient().get<unknown>(
+    `/auth/phone/call/${encodeURIComponent(challengeId)}`,
+    { auth: false },
+  )
+
+  const parsed = phoneCallStatusDtoSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw parsed.error
+  }
+
+  return toPhoneCallResult(parsed.data)
 }

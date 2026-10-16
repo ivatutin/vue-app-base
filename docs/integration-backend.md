@@ -346,6 +346,29 @@ type PhoneCallStatusResponse = {
 - провайдер недоступен на старте → `503` **без нового кода** (generic-сообщение);
 - UI: `callTo` + ссылка `tel:`, таймер до `expiresAt`, текст «звонить нужно с этого же номера».
 
+> **Проверено с фронта 16.10.2026 (живой стенд):** `POST /auth/phone/call` (`purpose: 'sign-up'`) → `200` с
+> `method: 'call'`, `callTo = +7 (800) 000-00-00` (dev-заглушка провайдера), `otpFallback: true` и окном 5 минут;
+> опрос `GET /auth/phone/call/:id` → `pending`, `pending`, затем **`verified` + `verificationToken` (43 симв.)** на t+15 с
+> (совпадает с `SMSRU_DEV_CONFIRM_AFTER_SECONDS=15`); этот токен принят `POST /auth/sign-up/phone` → `201`, пользователь
+> `active`, `phoneVerified: true` (**5.2 с**), выданный access-токен принят `GET /users/me`.
+> **Токен привязан к `purpose`:** токен, полученный звонком с `purpose: 'sign-in'`, в `sign-up/phone` даёт
+> `422 VerificationTokenInvalid` — граница проверена живьём.
+> **Rate limit звонкового канала** живой: повторный старт на тот же номер в пределах cooldown → `422 OtpRateLimited`
+> с `details.retryAfter` (60 с на target).
+
+> ⚠️ **Особенность стенда для приёмки звонкового канала (найдено 16.10.2026).**
+> Провайдер звонка работает только у приложения **с хоста** (в контейнере `NODE_ENV=production` → `503` fail-closed),
+> а CIBA-минт токенов (ADR-0015) требует, чтобы **Keycloak** дозвонился до канала аутентификации, а его адрес задан
+> в `docker-compose.yml` как контейнерный: `KC_SPI_CIBA_AUTH_CHANNEL__CIBA_HTTP_AUTH_CHANNEL__HTTP_AUTHENTICATION_CHANNEL_URI`
+> по умолчанию `http://app-backend:3001/api/v1/internal/ciba/channel`. Поэтому «хост вместо контейнера» ломает минт
+> (`sign-up/phone` → `503`, если контейнер остановлен ради порта 3001).
+> **Рабочий рецепт без правки конфигов:** держать контейнер `app` поднятым (Keycloak дозвонится до его канала) и
+> поднять приложение с хоста на **другом порту** — `set APP_PORT=3101 && npm run start:dev`: состояние челленджей и
+> метки минта живут в общем Redis, поэтому контейнерный инстанс подтверждает заявку, начатую хостовым. Так и сделана
+> приёмка выше.
+> **Альтернатива для бэкенда (одна строка):** дать `CIBA_CHANNEL_URL` указывать на хост
+> (`http://host.docker.internal:3001/api/v1/internal/ciba/channel`) — тогда хватит одного хостового инстанса.
+
 ### Social auth (Phase 3) — вне объёма Auth v1
 
 > Роутов на backend **нет**: Phase 3 закрыта решением координатора (15.10.2026), работы не открываются.
