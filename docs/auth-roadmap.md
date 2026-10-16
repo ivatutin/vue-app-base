@@ -114,6 +114,11 @@ Phase 0 (foundation)
 **Frontend:**
 - `/auth/forgot-password` — простая форма (email) + landing «Письмо отправлено»
 
+**Реализовано во фронте (16.10.2026):** `/auth/forgot-password` (два состояния: форма и «письмо отправлено» с маской
+адреса и возвратом к правке), флоу `forgotPasswordFlow`, ссылка «Забыли пароль?» на логине и обработчик
+`/auth/login?reset=success` (тост). Сегодня ссылка из письма ведёт на Keycloak и в приложение не возвращает — обработчик
+оставлен заделом; `?reset=success` в состоянии «отправлено» не обещаем.
+
 **Backend:**
 - `POST /auth/forgot-password` → `keycloakAdmin.users.executeActionsEmail([UPDATE_PASSWORD])` (anti-enumeration: всегда 202)
 

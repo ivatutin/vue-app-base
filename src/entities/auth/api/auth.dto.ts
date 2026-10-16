@@ -43,3 +43,14 @@ export const resendVerifyEmailBodyDtoSchema = z.object({
 })
 
 export type ResendVerifyEmailBodyDto = z.infer<typeof resendVerifyEmailBodyDtoSchema>
+
+/**
+ * Тело `POST /auth/forgot-password`. Ответ **всегда** `202` (anti-enumeration:
+ * не выдаёт, зарегистрирован ли адрес). Новый пароль задаётся на странице
+ * Keycloak — required action `UPDATE_PASSWORD`.
+ */
+export const forgotPasswordBodyDtoSchema = z.object({
+  email: emailSchema,
+})
+
+export type ForgotPasswordBodyDto = z.infer<typeof forgotPasswordBodyDtoSchema>

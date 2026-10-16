@@ -1,6 +1,7 @@
 import type { Email, Password } from '@/shared/model/credentials'
 import { getHttpClient, HttpError } from '@/shared/api'
 import {
+  forgotPasswordBodyDtoSchema,
   resendVerifyEmailBodyDtoSchema,
   signUpEmailBodyDtoSchema,
   signUpEmailResponseDtoSchema,
@@ -46,6 +47,19 @@ export async function signUpEmail (input: SignUpEmailInput): Promise<boolean> {
 export async function resendVerifyEmail (email: Email): Promise<void> {
   const body = resendVerifyEmailBodyDtoSchema.parse({ email })
   await getHttpClient().post<void>('/auth/verify-email/resend', body, { auth: false })
+}
+
+/**
+ * Запрос письма для сброса пароля (`POST /auth/forgot-password`, публичный).
+ *
+ * Бэкенд отвечает `202` **всегда** (anti-enumeration), поэтому наружу ничего не
+ * возвращаем: успех выражается отсутствием ошибки (сеть, 5xx). Новый пароль
+ * пользователь задаёт на странице Keycloak (required action `UPDATE_PASSWORD`) —
+ * своей формы нового пароля у нас нет.
+ */
+export async function forgotPassword (email: Email): Promise<void> {
+  const body = forgotPasswordBodyDtoSchema.parse({ email })
+  await getHttpClient().post<void>('/auth/forgot-password', body, { auth: false })
 }
 
 export async function signIn (email: string, password: string): Promise<TokenPair> {

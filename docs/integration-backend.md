@@ -271,6 +271,11 @@ interface ErrorResponseBody {
 |---|---|---|---|---|
 | `POST /auth/forgot-password` | public | `{ email }` | 202 Accepted (всегда, anti-enumeration) | ✅ |
 
+> **Проверено с фронта 16.10.2026:** `POST /auth/forgot-password` → `202` и для существующего адреса, и для
+> несуществующего (anti-enumeration живьём); письмо пришло в Mailpit (subject «Update Your Account»), ссылка внутри ведёт
+> на **Keycloak** (`/realms/app/login-actions/action-token?key=…`) и в приложение не возвращает — поэтому экран нового
+> пароля у нас не нужен, а обработчик `/auth/login?reset=success` оставлен заделом на случай `redirect_uri`.
+
 **Backend impl:** `users.executeActionsEmail(id, ['UPDATE_PASSWORD'], { lifespan: 3600 })`. Keycloak шлёт magic link → пользователь устанавливает новый пароль на Keycloak page.
 
 Frontend: одна страница `/auth/forgot-password` (email input + landing «Письмо отправлено»). После клика в magic link — redirect на `/auth/login?reset=success` с toast.
