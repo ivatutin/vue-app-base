@@ -10,7 +10,8 @@ import { sendOtp, verifyOtp } from '../api'
  * - `invalid` — неверный код: остаться на экране ввода, поле очистить;
  * - `expired` — челлендж не найден/истёк: начать заново;
  * - `locked` — попытки исчерпаны (5), ясно предлагаем resend;
- * - `rateLimited` — лимит отправок: таймер из `details.retryAfter`;
+ * - `rateLimited` — лимит отправок: таймер из `details.retryAfter`; выход — повторный `send(target, purpose)`
+ *   из флоу после истечения cooldown (челленджа может ещё не быть — см. `canRetrySend`);
  * - `alreadyExists` — `409 ContactAlreadyExists` (только `sign-up`): уводим на
  *   экран «проверьте почту»;
  * - `failed` — всё остальное (неизвестный код, сеть, 5xx).
@@ -62,7 +63,18 @@ export const useOtpChallengeStore = defineStore('otp-challenge', () => {
   const isBusy = computed(() => status.value === 'sending' || status.value === 'verifying')
   const cooldownLeft = computed(() => secondsUntil(cooldownUntil.value))
   const expiresInLeft = computed(() => secondsUntil(challenge.value?.expiresAt.getTime() ?? null))
-  const canResend = computed(() => !isBusy.value && challenge.value !== null && cooldownLeft.value === 0)
+
+  /**
+   * Гейт кнопки «запросить код»: не заняты и cooldown истёк.
+   *
+   * `challenge` в условие **не входит**: `OtpRateLimited` возможен и на первой
+   * отправке (лимит 3/час на target) — тогда челленджа ещё нет, а повторить
+   * попытку нужно; повтор идёт тем же `send(target, purpose)` из флоу.
+   */
+  const canRetrySend = computed(() => !isBusy.value && cooldownLeft.value === 0)
+
+  /** Можно повторить без параметров: есть сохранённая отправка (`resend()`). */
+  const canResend = computed(() => canRetrySend.value && request.value !== null)
 
   function secondsUntil (until: number | null): number {
     if (until === null) {
@@ -160,11 +172,16 @@ export const useOtpChallengeStore = defineStore('otp-challenge', () => {
     clearError()
   }
 
-  /** Пользователь закрыл сообщение об ошибке — возвращаем рабочий статус. */
+  /**
+   * Пользователь закрыл сообщение об ошибке. Статус в `idle` **не сбрасываем**:
+   * он несёт причину блокировки (`rateLimited` / `locked` / `expired`) и нужен UI,
+   * а гейт кнопки — `canRetrySend` (по cooldown). Возврат в `sent` — только когда
+   * челлендж жив и мы были в терминальном статусе ошибки ввода.
+   */
   function dismissError (): void {
     clearError()
-    if (status.value !== 'verified') {
-      status.value = challenge.value ? 'sent' : 'idle'
+    if (challenge.value && status.value !== 'verified') {
+      status.value = 'sent'
     }
   }
 
@@ -219,6 +236,7 @@ export const useOtpChallengeStore = defineStore('otp-challenge', () => {
     retryAfterSeconds,
     cooldownLeft,
     expiresInLeft,
+    canRetrySend,
     canResend,
     isBusy,
     send,

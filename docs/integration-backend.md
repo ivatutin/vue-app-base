@@ -302,7 +302,7 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 type PhoneCallChallengeResponse = {
   challengeId: string,
   channel: 'phone',
-  method: 'call',        // отличает звонковый челлендж от OTP (есть в ответе backend; в тексте контракта не описано — уточняется у координатора)
+  method: 'call',        // отличает звонковый челлендж от OTP; источник формы — спецификация v1.2 (контракт фиксирует пути, семантику и коды, а не поля DTO)
   callTo: string,        // общий сервисный номер, напр. '+7 (800) 500-8275'
   expiresAt: string,     // ISO; окно на звонок — 5 минут
   cooldownSeconds: number,

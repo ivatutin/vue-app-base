@@ -2,7 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-06-03
-- **Revision:** 2 (2026-10-16) — уточнён FSM `entities/otp-challenge` (реализован в Phase 0), введён внутренний `OtpDelivery = 'otp' | 'call'`, зафиксированы отказ от polling на `/auth/verify-email` (вариант A) и отказ от счётчика попыток в UI. См. § Decision и § FSM.
+- **Revision:** 2 (2026-10-16) — уточнён FSM `entities/otp-challenge` (реализован в Phase 0), введён внутренний `OtpDelivery = 'otp' | 'call'`, зафиксированы отказ от polling на `/auth/verify-email` (вариант A) и отказ от счётчика попыток в UI; по ревью координатора уточнён выход из `rateLimited` и гейт кнопки (`canRetrySend`). См. § Decision и § FSM.
 
 ## Context
 
@@ -89,6 +89,12 @@ idle → sending → sent → verifying → verified
 
 **Счётчика оставшихся попыток нет:** контракт его не отдаёт (ни в ответе `verify`, ни в `details` ошибок — только
 коды), поэтому UI не показывает выдуманное число и реагирует только на `locked`.
+
+**Выход из `rateLimited` и `locked`:** повторный `send(target, purpose)` из флоу — после истечения cooldown. Первая
+отправка тоже может упереться в лимит (3/час на target), а тогда челленджа ещё нет и `resend()` (без параметров) вызвать
+нечем. Поэтому гейт кнопки — `canRetrySend` (`!isBusy && cooldownLeft === 0`), а `canResend` остаётся безопасным условием
+именно для `resend()` (требует сохранённую отправку). Состояние при закрытии сообщения об ошибке **не сбрасывается в
+`idle`**: статус несёт причину блокировки, кнопку гейтит cooldown.
 
 Pinia setup-store держит **одну активную challenge единовременно**. Состояние эфемерное — не persist'ится (на refresh теряется, и это правильно — challenge на бэке тоже короткоживуща). `verificationToken` стор **не хранит**: `verify()` возвращает его вызывающему коду, а тот предъявляет токен в `sign-up/phone` / `sign-in/phone` / `set-password`.
 

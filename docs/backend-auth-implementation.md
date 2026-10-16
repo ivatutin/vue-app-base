@@ -666,7 +666,7 @@ Frontend читает (или полагается на env-config). Backend rea
 
 ### Contract tests
 - OpenAPI / Swagger описание всех endpoints
-- OpenAPI / Swagger — источник истины по формам запросов/ответов (перед интеграцией сверяйся с живым `GET /api/v1/docs`)
+- OpenAPI / Swagger — источник истины по формам запросов/ответов: `GET /api/v1/docs-json` отдаёт **32/32 схемы со свойствами** (16.10.2026: 11 response-DTO переведены на `createZodDto`)
 - Frontend MSW моки **не используются** (решение 16.10.2026): бэкенд готов, фронт работает против живого API, DTO валидируются Zod-схемами на клиенте
 
 ---

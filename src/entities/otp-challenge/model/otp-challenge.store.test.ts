@@ -84,8 +84,8 @@ describe('useOtpChallengeStore', () => {
     expect(store.error).toBe(ERROR_MESSAGES[ErrorCode.CONTACT_ALREADY_EXISTS])
   })
 
-  it('send: OtpRateLimited → таймер из details.retryAfter и блокировка resend', async () => {
-    sendOtpMock.mockRejectedValue(
+  it('send: OtpRateLimited на первой отправке — таймер, повтор открывается через send()', async () => {
+    sendOtpMock.mockRejectedValueOnce(
       httpError(422, ErrorCode.OTP_RATE_LIMITED, { retryAfter: 42 }),
     )
     const store = useOtpChallengeStore()
@@ -95,10 +95,28 @@ describe('useOtpChallengeStore', () => {
     expect(store.status).toBe('rateLimited')
     expect(store.retryAfterSeconds).toBe(42)
     expect(store.cooldownLeft).toBe(42)
+    // Челленджа ещё нет: повтор без параметров невозможен, но гейт кнопки не залипает.
     expect(store.canResend).toBe(false)
+    expect(store.canRetrySend).toBe(false)
+    await expect(store.resend()).rejects.toThrow('No active OTP request to resend')
+
+    // Закрытие сообщения не разблокирует кнопку до конца cooldown и не врёт про статус.
+    store.dismissError()
+    expect(store.error).toBeNull()
+    expect(store.status).toBe('rateLimited')
+    expect(store.canRetrySend).toBe(false)
 
     vi.advanceTimersByTime(42_000)
     expect(store.cooldownLeft).toBe(0)
+    expect(store.canRetrySend).toBe(true)
+
+    // Выход из тупика: флоу повторяет send(target, purpose) — параметры у него есть.
+    sendOtpMock.mockResolvedValueOnce(makeChallenge({ challengeId: 'ch_2' }))
+    await store.send(PHONE, 'sign-in')
+
+    expect(store.status).toBe('sent')
+    expect(store.challenge?.challengeId).toBe('ch_2')
+    expect(store.canResend).toBe(false)
   })
 
   it('send: неизвестная ошибка → failed с generic-сообщением', async () => {
@@ -110,6 +128,34 @@ describe('useOtpChallengeStore', () => {
     expect(store.status).toBe('failed')
     expect(store.errorCode).toBeNull()
     expect(store.error).toBe('Что-то пошло не так')
+  })
+
+  it('canRetrySend: после успешной отправки открывается только по истечении cooldown', async () => {
+    sendOtpMock.mockResolvedValue(makeChallenge({ cooldownSeconds: 60 }))
+    const store = useOtpChallengeStore()
+    await store.send(PHONE, 'sign-in')
+
+    expect(store.canRetrySend).toBe(false)
+    expect(store.canResend).toBe(false)
+
+    vi.advanceTimersByTime(30_000)
+    expect(store.canRetrySend).toBe(false)
+
+    vi.advanceTimersByTime(30_000)
+    expect(store.canRetrySend).toBe(true)
+    expect(store.canResend).toBe(true)
+  })
+
+  it('dismissError без челленджа: статус-причина блокировки сохраняется', async () => {
+    sendOtpMock.mockRejectedValue(httpError(422, ErrorCode.OTP_RATE_LIMITED, { retryAfter: 30 }))
+    const store = useOtpChallengeStore()
+    await expect(store.send(PHONE, 'sign-in')).rejects.toThrow()
+
+    store.dismissError()
+
+    expect(store.error).toBeNull()
+    expect(store.status).toBe('rateLimited')
+    expect(store.cooldownLeft).toBe(30)
   })
 
   it('resend: те же параметры, новый челлендж подменяет прежний', async () => {
