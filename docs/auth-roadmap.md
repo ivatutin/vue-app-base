@@ -131,6 +131,13 @@ Phase 0 (foundation)
 - LoginPage расширен табами «E-mail» / «Телефон», phone-таб делает OTP login
 - `<OtpInput>` интегрирован с phone WebOTP API (auto-fill из SMS)
 
+**Реализовано во фронте (16.10.2026):** виджет `widgets/phone-verification` (номер → код → `verificationToken`, один на
+регистрацию и вход), phone-таб в `/auth/register`, табы «E-mail» / «Телефон» на `/auth/login`, флоу
+`registerPhoneFlow` / `loginPhoneFlow` и общий финал входа `establishSession` (вынесен из `loginFlow`, чтобы порядок
+«токены → очистка кэша → профиль → компенсация» был один на все входы). Живая проверка цепочки — в
+`integration-backend.md` (Phase 2), там же наблюдение про холодный таймаут >30 с. Осталось: WebOTP auto-fill на Android
+проверяется руками.
+
 **Backend:**
 - `POST /auth/otp/send` / `verify` для phone channel — SMS provider integrated
 - `POST /auth/sign-up/phone` — `keycloakAdmin.users.create({attributes: {phoneNumber, phoneVerified}, credentials: []})`

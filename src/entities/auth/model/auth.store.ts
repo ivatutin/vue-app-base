@@ -1,4 +1,4 @@
-import { refreshTokens, signIn, signOut } from '../api'
+import { refreshTokens, signIn, signOut, type TokenPair } from '../api'
 import { tokenStorage } from '../lib/token-storage'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -63,6 +63,16 @@ export const useAuthStore = defineStore('auth', () => {
     tokenStorage.setTokens(access, refresh)
   }
 
+  /**
+   * Применить готовую пару токенов. Нужен флоу, которые получают токены не через
+   * `login()` — phone sign-up/sign-in: сессия считается установленной с момента
+   * применения токенов, а профиль подтягивает вызывающий флоу (`establishSession`
+   * в `processes/auth-flow`).
+   */
+  function applyTokenPair (pair: TokenPair): void {
+    applyTokens(pair.accessToken, pair.refreshToken)
+  }
+
   function clearTokens (): void {
     accessToken.value = null
     refreshToken.value = null
@@ -78,5 +88,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     refresh,
     logout,
+    applyTokenPair,
   }
 })

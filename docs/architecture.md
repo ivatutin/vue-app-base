@@ -56,7 +56,7 @@ shared/     ←  переиспользуемая инфраструктура (
 | `features/` | Пользовательские сценарии: «логин по email», «фильтр таблицы», «оплата» | Сущности |
 | `widgets/` | Готовые блоки лэйаута: AppHeader, AppSidebar, AppNotifications | Доменная логика |
 | `pages/` | Страницы маршрутов | Реиспользуемая логика (выносится в features/widgets) |
-| `processes/` | Cross-entity сценарии: app-bootstrap (FSM-инициализация), auth-flow (loginFlow, logoutFlow) | Простая логика, помещающаяся в один стор |
+| `processes/` | Cross-entity сценарии: app-bootstrap (FSM-инициализация), auth-flow (вход/выход, регистрация email и телефона, восстановление пароля, общий финал `establishSession`) | Простая логика, помещающаяся в один стор |
 | `app/` | Точка входа, провайдеры (Pinia, HTTP-клиент, error-handler, ThemeProvider, Router), layouts, `App.vue` | Бизнес-код |
 
 ### Запрещённые направления импортов

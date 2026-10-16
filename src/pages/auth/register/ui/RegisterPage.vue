@@ -14,7 +14,7 @@
  * ключ Keycloak (`invalidPasswordMinLengthMessage`), а не готовая фраза.
  */
   import { z } from 'zod'
-  import { registerEmailFlow } from '@/processes/auth-flow'
+  import { registerEmailFlow, registerPhoneFlow } from '@/processes/auth-flow'
   import { ErrorCode, getErrorMessage, matchError } from '@/shared/api'
   import { emailSchema, passwordSchema } from '@/shared/model/credentials'
   import {
@@ -31,6 +31,7 @@
     TabsTrigger,
     TextField,
   } from '@/shared/ui/base'
+  import { PhoneVerificationForm } from '@/widgets/phone-verification'
 
   definePage({
     meta: {
@@ -87,6 +88,31 @@
       loading.value = false
     }
   }
+
+  /**
+   * Телефонный шаг: виджет уже подтвердил номер и отдал `verificationToken`.
+   * `sign-up/phone` сразу логинит — уводим на дашборд; `409` (гонка: номер заняли
+   * между OTP и созданием) объясняем текстом, остальное — по реестру кодов.
+   */
+  async function onPhoneVerified (payload: {
+    phone: string
+    verificationToken: string
+    acceptedTerms: boolean
+  }): Promise<void> {
+    error.value = null
+    loading.value = true
+
+    try {
+      await registerPhoneFlow(payload)
+      await router.push({ name: '/dashboard' })
+    } catch (error_) {
+      error.value = matchError(error_, ErrorCode.CONTACT_ALREADY_EXISTS)
+        ? 'Номер уже зарегистрирован — войдите по телефону.'
+        : getErrorMessage(error_)
+    } finally {
+      loading.value = false
+    }
+  }
 </script>
 
 <template>
@@ -125,9 +151,13 @@
         </TabsContent>
 
         <TabsContent value="phone">
-          <p class="text-sm text-muted-foreground">
-            Регистрация по телефону появится вместе с SMS-шагом (Phase 2).
-          </p>
+          <PhoneVerificationForm
+            :disabled="loading"
+            purpose="sign-up"
+            require-terms
+            submit-label="Создать аккаунт"
+            @verified="onPhoneVerified"
+          />
         </TabsContent>
       </Tabs>
 

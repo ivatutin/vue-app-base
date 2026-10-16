@@ -289,6 +289,14 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 | `POST /auth/sign-up/phone` | public | `{ phone (E.164), verificationToken, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user, tokens }` | ✅ |
 | `POST /auth/sign-in/phone` | public | `{ phone, verificationToken (purpose='sign-in') }` | 200 → `TokenPair` | ✅ |
 
+> **Проверено с фронта 16.10.2026 (живой стенд):** `otp/send` (sign-up) → `200` + код в логе бэкенда (`[dev-sms]`);
+> `otp/verify` → `200 { verified: true, verificationToken }` (**1.6 с**); `sign-up/phone` → `201 { user, tokens }`
+> (`status: active`, `phoneVerified: true`, **6.5 с**), выданный access-токен принят `GET /users/me`.
+> Anti-enumeration: `otp/send` с `purpose='sign-in'` для незарегистрированного номера → `200`.
+> **Тайминги:** первый (холодный) прогон цепочки занял **>30 с** — клиент отвалился по таймауту, а бэкенд операцию довёл
+> (пользователь создан, CIBA-минт завершился); повторный прогон — 6.5 с. Для UI это значит: первый телефонный вход после
+> холодного старта бэкенда может закончиться таймаутом (30 с — дефолт `HttpClient`), повторный запрос проходит.
+
 **Backend impl:**
 - Sign-up: validate verificationToken → `users.create({username: uuid(), attributes: {phoneNumber: [phone], phoneVerified: ['true']}, credentials: []})` (passwordless) → status `active` → auto-login через Token Exchange
 - Sign-in: lookup user by `phoneNumber` attribute → если нет → 401 `InvalidCredentials` (anti-enumeration) → Token Exchange → TokenPair

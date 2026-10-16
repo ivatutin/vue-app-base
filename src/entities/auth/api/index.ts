@@ -1,10 +1,14 @@
 import type { Email, Password } from '@/shared/model/credentials'
+import type { Phone } from '@/shared/model/phone'
 import { getHttpClient, HttpError } from '@/shared/api'
 import {
   forgotPasswordBodyDtoSchema,
   resendVerifyEmailBodyDtoSchema,
+  signInPhoneBodyDtoSchema,
   signUpEmailBodyDtoSchema,
   signUpEmailResponseDtoSchema,
+  signUpPhoneBodyDtoSchema,
+  signUpPhoneResponseDtoSchema,
   type TokenPairDto,
   tokenPairDtoSchema,
 } from './auth.dto'
@@ -47,6 +51,50 @@ export async function signUpEmail (input: SignUpEmailInput): Promise<boolean> {
 export async function resendVerifyEmail (email: Email): Promise<void> {
   const body = resendVerifyEmailBodyDtoSchema.parse({ email })
   await getHttpClient().post<void>('/auth/verify-email/resend', body, { auth: false })
+}
+
+export interface SignUpPhoneInput {
+  phone: Phone
+  verificationToken: string
+  /** Форма гарантирует согласие; `false` бэкенд отвергает кодом `TermsNotAccepted`. */
+  acceptedTerms: boolean
+  firstName?: string
+  lastName?: string
+}
+
+/**
+ * Регистрация по телефону (`POST /auth/sign-up/phone`, публичный) — Phase 2.
+ *
+ * `verificationToken` приходит из OTP-канала с `purpose: 'sign-up'` (или из звонкового
+ * канала — токен общий). Отдаём пару токенов: `user` из ответа не валидируем, профиль
+ * подтянет общий финал входа (`GET /users/me`).
+ */
+export async function signUpPhone (input: SignUpPhoneInput): Promise<TokenPair> {
+  const body = signUpPhoneBodyDtoSchema.parse(input)
+  const raw = await getHttpClient().post<unknown>('/auth/sign-up/phone', body, { auth: false })
+
+  const parsed = signUpPhoneResponseDtoSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw parsed.error
+  }
+
+  return parsed.data.tokens
+}
+
+/**
+ * Вход по телефону (`POST /auth/sign-in/phone`, публичный): `verificationToken`
+ * с `purpose: 'sign-in'`. Ответ — плоская пара токенов.
+ */
+export async function signInPhone (phone: Phone, verificationToken: string): Promise<TokenPair> {
+  const body = signInPhoneBodyDtoSchema.parse({ phone, verificationToken })
+  const raw = await getHttpClient().post<unknown>('/auth/sign-in/phone', body, { auth: false })
+
+  const parsed = tokenPairDtoSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw parsed.error
+  }
+
+  return parsed.data
 }
 
 /**

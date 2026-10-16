@@ -1,8 +1,20 @@
 <script setup lang="ts">
   import { useNotificationStore } from '@/entities/notification'
-  import { loginFlow } from '@/processes/auth-flow'
+  import { loginFlow, loginPhoneFlow } from '@/processes/auth-flow'
   import { HttpError } from '@/shared/api'
-  import { Alert, Button, Card, Form, Spacer, TextField } from '@/shared/ui/base'
+  import {
+    Alert,
+    Button,
+    Card,
+    Form,
+    Spacer,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+    TextField,
+  } from '@/shared/ui/base'
+  import { PhoneVerificationForm } from '@/widgets/phone-verification'
 
   definePage({
     meta: {
@@ -15,6 +27,7 @@
   const route = useRoute()
   const notification = useNotificationStore()
 
+  const tab = ref('email')
   const email = ref('')
   const password = ref('')
   const error = ref<string | null>(null)
@@ -45,6 +58,27 @@
       loading.value = false
     }
   }
+
+  /**
+   * Телефонный вход: виджет уже подтвердил номер, `sign-in/phone` отдаёт токены.
+   * Anti-enumeration: незарегистрированный номер приходит как `401 InvalidCredentials`
+   * — показываем единый текст, как и для неверного кода.
+   */
+  async function onPhoneVerified (payload: { phone: string, verificationToken: string }): Promise<void> {
+    error.value = null
+    loading.value = true
+
+    try {
+      await loginPhoneFlow(payload.phone, payload.verificationToken)
+      await router.replace({ name: '/dashboard' })
+    } catch (error_) {
+      error.value = error_ instanceof HttpError && error_.status === 401
+        ? 'Не удалось войти по этому номеру'
+        : 'Не удалось войти'
+    } finally {
+      loading.value = false
+    }
+  }
 </script>
 
 <template>
@@ -53,22 +87,40 @@
       <Alert v-if="error" class="mb-4" density="compact" kind="error">
         {{ error }}
       </Alert>
-      <TextField
-        v-model="email"
-        autocomplete="email"
-        :disabled="loading"
-        label="E-mail"
-        required
-        type="email"
-      />
-      <TextField
-        v-model="password"
-        autocomplete="current-password"
-        :disabled="loading"
-        label="Пароль"
-        required
-        type="password"
-      />
+
+      <Tabs v-model="tab">
+        <TabsList class="mb-4">
+          <TabsTrigger value="email">E-mail</TabsTrigger>
+          <TabsTrigger value="phone">Телефон</TabsTrigger>
+        </TabsList>
+
+        <TabsContent class="space-y-4" value="email">
+          <TextField
+            v-model="email"
+            autocomplete="email"
+            :disabled="loading"
+            label="E-mail"
+            required
+            type="email"
+          />
+          <TextField
+            v-model="password"
+            autocomplete="current-password"
+            :disabled="loading"
+            label="Пароль"
+            required
+            type="password"
+          />
+        </TabsContent>
+
+        <TabsContent value="phone">
+          <PhoneVerificationForm
+            :disabled="loading"
+            purpose="sign-in"
+            @verified="onPhoneVerified"
+          />
+        </TabsContent>
+      </Tabs>
       <template #footer>
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
           <RouterLink
@@ -86,6 +138,7 @@
         </div>
         <Spacer />
         <Button
+          v-if="tab === 'email'"
           :disabled="!email || !password"
           :loading="loading"
           type="submit"

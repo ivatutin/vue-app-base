@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { emailSchema, passwordSchema } from '@/shared/model/credentials'
+import { phoneSchema } from '@/shared/model/phone'
 
 export const tokenPairDtoSchema = z.object({
   accessToken: z.string().min(1),
@@ -54,3 +55,36 @@ export const forgotPasswordBodyDtoSchema = z.object({
 })
 
 export type ForgotPasswordBodyDto = z.infer<typeof forgotPasswordBodyDtoSchema>
+
+/**
+ * Тело `POST /auth/sign-up/phone` (Phase 2). `acceptedTerms` — **boolean** (как на
+ * бэкенде): отказ от условий должен давать доменный `TermsNotAccepted`, а не ошибку
+ * валидации. `verificationToken` — из OTP-канала (`purpose: 'sign-up'`).
+ */
+export const signUpPhoneBodyDtoSchema = z.object({
+  phone: phoneSchema,
+  verificationToken: z.string().min(1),
+  acceptedTerms: z.boolean(),
+  firstName: z.string().trim().min(1).max(100).optional(),
+  lastName: z.string().trim().min(1).max(100).optional(),
+})
+
+export type SignUpPhoneBodyDto = z.infer<typeof signUpPhoneBodyDtoSchema>
+
+/**
+ * Ответ `POST /auth/sign-up/phone`: `{ user, tokens }`. `user` намеренно не валидируем —
+ * профиль всё равно придёт из `GET /users/me` (это `UserDto` соседнего слайса).
+ */
+export const signUpPhoneResponseDtoSchema = z.object({
+  tokens: tokenPairDtoSchema,
+})
+
+export type SignUpPhoneResponseDto = z.infer<typeof signUpPhoneResponseDtoSchema>
+
+/** Тело `POST /auth/sign-in/phone`: `verificationToken` с `purpose: 'sign-in'`. */
+export const signInPhoneBodyDtoSchema = z.object({
+  phone: phoneSchema,
+  verificationToken: z.string().min(1),
+})
+
+export type SignInPhoneBodyDto = z.infer<typeof signInPhoneBodyDtoSchema>
