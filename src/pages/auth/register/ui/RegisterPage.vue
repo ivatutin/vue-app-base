@@ -1,0 +1,146 @@
+<script setup lang="ts">
+/**
+ * Регистрация: табы «E-mail» / «Телефон».
+ *
+ * Phase 1 — рабочий email-таб (аккаунт с паролем + обязательное согласие с условиями);
+ * phone-таб включается в Phase 2 (OTP → `sign-up/phone`) и пока `disabled`, чтобы не
+ * создавать ложного впечатления работающей вкладки.
+ *
+ * Токенов `sign-up/email` не отдаёт (вариант A, 16.10.2026): после успеха уводим на
+ * `/auth/verify-email`. `409 ContactAlreadyExists` — не ошибка формы: по тому же
+ * решению ведём на экран подтверждения, где есть кнопка resend.
+ *
+ * `PasswordPolicyViolation` показываем **своим** текстом: в `details.message` приходит
+ * ключ Keycloak (`invalidPasswordMinLengthMessage`), а не готовая фраза.
+ */
+  import { z } from 'zod'
+  import { registerEmailFlow } from '@/processes/auth-flow'
+  import { ErrorCode, getErrorMessage, matchError } from '@/shared/api'
+  import { emailSchema, passwordSchema } from '@/shared/model/credentials'
+  import {
+    Alert,
+    Button,
+    Card,
+    Checkbox,
+    Form,
+    PasswordInput,
+    Spacer,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+    TextField,
+  } from '@/shared/ui/base'
+
+  definePage({
+    meta: {
+      noAuth: true,
+      layout: 'auth',
+      title: 'Регистрация',
+    },
+  })
+
+  const router = useRouter()
+
+  const tab = ref('email')
+  const error = ref<string | null>(null)
+  const loading = ref(false)
+
+  const registerSchema = z.object({
+    email: emailSchema,
+    password: passwordSchema,
+    acceptedTerms: z.literal(true),
+  })
+
+  type RegisterValues = z.infer<typeof registerSchema>
+
+  const formRef = ref<{ setFieldError: (field: string, message: string) => void } | null>(null)
+
+  async function onSubmit (values: RegisterValues): Promise<void> {
+    error.value = null
+    loading.value = true
+
+    try {
+      await registerEmailFlow(values)
+      await router.push({ name: '/auth/verify-email' })
+    } catch (error_) {
+      if (matchError(error_, ErrorCode.CONTACT_ALREADY_EXISTS)) {
+        await router.push({ name: '/auth/verify-email' })
+        return
+      }
+
+      if (matchError(error_, ErrorCode.PASSWORD_POLICY_VIOLATION)) {
+        formRef.value?.setFieldError(
+          'password',
+          'Пароль не соответствует требованиям: не короче 10 символов, не совпадает с логином и e-mail',
+        )
+        return
+      }
+
+      if (matchError(error_, ErrorCode.TERMS_NOT_ACCEPTED)) {
+        formRef.value?.setFieldError('acceptedTerms', 'Отметьте согласие с условиями')
+        return
+      }
+
+      error.value = getErrorMessage(error_)
+    } finally {
+      loading.value = false
+    }
+  }
+</script>
+
+<template>
+  <Form ref="formRef" :schema="registerSchema" @submit="onSubmit">
+    <Card title="Регистрация" width="100%">
+      <Alert v-if="error" class="mb-4" density="compact" kind="error">
+        {{ error }}
+      </Alert>
+
+      <Tabs v-model="tab">
+        <TabsList class="mb-4">
+          <TabsTrigger value="email">E-mail</TabsTrigger>
+          <TabsTrigger disabled value="phone">Телефон</TabsTrigger>
+        </TabsList>
+
+        <TabsContent class="space-y-4" value="email">
+          <TextField
+            autocomplete="email"
+            :disabled="loading"
+            label="E-mail"
+            name="email"
+            required
+            type="email"
+          />
+          <PasswordInput
+            autocomplete="new-password"
+            :disabled="loading"
+            label="Пароль"
+            name="password"
+            required
+            show-strength
+          />
+          <Checkbox name="acceptedTerms">
+            <span>Принимаю условия использования и обработку персональных данных</span>
+          </Checkbox>
+        </TabsContent>
+
+        <TabsContent value="phone">
+          <p class="text-sm text-muted-foreground">
+            Регистрация по телефону появится вместе с SMS-шагом (Phase 2).
+          </p>
+        </TabsContent>
+      </Tabs>
+
+      <template #footer>
+        <span class="text-sm text-muted-foreground">
+          Уже есть аккаунт?
+          <RouterLink class="text-brand underline" :to="{ name: '/auth/login' }">Войти</RouterLink>
+        </span>
+        <Spacer />
+        <Button :disabled="tab !== 'email'" :loading="loading" type="submit" variant="brand">
+          Создать аккаунт
+        </Button>
+      </template>
+    </Card>
+  </Form>
+</template>

@@ -250,6 +250,11 @@ interface ErrorResponseBody {
 | `POST /auth/sign-up/email` | public | `{ email, password, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user: UserDto (pending_verification), verifyEmailSent: true }` | ✅ |
 | `POST /auth/verify-email/resend` | public | `{ email }` | 202 Accepted (anti-enumeration: всегда 202) | ✅ |
 
+> **Проверено с фронта 16.10.2026 (API-проба живого стенда):** `sign-up/email` → `201 { verifyEmailSent: true }`,
+> `status: pending_verification`; письмо `VERIFY_EMAIL` появилось в Mailpit, ссылка внутри ведёт на Keycloak
+> (`/realms/app/login-actions/action-token?key=…`), а не в наше приложение; `verify-email/resend` → `202`, причём
+> и для несуществующего адреса тоже `202` (anti-enumeration подтверждена живьём). UI-прогон руками — при ручной приёмке.
+
 **Backend impl:**
 - `users.create({email, credentials: [{type:'password', value: password}], emailVerified: false, requiredActions: ['VERIFY_EMAIL']})` + `users.sendVerifyEmail(id)`
 - Пользователь кликает в magic link → Keycloak `VERIFY_EMAIL` event → backend listener обновляет Postgres shadow

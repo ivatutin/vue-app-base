@@ -94,6 +94,12 @@ Phase 0 (foundation)
 - LoginPage имеет ссылку «Создать аккаунт»; `401` сразу после sign-up показываем подсказкой «проверьте почту»
   (не завязываться на точный код ошибки)
 
+**Реализовано во фронте (16.10.2026):** `/auth/register` (табы, email-таб) и `/auth/verify-email` (статичный экран
+с resend и ручным вводом адреса после перезагрузки), флоу `registerEmailFlow` + `resendVerifyEmailFlow`, примитив
+`<Checkbox>` для `acceptedTerms`, состояние в `entities/auth` (`registration.store`, `maskEmail`).
+Живая проба API: `201 { verifyEmailSent: true }`, письмо в Mailpit, `resend → 202` (и для несуществующего адреса — тоже
+`202`, anti-enumeration). Прогон UI руками — за владельцем: e2e-инструментов в проекте пока нет (ROADMAP, Фаза 3).
+
 **Backend:**
 - `POST /auth/sign-up/email` — `keycloakAdmin.users.create({requiredActions: ['VERIFY_EMAIL']})` + `sendVerifyEmail`
 - Event listener подхватывает Keycloak `VERIFY_EMAIL` event → обновляет Postgres shadow user

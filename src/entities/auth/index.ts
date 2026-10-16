@@ -1,3 +1,5 @@
 export { resendVerifyEmail, signUpEmail } from './api'
 export type { SignUpEmailInput, TokenPair } from './api'
+export { maskEmail } from './lib/mask-email'
 export { useAuthStore } from './model/auth.store'
+export { useRegistrationStore } from './model/registration.store'

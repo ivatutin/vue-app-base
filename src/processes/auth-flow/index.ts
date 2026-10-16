@@ -1,2 +1,5 @@
 export { loginFlow } from './login-flow'
 export { logoutFlow } from './logout-flow'
+export { registerEmailFlow } from './register-email-flow'
+export type { RegisterEmailInput } from './register-email-flow'
+export { resendVerifyEmailFlow } from './resend-verify-email-flow'

@@ -22,6 +22,8 @@ declare module 'vue-router/auto-routes' {
     'not-found': RouteRecordInfo<'not-found', '/:path(.*)', { path: ParamValue<true> }, { path: ParamValue<false> }>,
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/logout': RouteRecordInfo<'/auth/logout', '/auth/logout', Record<never, never>, Record<never, never>>,
+    '/auth/register': RouteRecordInfo<'/auth/register', '/auth/register', Record<never, never>, Record<never, never>>,
+    '/auth/verify-email': RouteRecordInfo<'/auth/verify-email', '/auth/verify-email', Record<never, never>, Record<never, never>>,
     '/dashboard': RouteRecordInfo<'/dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
     '/roles': RouteRecordInfo<'/roles', '/roles', Record<never, never>, Record<never, never>>,
     '/system/account-status': RouteRecordInfo<'/system/account-status', '/system/account-status', Record<never, never>, Record<never, never>>,
@@ -59,6 +61,14 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/auth/logout/ui/LogoutPage.vue': {
       routes: '/auth/logout'
+      views: never
+    }
+    'src/pages/auth/register/ui/RegisterPage.vue': {
+      routes: '/auth/register'
+      views: never
+    }
+    'src/pages/auth/verify-email/ui/VerifyEmailPage.vue': {
+      routes: '/auth/verify-email'
       views: never
     }
     'src/pages/dashboard/ui/DashboardPage.vue': {

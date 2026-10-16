@@ -55,6 +55,12 @@
       />
       <template #footer>
         <Spacer />
+        <RouterLink
+          class="text-sm text-brand underline"
+          :to="{ name: '/auth/register' }"
+        >
+          Создать аккаунт
+        </RouterLink>
         <Button
           :disabled="!email || !password"
           :loading="loading"

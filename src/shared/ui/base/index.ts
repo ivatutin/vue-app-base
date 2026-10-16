@@ -17,6 +17,7 @@
 export { Alert } from './alert'
 export { Button } from './button'
 export { Card } from './card'
+export { Checkbox } from './checkbox'
 export { CodeViewer } from './code-viewer'
 export { CommandPalette } from './command-palette'
 export type { CommandGroup, CommandItem } from './command-palette'
