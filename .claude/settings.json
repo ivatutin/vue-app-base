@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(git mv *)",
+      "Bash(git rm *)",
+      "Bash(ls -la \"C:/WORK/v1m/njs-server\" 2>&1 | head -30)",
+      "Read(//c/WORK/v1m/njs-server/**)",
+      "Read(//c/vim/prj/video-service/**)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\WORK\\\\v1m\\\\vue-app-base\\\\src\\\\widgets\\\\app-sidebar\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(vue|ts|tsx\\)$' } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\WORK\\\\v1m\\\\vue-app-base\\\\src\\\\widgets\\\\app-footer\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(vue|ts|tsx\\)$' } | Select-Object FullName)",
+      "Bash(npm ls *)",
+      "Bash(npx vitest *)"
+    ]
+  }
+}

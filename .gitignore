@@ -27,5 +27,6 @@ storybook-static
 # test coverage
 /coverage
 
-# agent: состояние прогонов /inbox (машинно-локальные пути и хэши)
+# agent: локальные конфиги и состояние прогонов (машинно-специфичное, не в историю)
+.claude/settings.local.json
 .claude/inbox-state.json
