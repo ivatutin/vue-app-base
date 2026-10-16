@@ -43,7 +43,7 @@ processes/  ←  длительные многошаговые сценарии 
 pages/      ←  маршрутные страницы
 widgets/    ←  самостоятельные UI-блоки (sidebar, header, footer, ...)
 features/   ←  пользовательские сценарии (зарезервирован, пока пуст)
-entities/   ←  бизнес-сущности (user, auth, bootstrap, notification)
+entities/   ←  бизнес-сущности (user, auth, bootstrap, notification, otp-challenge)
 shared/     ←  переиспользуемая инфраструктура (utils, ui, схемы)
 ```
 

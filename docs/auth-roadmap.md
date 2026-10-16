@@ -64,7 +64,7 @@ Phase 0 (foundation)
 **Frontend:**
 - VeeValidate интегрирован в `<Form>` и `<TextField>`
 - Компоненты `<OtpInput>`, `<PasswordInput>`, `<PhoneInput>`, `<Tabs>` готовы и в Storybook
-- `entities/otp-challenge` FSM-store + API контракт (проверяется на **живом** API; MSW не заводим — бэкенд готов)
+- ✅ `entities/otp-challenge` — FSM-store + API-контракт + модели `shared/model/otp` (Phase 0, 16.10.2026; тесты: 13 store + 6 api)
 - ~~`entities/auth-provider` scaffold~~ — исключено: соцвход вне объёма Auth v1 (решение координатора, 15.10.2026)
 - `shared/api/error-codes.ts` с registry + `matchError`
 - 4 новых ADR (0009, 0010, 0011, 0014) приняты
@@ -173,13 +173,13 @@ Phase 0 (foundation)
 ## Acceptance criteria по Phase
 
 > **Как читать списки ниже.** Это **критерии приёмки** фаз (что должно быть выполнено), а не отчёт о статусе: `✅` в них —
-> маркеры пунктов из исходного (утраченного) плана. Фактический статус на 16.10.2026: `entities/otp-challenge` — в работе,
+> маркеры пунктов из исходного (утраченного) плана. Фактический статус на 16.10.2026: `entities/otp-challenge` — создан,
 > остальной фронт Phase 1-4 — **не начат**, Phase 3 — вне объёма Auth v1, backend Phase 0-2/2.5/4 — реализован и live-проверен.
 > Источник по факту — раздел «Phase 0» ниже, ✅ у эндпоинтов в `docs/integration-backend.md` и git-лог.
 
 ### Phase 0
 
-Статус на 16.10.2026: **M0.A и M0.B закрыты; M0.C в работе** — `entities/otp-challenge` пишется фронт-сессией, MSW-часть M0.C отменена (см. раздел «MSW не используется»).
+Статус на 16.10.2026: **M0.A и M0.B закрыты; M0.C закрыт по фронту** — `shared/model/otp` + `entities/otp-challenge` созданы и покрыты тестами (19), MSW-часть M0.C отменена (см. раздел «MSW не используется»).
 
 - ✅ `npm run lint` + `type-check` + `test` + `build` green
 - ✅ ADR-0010, ADR-0011, ADR-0012, ADR-0013 committed (M0.A)
@@ -188,7 +188,7 @@ Phase 0 (foundation)
 - ✅ Stories для `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>`, `<Tabs>` написаны; сборка Storybook добавлена в CI
 - ✅ Компоненты M0.B выведены в barrel `@/shared/ui/base`; инвариант закреплён тестом `public-api.test.ts`
 - ⬜ Потребителей у компонентов M0.B по-прежнему нет — появятся на экранах Phase 1-2
-- ⬜ `entities/otp-challenge` (FSM-store) — **не создан** (M0.C, следующая итерация фронт-сессии)
+- ✅ `entities/otp-challenge` (FSM-store + `api` + `schema`) и `shared/model/otp` созданы 16.10.2026; тесты — 19 (13 store + 6 api)
 - ❌ `entities/auth-provider` — **не нужен**: соцвход вне объёма Auth v1 (решение координатора, 15.10.2026)
 - ❌ MSW handlers — **не нужны**: решение пересмотрено 16.10.2026 (бэкенд готов, работаем против живого API), пакет `msw` не устанавливаем
 - ✅ Backend auth-suite (OTP, звонковый канал, регистрация email/phone, Phase 4) реализован и проверен на живом стеке (16.10.2026)
@@ -288,8 +288,9 @@ Week 4:    Phase 5 + integration tests
   (внутренний словарь UI; на проводе такого поля **нет** — канал различается эндпоинтом). В ответе
   `POST /auth/phone/call` бэкенд отдаёт собственное поле `method: 'call'` — это про ответ, а не про enum способа.
   `shared/model/contact-channel` не расширяем.
-- Раскладка: `entities/otp-challenge` (FSM, cooldown, попытки, `challengeId`, маскированный `target`) →
-  `processes/auth-flow` (сценарии) → `pages/auth/*` (UI). Слой `features` не заводим.
+- Раскладка (реализовано в Phase 0): `entities/otp-challenge` (FSM, cooldown, `challengeId`, маскированный `target`,
+  сохранённые параметры отправки для `resend`) → `processes/auth-flow` (сценарии) → `pages/auth/*` (UI). Слой `features`
+  не заводим. **Счётчик попыток не ведём**: контракт его не отдаёт — UI реагирует только на состояние `locked`.
 - `verificationToken` — **только in-memory** в рамках флоу (TTL 10 мин, одноразовый); в Pinia/storage не кладём.
   Побочный эффект принят осознанно: перезагрузка страницы начинает шаг заново.
 - ADR: детали FSM и кросс-канального вытеснения — **amend ADR-0011** (поведение звонкового канала — ADR-0014);

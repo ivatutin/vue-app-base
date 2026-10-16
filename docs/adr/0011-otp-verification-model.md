@@ -2,6 +2,7 @@
 
 - **Status:** accepted
 - **Date:** 2026-06-03
+- **Revision:** 2 (2026-10-16) — уточнён FSM `entities/otp-challenge` (реализован в Phase 0), введён внутренний `OtpDelivery = 'otp' | 'call'`, зафиксированы отказ от polling на `/auth/verify-email` (вариант A) и отказ от счётчика попыток в UI. См. § Decision и § FSM.
 
 ## Context
 
@@ -41,7 +42,7 @@ Auth/Registration suite требует **верификации владения
 - `keycloakAdmin.users.sendVerifyEmail(id)` отправляет magic link через realm SMTP
 - Пользователь кликает → Keycloak обрабатывает verify → fires `VERIFY_EMAIL` event
 - Backend ловит event → обновляет Postgres shadow user
-- Frontend на странице `/auth/verify-email` polling `GET /users/me` каждые 5s через TanStack Query `refetchInterval` → когда `emailVerified === true` → redirect
+- Frontend: `/auth/verify-email` — **статичный** экран «проверьте почту» (решение координатора, 16.10.2026). Polling невозможен: `POST /auth/sign-up/email` токенов не отдаёт (`{ user, verifyEmailSent }`), а `GET /users/me` protected; ссылка `VERIFY_EMAIL` уводит на страницу Keycloak и в приложение не возвращает. Подтверждение — попыткой входа после клика по ссылке
 
 **Почему не унифицируем с phone OTP:**
 - Keycloak делает email verification «бесплатно» (SMTP в realm settings, i18n templates, rate limiting, anti-abuse). Дублировать = переписывать Keycloak.
@@ -51,7 +52,7 @@ Auth/Registration suite требует **верификации владения
 ### Unified `OtpChallenge` контракт (для phone, future Telegram, change-contact OTP)
 
 ```typescript
-type OtpChannel = 'phone'  // в Phase 0 только phone; email = Keycloak magic link
+// backend: OTP_PURPOSES (otp-policy.ts:18-25) — фронт повторяет дословно
 type OtpPurpose =
   | 'sign-up'          // регистрация
   | 'sign-in'          // вход по phone
@@ -59,19 +60,37 @@ type OtpPurpose =
   | 'change-contact-old'  // подтверждение владения OLD контактом при смене
   | 'change-contact-new'  // подтверждение владения NEW контактом при смене
   | 'set-password'     // установить password для passwordless user
-  | 'forgot-password'  // только если будем custom-flow (но по решению — Keycloak Required Action)
+
+// фронт: внутренний словарь способа подтверждения — на провод не выводится
+// (канал различается эндпоинтом: /auth/otp/* против /auth/phone/call)
+type OtpDelivery = 'otp' | 'call'
 ```
 
-`OtpChannel = 'email'` зарезервирован на случай fallback (если Keycloak SMTP не работает в каких-то deployments) — но **не используется по умолчанию**.
+Реализация моделей — [`shared/model/otp/`](../../src/shared/model/otp/): `otpPurposeSchema` + `otpDeliverySchema`.
+Канал контакта (`ContactChannel = 'email' | 'phone'`, [`shared/model/contact-channel/`](../../src/shared/model/contact-channel/))
+не смешивается со способом подтверждения. `forgot-password` в OTP-сервисе **не используется** — сброс пароля идёт через
+Keycloak Required Action (`UPDATE_PASSWORD`).
 
-### FSM в `entities/otp-challenge`
+### FSM в `entities/otp-challenge` (реализовано 2026-10-16)
 
 ```
-idle → sending → sent → verifying → verified | failed | expired
-                  ↘ resending → sent (cooldown reset)
+idle → sending → sent → verifying → verified
+                   ↑                  ↘ invalid | expired | locked | rateLimited | alreadyExists | failed
+                   └── resend() ──────┘
 ```
 
-Pinia setup-store держит **одну активную challenge единовременно**. Состояние эфемерное — не persist'ится (на refresh теряется, и это правильно — challenge на бэке тоже короткоживуща).
+Путь отправки один: `resend()` вызывает тот же `send()`, поэтому отдельного статуса `resending` нет — UI различает
+первую отправку и повтор по наличию активного челленджа и по таймеру `cooldownLeft`.
+
+Терминальные состояния заведены по тому, как их показывает UI: `invalid` — остаться на экране ввода (поле очистить);
+`expired` — «начать заново»; `locked` (5 неверных попыток) — предложить resend; `rateLimited` — таймер из
+`details.retryAfter`; `alreadyExists` (`409 ContactAlreadyExists`, только `sign-up`) — переход на экран «проверьте
+почту»; `failed` — всё остальное, включая сеть и 5xx.
+
+**Счётчика оставшихся попыток нет:** контракт его не отдаёт (ни в ответе `verify`, ни в `details` ошибок — только
+коды), поэтому UI не показывает выдуманное число и реагирует только на `locked`.
+
+Pinia setup-store держит **одну активную challenge единовременно**. Состояние эфемерное — не persist'ится (на refresh теряется, и это правильно — challenge на бэке тоже короткоживуща). `verificationToken` стор **не хранит**: `verify()` возвращает его вызывающему коду, а тот предъявляет токен в `sign-up/phone` / `sign-in/phone` / `set-password`.
 
 ### Anti-patterns
 
@@ -92,16 +111,17 @@ Pinia setup-store держит **одну активную challenge едино�
 ### Отрицательные
 
 - **Двойственность для пользователя**: для phone — вводи код, для email — кликни ссылку. Митигация: UX-копи на странице verify объясняет («Мы отправили ссылку на ваш email — кликните, чтобы подтвердить» vs «Введите код из SMS»).
-- **Не полностью кросс-устройство для email**: если пользователь регистрируется на десктопе, а email открывает на телефоне — кликает на телефоне, на десктопе нужно вручную refresh (или polling сам подхватит через 5s).
+- **Не полностью кросс-устройство для email**: если пользователь регистрируется на десктопе, а email открывает на телефоне — кликает на телефоне, а на десктопе нужно обновить страницу и войти (polling-а нет, см. § Decision).
 - **Зависимость от Keycloak SMTP** для email verify. Митигация: production использует SES/SendGrid через Keycloak realm; в dev — Mailpit.
 
 ### Что меняется в коде
 
-- **Phase 0**:
-  - `entities/otp-challenge/` — FSM store + API (`POST /auth/otp/send`, `POST /auth/otp/verify`) + DTO + mapper по [ADR-0005](0005-dto-domain-mapping.md)
-  - `shared/ui/base/otp-input/OtpInput.vue` — 6-segment input
-- **Phase 1**: страница `/auth/verify-email` + TanStack Query polling `useCurrentUserQuery` с `refetchInterval: 5000`
-- **Phase 2**: использование `useOtpChallengeStore` в `signupPhoneFlow` + `loginPhoneFlow`
+- **Phase 0 — сделано (2026-10-16)**:
+  - `shared/model/otp/` — `otpPurposeSchema` (6 значений, сверено с бэкендом) + `otpDeliverySchema`
+  - `entities/otp-challenge/` — `api` (`POST /auth/otp/send`, `POST /auth/otp/verify` + DTO и mapper по [ADR-0005](0005-dto-domain-mapping.md)), `schema`, `model/otp-challenge.store.ts` (FSM выше); тесты — 13 (store) + 6 (api)
+  - `shared/ui/base/otp-input/OtpInput.vue` — 6-segment input (готов с M0.B)
+- **Phase 1**: страница `/auth/verify-email` — статичный экран «проверьте почту» + resend + «войти» (без polling, см. § Decision)
+- **Phase 2**: использование `useOtpChallengeStore` в `registerPhoneFlow` + `loginPhoneFlow`
 - **Phase 4**: использование в `changeContactFlow` (change-contact-old + change-contact-new purposes)
 
 ## Альтернативы (для истории)
