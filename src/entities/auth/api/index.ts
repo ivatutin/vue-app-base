@@ -1,7 +1,52 @@
+import type { Email, Password } from '@/shared/model/credentials'
 import { getHttpClient, HttpError } from '@/shared/api'
-import { type TokenPairDto, tokenPairDtoSchema } from './auth.dto'
+import {
+  resendVerifyEmailBodyDtoSchema,
+  signUpEmailBodyDtoSchema,
+  signUpEmailResponseDtoSchema,
+  type TokenPairDto,
+  tokenPairDtoSchema,
+} from './auth.dto'
 
 export type TokenPair = TokenPairDto
+
+export interface SignUpEmailInput {
+  email: Email
+  password: Password
+  /** Форма обязана гарантировать `true` (чекбокс «принимаю условия»). */
+  acceptedTerms: true
+  firstName?: string
+  lastName?: string
+}
+
+/**
+ * Регистрация по email (`POST /auth/sign-up/email`, публичный).
+ *
+ * Возвращает только признак отправки письма: пары токенов в ответе нет — вход
+ * выполняется после подтверждения адреса (вариант A, 16.10.2026).
+ */
+export async function signUpEmail (input: SignUpEmailInput): Promise<boolean> {
+  const body = signUpEmailBodyDtoSchema.parse(input)
+  const raw = await getHttpClient().post<unknown>('/auth/sign-up/email', body, { auth: false })
+
+  const parsed = signUpEmailResponseDtoSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw parsed.error
+  }
+
+  return parsed.data.verifyEmailSent
+}
+
+/**
+ * Повторная отправка письма-подтверждения (`POST /auth/verify-email/resend`).
+ *
+ * Ответ всегда `202` (anti-enumeration: не выдаёт, существует ли адрес), поэтому
+ * наружу ничего не возвращается — успех выражается отсутствием ошибки.
+ */
+export async function resendVerifyEmail (email: Email): Promise<void> {
+  const body = resendVerifyEmailBodyDtoSchema.parse({ email })
+  await getHttpClient().post<void>('/auth/verify-email/resend', body, { auth: false })
+}
 
 export async function signIn (email: string, password: string): Promise<TokenPair> {
   const client = getHttpClient()

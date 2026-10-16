@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { emailSchema, passwordSchema } from '@/shared/model/credentials'
 
 export const tokenPairDtoSchema = z.object({
   accessToken: z.string().min(1),
@@ -7,3 +8,38 @@ export const tokenPairDtoSchema = z.object({
 })
 
 export type TokenPairDto = z.infer<typeof tokenPairDtoSchema>
+
+/**
+ * Тело `POST /auth/sign-up/email` (контракт Auth v1). Email и пароль — уже
+ * нормализованные значения из `shared/model/credentials`; `acceptedTerms`
+ * обязателен: без него бэкенд отвечает `422 TermsNotAccepted`.
+ */
+export const signUpEmailBodyDtoSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  acceptedTerms: z.literal(true),
+  firstName: z.string().trim().min(1).max(100).optional(),
+  lastName: z.string().trim().min(1).max(100).optional(),
+})
+
+export type SignUpEmailBodyDto = z.infer<typeof signUpEmailBodyDtoSchema>
+
+/**
+ * Ответ `POST /auth/sign-up/email`: **пары токенов нет** — вход выполняется после
+ * подтверждения адреса (вариант A). `user` приходит полностью, но здесь
+ * намеренно не валидируется: это `UserDto` соседнего слайса, а на этом шаге нужен
+ * только признак отправки письма (`verifyEmailSent` может быть и `false` —
+ * отправка письма не валит регистрацию).
+ */
+export const signUpEmailResponseDtoSchema = z.object({
+  verifyEmailSent: z.boolean(),
+})
+
+export type SignUpEmailResponseDto = z.infer<typeof signUpEmailResponseDtoSchema>
+
+/** Тело `POST /auth/verify-email/resend`. Ответ всегда `202` (anti-enumeration). */
+export const resendVerifyEmailBodyDtoSchema = z.object({
+  email: emailSchema,
+})
+
+export type ResendVerifyEmailBodyDto = z.infer<typeof resendVerifyEmailBodyDtoSchema>
