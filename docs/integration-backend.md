@@ -120,7 +120,7 @@ interface ErrorResponseBody {
   statusCode: number
   timestamp: string        // ISO8601
   path: string             // request URL
-  error: string            // имя класса ошибки: "UnauthorizedError", "ConflictError", ...
+  error: string            // контрактный код ошибки (ADR-0012): "ContactAlreadyExists", "OtpInvalid", ...; у Nest-исключений (400 от Zod) — строка от Nest
   message: string | string[]   // string обычно, string[] при Zod-валидации
   details?: unknown        // подробности (Zod errors, и т.п.) — отсутствует при 5xx
 }
@@ -138,6 +138,8 @@ interface ErrorResponseBody {
 | `HttpException` (от Nest) | как было | напр. 400 от Zod-валидации |
 | **5xx** | 500 | message в response затирается на `"Internal server error"`, `details` опускается |
 
+**Что попадает в `error`:** у `DomainError`-наследников — **контрактный код** (`DomainError.code`), а не имя класса: по умолчанию это имя класса без суффикса `Error`, но наследники переопределяют его — `EmailAlreadyExistsError` → `ContactAlreadyExists`, `UserNotFoundError` → `UserNotFound`, `InvalidContactsError` → `InvalidContacts` ([`njs-server` `src/shared/infrastructure/filters/all-exceptions.filter.ts:95-107`]). Матчить ошибки нужно по реестру `ErrorCode` (`matchError`), а не по имени класса или тексту сообщения.
+
 **Пример 400 (Zod-валидация)** — `message` массивом, `details` содержит подробности от Zod.
 
 **Пример 409 (дубликат email)**:
@@ -146,7 +148,7 @@ interface ErrorResponseBody {
   "statusCode": 409,
   "timestamp": "2026-05-22T10:00:00.000Z",
   "path": "/api/v1/users",
-  "error": "ConflictError",
+  "error": "ContactAlreadyExists",
   "message": "Email already exists"
 }
 ```
@@ -157,8 +159,8 @@ interface ErrorResponseBody {
   "statusCode": 422,
   "timestamp": "2026-05-22T10:00:00.000Z",
   "path": "/api/v1/users/abc-123/suspend",
-  "error": "RuleViolationError",
-  "message": "Cannot suspend non-active user"
+  "error": "RuleViolation",
+  "message": "Can only suspend active users"
 }
 ```
 
@@ -190,6 +192,7 @@ interface ErrorResponseBody {
 | `POST /users/:id/suspend` | — | 200 → `UserResponseDto` | 422 если уже не active |
 | `POST /users/:id/activate` | — | 200 → `UserResponseDto` | 422 если нет verified контакта |
 | `DELETE /users/:id` | — | 204 |  |
+| `POST /users/me/logout-all` ⟵ *v1.4* | — (тела нет) | 204 | Выход со **всех** устройств: гасит все сессии Keycloak + метка отзыва по `sub` (умирает и текущий access-токен). Без `X-Reauth-Token`, идемпотентно; отказ инфраструктуры → `503` (без нового кода). Реализация — [`njs-server` `src/modules/auth/interfaces/http/account-security.controller.ts`], см. также Phase 4 ниже |
 
 Источник: [`njs-server` `src/modules/user/interfaces/http/user.controller.ts`].
 
@@ -197,16 +200,20 @@ interface ErrorResponseBody {
 
 ## Auth endpoints planned (Phase 1-5 auth/registration suite)
 
-> **Статус:** [planned] — спроектированы во фронте, ожидают реализации на backend. Архитектура — [ADR-0013 Keycloak Hybrid (Strategy C)](adr/0013-keycloak-hybrid-integration.md). Полные backend specs (Keycloak Admin calls, NestJS module structure, error mapping) — в [backend-auth-implementation.md](backend-auth-implementation.md). Timeline — в [auth-roadmap.md](auth-roadmap.md).
+> **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.4**. Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
 >
-> До готовности backend frontend работает на MSW-моках (`VITE_USE_MSW=true` в `.env.local`). Endpoint считается реализованным когда backend выкатил + smoke-test прошёл; mock удаляется из `src/shared/lib/msw/handlers/`.
+> Архитектура — [ADR-0013 Keycloak Hybrid (Strategy C)](adr/0013-keycloak-hybrid-integration.md). Полные backend specs (Keycloak Admin calls, NestJS module structure, error mapping) — в [backend-auth-implementation.md](backend-auth-implementation.md). Timeline — в [auth-roadmap.md](auth-roadmap.md).
+>
+> Имя раздела оставлено историческим: на «Auth endpoints planned» ссылаются контракт (v1.4) и ADR-0013.
+>
+> **MSW-моки не используются.** Backend готов, фронт работает против живого API (dev — Vite-proxy `/api → http://localhost:3001`). Слоя `src/shared/lib/msw/` в проекте нет, `VITE_USE_MSW` не задействован (решение координатора, 16.10.2026).
 
 ### Foundation (Phase 0) — OTP service
 
-| Метод + Path | Auth | Body | Response | Phase |
+| Метод + Path | Auth | Body | Response | Phase · backend |
 |---|---|---|---|---|
-| `POST /auth/otp/send` | public | `{ channel: 'phone', target, purpose }` | 200 → `OtpChallengeResponse` | 0 |
-| `POST /auth/otp/verify` | public | `{ challengeId, code }` | 200 → `{ challengeId, verified: true, verificationToken }` | 0 |
+| `POST /auth/otp/send` | public | `{ channel: 'phone', target, purpose }` | 200 → `OtpChallengeResponse` | 0 ✅ |
+| `POST /auth/otp/verify` | public | `{ challengeId, code }` | 200 → `{ challengeId, verified: true, verificationToken }` | 0 ✅ |
 
 `OtpChallengeResponse`:
 ```typescript
@@ -236,10 +243,10 @@ interface ErrorResponseBody {
 
 ### Email registration (Phase 1) — Keycloak magic link
 
-| Метод + Path | Auth | Body | Response |
-|---|---|---|---|
-| `POST /auth/sign-up/email` | public | `{ email, password, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user: UserDto (pending_verification), verifyEmailSent: true }` |
-| `POST /auth/verify-email/resend` | public | `{ email }` | 202 Accepted (anti-enumeration: всегда 202) |
+| Метод + Path | Auth | Body | Response | Backend |
+|---|---|---|---|---|
+| `POST /auth/sign-up/email` | public | `{ email, password, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user: UserDto (pending_verification), verifyEmailSent: true }` | ✅ |
+| `POST /auth/verify-email/resend` | public | `{ email }` | 202 Accepted (anti-enumeration: всегда 202) | ✅ |
 
 **Backend impl:**
 - `users.create({email, credentials: [{type:'password', value: password}], emailVerified: false, requiredActions: ['VERIFY_EMAIL']})` + `users.sendVerifyEmail(id)`
@@ -253,9 +260,9 @@ interface ErrorResponseBody {
 
 ### Forgot password (Phase 1.5) — Keycloak Required Action
 
-| Метод + Path | Auth | Body | Response |
-|---|---|---|---|
-| `POST /auth/forgot-password` | public | `{ email }` | 202 Accepted (всегда, anti-enumeration) |
+| Метод + Path | Auth | Body | Response | Backend |
+|---|---|---|---|---|
+| `POST /auth/forgot-password` | public | `{ email }` | 202 Accepted (всегда, anti-enumeration) | ✅ |
 
 **Backend impl:** `users.executeActionsEmail(id, ['UPDATE_PASSWORD'], { lifespan: 3600 })`. Keycloak шлёт magic link → пользователь устанавливает новый пароль на Keycloak page.
 
@@ -265,10 +272,10 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 
 ### Phone registration + Phone OTP login (Phase 2)
 
-| Метод + Path | Auth | Body | Response |
-|---|---|---|---|
-| `POST /auth/sign-up/phone` | public | `{ phone (E.164), verificationToken, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user, tokens }` |
-| `POST /auth/sign-in/phone` | public | `{ phone, verificationToken (purpose='sign-in') }` | 200 → `TokenPair` |
+| Метод + Path | Auth | Body | Response | Backend |
+|---|---|---|---|---|
+| `POST /auth/sign-up/phone` | public | `{ phone (E.164), verificationToken, acceptedTerms: true, firstName?, lastName? }` | 201 → `{ user, tokens }` | ✅ |
+| `POST /auth/sign-in/phone` | public | `{ phone, verificationToken (purpose='sign-in') }` | 200 → `TokenPair` | ✅ |
 
 **Backend impl:**
 - Sign-up: validate verificationToken → `users.create({username: uuid(), attributes: {phoneNumber: [phone], phoneVerified: ['true']}, credentials: []})` (passwordless) → status `active` → auto-login через Token Exchange
@@ -279,7 +286,50 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 - `409 ContactAlreadyExists` (race condition)
 - `401 InvalidCredentials` (для sign-in — единый ответ для unknown phone и wrong OTP)
 
-### Social auth (Phase 3)
+### Обратный звонок — второй канал подтверждения телефона (v1.2)
+
+Тот же шаг, что и SMS-код, но пользователь **звонит на сервисный номер**. `verificationToken` — **тот же**, что выдаёт
+`POST /auth/otp/verify`, и предъявляется в существующие `POST /auth/sign-up/phone` / `sign-in/phone` без изменений.
+
+| Метод + Path | Auth | Body | Response | Backend |
+|---|---|---|---|---|
+| `POST /auth/phone/call` | public | `{ phone (E.164), purpose }` (enum как у `otp/send`) | 200 → `PhoneCallChallengeResponse` | ✅ |
+| `GET /auth/phone/call/:challengeId` | public | — | **всегда 200** → `PhoneCallStatusResponse` | ✅ |
+
+```typescript
+type PhoneCallChallengeResponse = {
+  challengeId: string,
+  channel: 'phone',
+  method: 'call',        // отличает звонковый челлендж от OTP-челленджа
+  callTo: string,        // общий сервисный номер, напр. '+7 (800) 500-8275'
+  expiresAt: string,     // ISO; окно на звонок — 5 минут
+  cooldownSeconds: number,
+  otpFallback: true,     // SMS-код тем же номером: POST /auth/otp/send
+}
+
+type PhoneCallStatusResponse = {
+  challengeId: string,
+  status: 'pending' | 'verified' | 'expired' | 'failed',
+  verificationToken?: string,  // только при status='verified'; повторный GET отдаёт тот же токен (TTL 10 мин)
+  reason?: string,             // только при status='failed'
+}
+```
+
+**Семантика (важно для фронта):**
+
+- терминальные состояния — **200 + `status`**, а не ошибка → **новых кодов в реестре нет** (v1.2);
+- polling `GET` — 3-5 с; `expired` (окно истекло, челлендж вытеснен новым стартом или неизвестен) → «начать заново»;
+- опрос провайдера на бэкенде троттлится (`CALL_POLL_MIN_SECONDS`), на повторный `GET` при `verified` приходит тот же токен — polling 3-5 с безопасен;
+- `failed` → показать `reason`; `otpFallback` → кнопка «получить код вместо звонка»;
+- anti-enumeration: при `purpose='sign-in'` `POST` **всегда** 200, заявка создаётся и для незарегистрированного номера;
+- `409 ContactAlreadyExists` (только `purpose='sign-up'`), `422 OtpRateLimited` (`details.retryAfter`) — как у `otp/send`;
+- провайдер недоступен на старте → `503` **без нового кода** (generic-сообщение);
+- UI: `callTo` + ссылка `tel:`, таймер до `expiresAt`, текст «звонить нужно с этого же номера».
+
+### Social auth (Phase 3) — вне объёма Auth v1
+
+> Роутов на backend **нет**: Phase 3 закрыта решением координатора (15.10.2026), работы не открываются.
+> Ниже — замороженная форма (контракт v1.3) на случай, если объём пересмотрят.
 
 | Метод + Path | Auth | Body | Response |
 |---|---|---|---|
@@ -289,7 +339,7 @@ Frontend: одна страница `/auth/forgot-password` (email input + landi
 
 `/auth/oidc/callback` — универсальный для Keycloak-brokered providers (Google/GitHub/VK/Yandex если Generic OIDC работает).
 
-`/auth/providers/:id/callback` — для custom flows. `:id ∈ telegram-widget | telegram-bot | vkid | yandex` (последние два — fallback).
+`/auth/providers/:id/callback` — для custom flows. Контракт v1.3 фиксирует `:id = 'telegram-widget'`; `telegram-bot` / `vkid` / `yandex` — **зарезервированы** и добавляются аддитивно отдельными предложениями.
 
 Provider payloads:
 ```typescript
@@ -310,21 +360,24 @@ Provider payloads:
 - VK/Yandex fallback: validate через provider API, `users.create` + `addFederatedIdentity`, Token Exchange
 
 **Errors:**
-- `401 SocialAuthFailed` (wrong HMAC, expired token, provider rejected)
-- `409 ProviderAccountLinked` (этот provider account уже привязан к другому local user)
+- `422 SocialAuthFailed` (wrong HMAC, expired token, provider rejected; контракт v1.3)
+- `409 ProviderAccountLinked` (federated identity уже привязана к другому нашему аккаунту)
+- `409 ContactAlreadyExists` (контакт занят другим аккаунтом)
+- **Политика линковки (v1.3):** автоматическая привязка провайдера к существующему аккаунту по совпавшему контакту **запрещена** — пользователь входит прежним способом, отдельного эндпоинта привязки в v1.3 нет
 
 `needsContactCompletion: true` если у user нет ни email ни phone (e.g., Telegram-only).
 
 ### Account security (Phase 4)
 
-| Метод + Path | Auth | Body | Response |
-|---|---|---|---|
-| `POST /auth/reauth` | protected | `{ password }` | 200 → `{ reauthToken, expiresAt }` (TTL ~5min, one-shot) |
-| `POST /users/me/contact-change/request` | protected + `X-Reauth-Token` | `{ channel: 'email' \| 'phone', newValue }` | 201 → `{ changeToken, requiresOldChallenge, oldChallengeId?, newChallengeId }` |
-| `POST /users/me/contact-change/verify` | protected | `{ changeToken, oldCode?, newCode }` | 200 → `UserDto` (с новым контактом + verified) |
-| `POST /users/me/contact-change/cancel` | protected | `{ changeToken }` | 204 |
-| `POST /users/me/password` | protected + `X-Reauth-Token` | `{ newPassword }` | 204 |
-| `POST /users/me/set-password` | protected | `{ verificationToken (purpose='set-password'), newPassword }` | 204 |
+| Метод + Path | Auth | Body | Response | Backend |
+|---|---|---|---|---|
+| `POST /auth/reauth` | protected | `{ password }` | 200 → `{ reauthToken, expiresAt }` (TTL ~5min, one-shot) | ✅ |
+| `POST /users/me/contact-change/request` | protected + `X-Reauth-Token` | `{ channel: 'email' \| 'phone', newValue }` | 201 → `{ changeToken, requiresOldChallenge, oldChallengeId?, newChallengeId }` | ✅ |
+| `POST /users/me/contact-change/verify` | protected | `{ changeToken, oldCode?, newCode }` | 200 → `UserDto` (с новым контактом + verified) | ✅ |
+| `POST /users/me/contact-change/cancel` | protected | `{ changeToken }` | 204 | ✅ |
+| `POST /users/me/password` | protected + `X-Reauth-Token` | `{ newPassword }` | 204 | ✅ |
+| `POST /users/me/set-password` | protected | `{ verificationToken (purpose='set-password'), newPassword }` | 204 | ✅ |
+| `POST /users/me/logout-all` ⟵ *v1.4* | protected | — (тела нет, **без** `X-Reauth-Token`) | 204 | ✅ |
 
 **Backend impl:**
 - Reauth: backend через Keycloak password grant verify current password → signed JWT reauthToken в Redis (one-shot)
@@ -340,6 +393,13 @@ Provider payloads:
 - `409 ContactAlreadyExists` (newValue занят)
 - `422 ContactChangeAlreadyPending`
 - `422 PasswordPolicyViolation`
+- `503` (без нового кода) — Keycloak/провайдер недоступен: изменение **не применено**, `changeToken` жив, повтор безопасен (уважаем `Retry-After`)
+
+**Поведенческие следствия (сверено с бэкендом, 16.10.2026):**
+- **повторный `request` при активной смене → `422 ContactChangeAlreadyPending`** ⇒ перевыпуск кода делается только через `cancel` → `request`;
+- **успешный `verify` отзывает доступ** (сессии Keycloak + метка по `sub`): приходит `200 UserDto`, но следующий запрос — `401` → увести на вход; факт смены пользователь подтверждает уже после входа;
+- `requiresOldChallenge: true` ⇒ форма собирает `oldCode` (подтверждение прежнего контакта обязательно для email);
+- `logout-all` (v1.4): `204` — вышли **везде, включая это устройство** (сбросить токены **до** навигации); `503` — сессии **не** погашены, сессию и токены не трогать; тело пустое — «вышли N сессий» не показывать.
 
 ### Account Console (для advanced ops)
 
@@ -355,13 +415,16 @@ Frontend `/account/security` показывает links на эти страни
 
 ### Error codes registry (полный)
 
-Перечень новых `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (создаётся в Phase 0).
+Перечень `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (реестр существует; сверен с контрактом [v1.4](auth-v1-contract.md) 16.10.2026).
 
 Backend dev **обязан** использовать ровно эти `errorName` строки для согласованности с frontend `ErrorCode` registry. Добавление нового error → PR в `src/shared/api/error-codes.ts` параллельно backend изменениям.
 
 | errorName | HTTP | Когда |
 |---|---|---|
 | `InvalidCredentials` | 401 | wrong password (login, reauth, phone sign-in при unknown phone) |
+| `InvalidToken` ⟵ *v1.1* | 401 | невалидный / просроченный / отозванный access или refresh |
+| `InvalidContacts` ⟵ *v1.1* | 422 | нарушен инвариант контактов: нет ни email, ни phone; прямая смена verified-контакта |
+| `UserNotFound` ⟵ *v1.1* | 404 | локальной записи пользователя нет (в основном админские операции) |
 | `ContactAlreadyExists` | 409 | email/phone уже зарегистрирован (sign-up, contact-change) |
 | `ContactNotFound` | 404 | при verify-contact existing user, такого контакта нет |
 | `ContactAlreadyVerified` | 422 | попытка verify уже verified контакт |
@@ -377,7 +440,7 @@ Backend dev **обязан** использовать ровно эти `errorNa
 | `TermsNotAccepted` | 422 | sign-up без `acceptedTerms: true` |
 | `ReauthTokenInvalid` | 401 | X-Reauth-Token wrong / consumed |
 | `ReauthTokenExpired` | 401 | 5 min TTL истёк |
-| `SocialAuthFailed` | 401 | provider не подтвердил (wrong HMAC, expired token) |
+| `SocialAuthFailed` ⟵ *v1.3* | 422 | provider не подтвердил доказательство (wrong HMAC, expired token) — роутов на backend пока нет (Phase 3 вне объёма) |
 | `ProviderAccountLinked` | 409 | этот provider account уже привязан к другому local user |
 
 ### Anti-enumeration policy (важно)
@@ -435,7 +498,7 @@ type UserStatusType = 'pending_verification' | 'active' | 'suspended' | 'deleted
 - **Refresh-rotation** — бэк отдаёт новый refresh в каждом ответе; старый отзывается. Клиент **обязан** заменять refresh в storage после успешного refresh.
 - **Public endpoints** помечены `@Public()` — это login + refresh. Все остальные требуют Bearer JWT. Без него — 401.
 - **Конкурентные 401** — клиент должен делать только один refresh-запрос на пакет упавших, остальные ждут результат (реализовано через `refreshPromise` mutex в HttpClient — см. Фаза 1.3).
-- **Отозванный access после sign-out** — бэк держит access-blacklist в Redis. Использование уже отозванного токена → 401 с `error: "InvalidTokenError"`, `message: "Token has been revoked"`. Это сигнал чистого logout, обрабатывается тем же `onUnauthorized` → `auth.refresh()` фейлится → `auth.logout()` → редирект на login.
+- **Отозванный access после sign-out** — бэк держит access-blacklist в Redis. Использование уже отозванного токена → 401 с `error: "InvalidToken"` (контрактный код, ADR-0012; имя класса `InvalidTokenError` в тело не попадает). Это сигнал чистого logout, обрабатывается тем же `onUnauthorized` → `auth.refresh()` фейлится → `auth.logout()` → редирект на login.
 - **Профиль НЕ синхронизируется автоматически с Keycloak.** Даже если в Keycloak заполнены `firstName`/`lastName`, в `/users/me` они приходят `null` после первого sign-in. Заполняются через `PATCH /users/:id/profile`. На фронте `userStore.fullName` имеет fallback на `email`/`phone` ([user.store.ts](../src/entities/user/model/user.store.ts)).
 - **Roles в `/users/me` — это Keycloak roles**, не бизнес-роли. По умолчанию у нового user: `["offline_access", "uma_authorization", "default-roles-app"]`. Эти роли наш `ROLE_PERMISSIONS` ([shared/model/permission/role-permissions.ts](../src/shared/model/permission/role-permissions.ts)) не распознаёт → `userStore.permissions` пустой → permission-протектед маршруты редиректят на `/system/forbidden`. Чтобы получить permissions, нужно либо назначить realm-role `admin`/`manager`/`user` в Keycloak, либо настроить protocol mapper, чтобы бизнес-роли попадали в JWT claims.
 
@@ -477,3 +540,5 @@ type UserStatusType = 'pending_verification' | 'active' | 'suspended' | 'deleted
 3. Тестируется fall-through: что произойдёт со старыми клиентами, если бэк выкатили раньше.
 
 Бэк ведёт свой changelog в [`njs-server` `docs/DEVELOPER_GUIDE.md`](https://github.com/ivatutin/njs-server/blob/main/docs/DEVELOPER_GUIDE.md). Сверяйся с ним при апгрейдах.
+
+**Синхронизация 16.10.2026 (контракт Auth v1.4):** добавлен звонковый канал подтверждения телефона (v1.2) и `POST /users/me/logout-all` (v1.4); в таблицу реестра внесены коды v1.1 (`InvalidToken`, `InvalidContacts`, `UserNotFound`), у `SocialAuthFailed` статус исправлен на 422 (v1.3); раздел «Auth endpoints planned» получил ✅ по реализованным на backend эндпоинтам, Phase 3 помечена как вне объёма Auth v1; снят абзац про MSW-моки (бэкенд готов, моков нет); уточнено, что в поле `error` уходит контрактный код, а не имя класса.

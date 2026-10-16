@@ -49,8 +49,9 @@
 - [../KNOWN-ISSUES.md](../KNOWN-ISSUES.md) — найденные баги и тех-долг
 - [../CLAUDE.md](../CLAUDE.md) — руководство для AI-агентов
 
-## Auth/Registration suite (in planning)
+## Auth/Registration suite (контракт v1.4; backend готов, фронт в работе)
 
+- [auth-v1-contract.md](auth-v1-contract.md) — **зеркало замороженного контракта Auth v1 (v1.4)**: пути/DTO/коды ошибок и протокол расширения. Файл производный — правится только координатором, синхронизируется перекопированием (sha256 — `docs/auth/contract.sha256`)
 - [auth-roadmap.md](auth-roadmap.md) — дорожная карта фаз 0-5, milestones, parallelization, risk register
 - [backend-auth-implementation.md](backend-auth-implementation.md) — spec-level инструкция для backend dev (Keycloak realm setup + NestJS modules + per-endpoint спецификации)
 

@@ -64,8 +64,8 @@ Phase 0 (foundation)
 **Frontend:**
 - VeeValidate интегрирован в `<Form>` и `<TextField>`
 - Компоненты `<OtpInput>`, `<PasswordInput>`, `<PhoneInput>`, `<Tabs>` готовы и в Storybook
-- `entities/otp-challenge` FSM-store + API контракт, MSW-моки работают
-- `entities/auth-provider` scaffold
+- `entities/otp-challenge` FSM-store + API контракт (проверяется на **живом** API; MSW не заводим — бэкенд готов)
+- ~~`entities/auth-provider` scaffold~~ — исключено: соцвход вне объёма Auth v1 (решение координатора, 15.10.2026)
 - `shared/api/error-codes.ts` с registry + `matchError`
 - 4 новых ADR (0009, 0010, 0011, 0014) приняты
 
@@ -76,7 +76,7 @@ Phase 0 (foundation)
 - Service account с правами `realm-management/manage-users`
 - SMS provider в dev-режиме (Twilio test mode / Mailpit)
 
-**Acceptance:** `npm run dev` + MSW моки → можно протестировать send/verify OTP с фронта без реального backend; backend dev может вызывать `keycloakAdmin.users.create({...})` интерактивно.
+**Acceptance:** `npm run dev` против живого backend (`docker compose up -d postgres redis keycloak mailpit` + `npm run start:dev` в `njs-server`) → send/verify OTP проходит end-to-end, anti-enumeration видна в ответах; backend dev может вызывать `keycloakAdmin.users.create({...})` интерактивно.
 
 ### M1 — Email Registration Live (после Phase 1)
 
@@ -119,6 +119,9 @@ Phase 0 (foundation)
 
 ### M3 — Social Auth Live (после Phase 3)
 
+> ⛔ **Вне объёма Auth v1** (решение координатора, 15.10.2026): эндпоинтов на backend нет, работы не открываются.
+> Раздел оставлен как план на случай пересмотра объёма.
+
 **Frontend:**
 - `<SocialLoginButtons>` widget на LoginPage и Register pages
 - `entities/auth-provider` реестр заполнен (vkid, yandex, telegram-widget, telegram-bot)
@@ -159,9 +162,14 @@ Phase 0 (foundation)
 
 ## Acceptance criteria по Phase
 
+> **Как читать списки ниже.** Это **критерии приёмки** фаз (что должно быть выполнено), а не отчёт о статусе: `✅` в них —
+> маркеры пунктов из исходного (утраченного) плана. Фактический статус на 16.10.2026: `entities/otp-challenge` — в работе,
+> остальной фронт Phase 1-4 — **не начат**, Phase 3 — вне объёма Auth v1, backend Phase 0-2/2.5/4 — реализован и live-проверен.
+> Источник по факту — раздел «Phase 0» ниже, ✅ у эндпоинтов в `docs/integration-backend.md` и git-лог.
+
 ### Phase 0
 
-Статус на 2026-07-21: **M0.A и M0.B закрыты, M0.C не начат.**
+Статус на 16.10.2026: **M0.A и M0.B закрыты; M0.C в работе** — `entities/otp-challenge` пишется фронт-сессией, MSW-часть M0.C отменена (см. раздел «MSW не используется»).
 
 - ✅ `npm run lint` + `type-check` + `test` + `build` green
 - ✅ ADR-0010, ADR-0011, ADR-0012, ADR-0013 committed (M0.A)
@@ -170,9 +178,10 @@ Phase 0 (foundation)
 - ✅ Stories для `<OtpInput>`, `<PhoneInput>`, `<PasswordInput>`, `<Tabs>` написаны; сборка Storybook добавлена в CI
 - ✅ Компоненты M0.B выведены в barrel `@/shared/ui/base`; инвариант закреплён тестом `public-api.test.ts`
 - ⬜ Потребителей у компонентов M0.B по-прежнему нет — появятся на экранах Phase 1-2
-- ⬜ `entities/otp-challenge` (FSM-store) и `entities/auth-provider` — **не созданы** (M0.C)
-- ⬜ MSW handlers (`VITE_USE_MSW=true`) — **не сделаны**, пакет `msw` не установлен (M0.C)
-- ⬜ Backend: `KeycloakAdminService` создаёт test-user через `users.create` + удаляет (интегр. тест) — статус на стороне `njs-server`, здесь не подтверждён
+- ⬜ `entities/otp-challenge` (FSM-store) — **не создан** (M0.C, следующая итерация фронт-сессии)
+- ❌ `entities/auth-provider` — **не нужен**: соцвход вне объёма Auth v1 (решение координатора, 15.10.2026)
+- ❌ MSW handlers — **не нужны**: решение пересмотрено 16.10.2026 (бэкенд готов, работаем против живого API), пакет `msw` не устанавливаем
+- ✅ Backend auth-suite (OTP, звонковый канал, регистрация email/phone, Phase 4) реализован и проверен на живом стеке (16.10.2026)
 
 ### Phase 1
 - ✅ Регистрация через `/auth/register-email` создаёт реального user в Keycloak realm
@@ -256,19 +265,21 @@ Week 4:    Phase 5 + integration tests
 | **WebOTP API не работает на iOS** | Высокая | Низкий | Apple не поддерживает WebOTP полноценно. На iOS — manual OTP entry (стандарт). Документировано в `<OtpInput>` |
 | **Phone-OTP race condition при resend** | Средняя | Низкий | FSM-store `useOtpChallengeStore` блокирует resend по cooldown. Backend invalidate'ит старый challenge при создании нового |
 | **Email magic link expires (по Keycloak default 5 min)** | Высокая | Низкий | UX message «Ссылка действительна 5 минут». Кнопка resend всегда доступна. В Keycloak можно настроить дольше (до 24h) |
-| **MSW моки расходятся с реальным backend** | Средняя | Высокий | MSW handlers генерируются из той же Zod-схемы DTO что и production fetch. Контракт-тесты в Phase 5 (Playwright против real backend) |
+| **MSW моки расходятся с реальным backend** | — | — | ~~Риск снят~~: MSW не заводится (бэкенд готов, 16.10.2026). Контракт-тесты Phase 5 (Playwright против real backend) остаются в силе |
 
 ---
 
-## Когда уходим от MSW моков
+## MSW не используется (решение пересмотрено 16.10.2026)
 
-MSW моки активируются через `VITE_USE_MSW=true` в `.env.local`. После того как backend endpoint **реально работает** (smoke-проверено):
+Исходно фронт планировался «на MSW, пока бэкенд не готов». К старту фронт-сессии бэкенд реализован (Phase 0-2, 2.5 и Phase 4
+live-проверены), поэтому MSW-слой **не заводится**: ни пакета `msw`, ни `src/shared/lib/msw/` в проекте нет, `VITE_USE_MSW`
+не используется.
 
-1. Frontend: удалить handler для этого endpoint из `src/shared/lib/msw/handlers/auth.ts`
-2. Frontend dev переключает `VITE_USE_MSW=false` локально (или удаляет vars)
-3. Документация: обновить `docs/integration-backend.md` отметкой "✅ implemented" на этом endpoint
+Вместо этого:
 
-Можно работать в **hybrid режиме** — часть endpoint'ов мокирована, часть реальная (если backend dev ещё не закончил все).
+1. фронт работает против живого API (dev — Vite-proxy `/api → http://localhost:3001`);
+2. по каждому работающему эндпоинту ставится ✅ в `docs/integration-backend.md` § «Auth endpoints planned»;
+3. DTO валидируются Zod-схемами на клиенте — расхождение с бэкендом ловится на входе, а не в рантайме UI.
 
 ---
 
