@@ -31,6 +31,7 @@
     Spacer,
   } from '@/shared/ui/base'
   import { PhoneVerificationForm } from '@/widgets/phone-verification'
+  import ContactChangeCard from './ContactChangeCard.vue'
 
   definePage({
     meta: {
@@ -248,6 +249,8 @@
         </button>
       </template>
     </Card>
+
+    <ContactChangeCard />
 
     <Card title="Сессии">
       <p class="text-sm text-muted-foreground">

@@ -444,6 +444,15 @@ Provider payloads:
 - `requiresOldChallenge: true` ⇒ форма собирает `oldCode` (подтверждение прежнего контакта обязательно для email);
 - `logout-all` (v1.4): `204` — вышли **везде, включая это устройство** (сбросить токены **до** навигации); `503` — сессии **не** погашены, сессию и токены не трогать; тело пустое — «вышли N сессий» не показывать.
 
+**Фронт (Phase 4, 19.10.2026):** реализовано, живая приёмка на стенде **не выполнена** (стенд не поднят).
+- `entities/contact-change` (`request`/`verify`/`cancel` + FSM-стор `idle → codes → done`), `entities/auth/api/account.ts`
+  (`reauth`, `changePassword`, `setPassword`, `logoutAll`), `entities/user/api/update-profile.ts`;
+- флоу: `requestContactChangeFlow` (reauth → request, на `ContactChangeAlreadyPending` → `cancel` → новый reauth → request),
+  `verifyContactChangeFlow` (успех — сброс локальной сессии, `503` — сессия и токен смены живы), `cancelContactChangeFlow`,
+  `changePasswordFlow`, `setPasswordFlow`, `logoutAllFlow`;
+- экраны: `/account/profile` и `/account/security` (пароль, «Контакт», «Выйти на всех устройствах»);
+- тесты: `src/entities/contact-change/**`, `src/processes/auth-flow/{change-contact,change-password,logout-all}-flow.test.ts`.
+
 ### Account Console (для advanced ops)
 
 Не наши endpoints — Keycloak нативный self-service UI:

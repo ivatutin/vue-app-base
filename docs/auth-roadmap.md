@@ -195,9 +195,9 @@ Phase 0 (foundation)
 ## Acceptance criteria по Phase
 
 > **Как читать списки ниже.** Это **критерии приёмки** фаз (что должно быть выполнено), а не отчёт о статусе: `✅` в них —
-> маркеры пунктов из исходного (утраченного) плана. Фактический статус на 16.10.2026: `entities/otp-challenge` — создан,
-> остальной фронт Phase 1-4 — **не начат**, Phase 3 — вне объёма Auth v1, backend Phase 0-2/2.5/4 — реализован и live-проверен.
-> Источник по факту — раздел «Phase 0» ниже, ✅ у эндпоинтов в `docs/integration-backend.md` и git-лог.
+> маркеры пунктов из исходного (утраченного) плана. Фактический статус на 19.10.2026: фронт Phase 0, 1, 1.5, 2, 2.5 и 4
+> **реализован** (статусы — у разделов ниже, подтверждение — git-лог), Phase 3 — вне объёма Auth v1, backend Phase 0-2/2.5/4 —
+> реализован и live-проверен. Источник по факту — ✅ у эндпоинтов в `docs/integration-backend.md` и git-лог.
 
 ### Phase 0
 
@@ -243,6 +243,24 @@ Phase 0 (foundation)
 - ✅ ADR-0012 committed
 
 ### Phase 4
+
+Статус на 19.10.2026: **реализовано на фронте, живая приёмка не выполнена** (стенд в сессии не поднят: порты 3000/3101 закрыты).
+
+- ✅ `entities/contact-change` — `api` (`request` / `verify` / `cancel`, DTO — зеркало бэкенда) и FSM-store
+  (`idle` → `codes` → `done`); `changeToken` живёт в сторе (нужен и `verify`, и `cancel`), коды — только в полях формы
+- ✅ `processes/auth-flow`: `requestContactChangeFlow` (reauth → request; `ContactChangeAlreadyPending` → `cancel` →
+  **новый** reauth → request, потому что reauth одноразовый), `verifyContactChangeFlow` (`200` = доступ отозван →
+  локальная сессия сбрасывается; `503` = ничего не применено → сессия и токен смены живы),
+  `cancelContactChangeFlow` (`ChangeTokenExpired` = «смены уже нет»), `changePasswordFlow` (reauth + `X-Reauth-Token`),
+  `setPasswordFlow` (OTP `purpose=set-password`), `logoutAllFlow` (v1.4 — отзыв на всех устройствах)
+- ✅ Экраны: `/account/profile` (имя/фамилия; контакты только для чтения) и `/account/security`
+  (пароль «сменить/задать», карточка «Контакт», «Выйти на всех устройствах»)
+- ✅ «Задать пароль»: у `PhoneVerificationForm` появились `initialPhone` / `lockPhone` — токен выдаётся только на свой номер
+- ✅ Тесты: 312 (43 файла), включая API и флоу `contact-change`, `changePasswordFlow`, `logoutAllFlow`
+- ⬜ Живая приёмка: double OTP (старый + новый), `409` при занятом контакте, `503` на `verify`, отзыв сессий после
+  `verify`, повтор `request` после `cancel`, `logout-all` — нужны стенд и тестовые аккаунты
+- ⬜ Отдельного ADR по смене контакта на фронте нет: правила зафиксированы в `docs/integration-backend.md`
+  § Account security (поведенческие следствия) и в JSDoc флоу
 - ✅ Verified email/phone меняется через double OTP (старый + новый)
 - ✅ Unverified — только OTP на новый
 - ✅ Change password требует re-auth с current password
