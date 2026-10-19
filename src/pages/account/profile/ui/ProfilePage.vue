@@ -8,6 +8,11 @@
  * Поля необязательные: пустая строка уходит на бэкенд как `null` (очистка), а
  * «Сохранить» неактивна, пока значения совпадают с профилем — лишний `PATCH`
  * (и лишняя запись `updatedAt`) не нужен.
+ *
+ * **Права (сверено с бэкендом 19.10.2026):** `PATCH /users/:id/profile` закрыт
+ * `@Roles('admin')` — самостоятельного эндпоинта (`/users/me/profile`) в контракте v1.5
+ * нет. Поэтому форма редактируется только при праве `user.update`; остальным показываем
+ * значения read-only и подсказку, а не 403 после нажатия «Сохранить».
  */
   import { useNotificationStore } from '@/entities/notification'
   import { useUserStore } from '@/entities/user'
@@ -37,8 +42,14 @@
 
   const canSave = computed(() => !saving.value && changed.value)
 
+  /**
+   * `PATCH /users/:id/profile` — админский эндпоинт (`@Roles('admin')`), self-service
+   * обновления профиля в контракте нет. Право `user.update` есть у `admin`/`manager`.
+   */
+  const canEdit = computed(() => userStore.hasPermission('user.update'))
+
   async function submit (): Promise<void> {
-    if (!canSave.value) {
+    if (!canSave.value || !canEdit.value) {
       return
     }
 
@@ -76,25 +87,34 @@
           <TextField
             v-model="firstName"
             autocomplete="given-name"
-            :disabled="saving"
+            :disabled="saving || !canEdit"
             label="Имя"
             maxlength="100"
           />
           <TextField
             v-model="lastName"
             autocomplete="family-name"
-            :disabled="saving"
+            :disabled="saving || !canEdit"
             label="Фамилия"
             maxlength="100"
           />
         </div>
 
         <template #footer>
-          <span class="text-xs text-muted-foreground">Оба поля необязательные.</span>
-          <Spacer />
-          <Button :disabled="!canSave" :loading="saving" type="submit" variant="brand">
-            Сохранить
-          </Button>
+          <span class="text-xs text-muted-foreground">
+            <template v-if="canEdit">
+              Оба поля необязательные.
+            </template>
+            <template v-else>
+              Имя и фамилию меняет администратор — самостоятельное редактирование бэкенд пока не поддерживает.
+            </template>
+          </span>
+          <template v-if="canEdit">
+            <Spacer />
+            <Button :disabled="!canSave" :loading="saving" type="submit" variant="brand">
+              Сохранить
+            </Button>
+          </template>
         </template>
       </Card>
     </Form>
