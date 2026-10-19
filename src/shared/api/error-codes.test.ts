@@ -36,8 +36,15 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(err)).toBe(ERROR_MESSAGES[ErrorCode.OTP_EXPIRED])
   })
 
-  it('возвращает дефолт для HttpError с незнакомым errorName', () => {
-    const err = new HttpError(500, 'Internal', 'SomeUnknownThing', 'raw')
+  it('5xx без доменного кода → «Сервис временно недоступен» (контрактный 503)', () => {
+    // NestJS отдаёт 503 как `Service Unavailable` — такого кода в реестре нет,
+    // но пользователю нельзя показывать «Что-то пошло не так» на «повторите позже».
+    const err = new HttpError(503, 'Service Unavailable', 'Service Unavailable', 'Internal server error')
+    expect(getErrorMessage(err)).toBe('Сервис временно недоступен')
+  })
+
+  it('возвращает дефолт для незнакомого кода вне 5xx', () => {
+    const err = new HttpError(418, 'Teapot', 'SomeUnknownThing', 'raw')
     expect(getErrorMessage(err)).toBe('Что-то пошло не так')
   })
 

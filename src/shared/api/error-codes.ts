@@ -1,3 +1,4 @@
+import { FAILURE_MESSAGES } from './failure'
 import { HttpError } from './http-error'
 
 /**
@@ -110,11 +111,22 @@ const ERROR_CODE_VALUES = new Set<string>(Object.values(ErrorCode))
 
 /**
  * Получить пользовательское сообщение для ошибки.
- * Если errorName не в реестре — возвращает дефолт «Что-то пошло не так».
+ *
+ * Порядок:
+ * 1. Доменный код из реестра — его текст;
+ * 2. `5xx` без доменного кода — «Сервис временно недоступен». Это важно для контрактных
+ *    `503` («ничего не применено, повторите позже»): NestJS отдаёт там `Service Unavailable`,
+ *    которого в реестре нет, и без этой ветки пользователь видел бы «Что-то пошло не так»;
+ * 3. иначе — дефолт.
  */
 export function getErrorMessage (err: unknown): string {
-  if (err instanceof HttpError && ERROR_CODE_VALUES.has(err.errorName)) {
-    return ERROR_MESSAGES[err.errorName as ErrorCode]
+  if (err instanceof HttpError) {
+    if (ERROR_CODE_VALUES.has(err.errorName)) {
+      return ERROR_MESSAGES[err.errorName as ErrorCode]
+    }
+    if (err.status >= 500) {
+      return FAILURE_MESSAGES.server
+    }
   }
   return 'Что-то пошло не так'
 }
