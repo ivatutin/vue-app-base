@@ -26,6 +26,12 @@ export interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined | null>
   /** `false` для public endpoints (sign-in, refresh) — не добавлять Bearer-header. */
   auth?: boolean
+  /**
+   * Таймаут конкретного запроса — перекрывает клиентский. Нужен там, где холодный
+   * путь дольше дефолтных 30 с (phone-регистрация с CIBA-минтом: замерено ~30 с на
+   * первом прогоне и ~6.5 с на тёплом, см. ADR-0016 § ревизия).
+   */
+  timeoutMs?: number
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -87,6 +93,7 @@ export class HttpClient {
     options: RequestOptions,
   ): Promise<Response> {
     const url = this.buildUrl(path, options.query)
+    const timeoutMs = options.timeoutMs ?? this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     const headers: Record<string, string> = { ...options.headers }
 
     if (options.auth !== false) {
@@ -107,20 +114,19 @@ export class HttpClient {
         method,
         headers,
         body: bodyInit,
-        signal: this.buildSignal(options.signal),
+        signal: this.buildSignal(options.signal, timeoutMs),
       })
     } catch (error) {
-      throw this.toTransportError(error, options.signal)
+      throw this.toTransportError(error, options.signal, timeoutMs)
     }
   }
 
   /**
    * Совмещает таймаут клиента с сигналом вызывающего кода: отменить
-   * запрос может любой из двух.
+   * запрос может любой из двух. `timeoutMs` — уже вычисленный эффективный
+   * таймаут (per-request перекрывает клиентский).
    */
-  private buildSignal (external?: AbortSignal): AbortSignal | undefined {
-    const timeoutMs = this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-
+  private buildSignal (external?: AbortSignal, timeoutMs = this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS): AbortSignal | undefined {
     if (timeoutMs <= 0) {
       return external
     }
@@ -150,7 +156,11 @@ export class HttpClient {
    * рвутся все проверки `instanceof HttpError` вверх по стеку, а в UI
    * утекает англоязычное «Failed to fetch». Приводим к единому типу.
    */
-  private toTransportError (error: unknown, external?: AbortSignal): unknown {
+  private toTransportError (
+    error: unknown,
+    external?: AbortSignal,
+    timeoutMs = this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  ): unknown {
     // Отмену инициировал вызывающий код — это не отказ сети,
     // пробрасываем как есть, чтобы caller мог её распознать.
     if (external?.aborted) {
@@ -158,7 +168,7 @@ export class HttpClient {
     }
 
     if (error instanceof Error && error.name === 'TimeoutError') {
-      return HttpError.timeout(this.options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error)
+      return HttpError.timeout(timeoutMs, error)
     }
 
     return HttpError.network(error)

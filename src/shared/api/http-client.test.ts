@@ -74,6 +74,31 @@ describe('HttpClient — транспортные ошибки', () => {
     expect(init.signal).toBeUndefined()
   })
 
+  it('timeoutMs запроса перекрывает клиентский', async () => {
+    const timeoutError = new Error('The operation timed out')
+    timeoutError.name = 'TimeoutError'
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(timeoutError))
+
+    const error = await createClient(5000)
+      .get('/users/me', { timeoutMs: 20 })
+      .catch((error_: unknown) => error_)
+
+    expect(error).toBeInstanceOf(HttpError)
+    // Сообщение собирается из эффективного таймаута — значит перекрытие дошло до транспорта.
+    expect((error as HttpError).message).toContain('20')
+    expect(classifyFailure(error)).toBe('timeout')
+  })
+
+  it('timeoutMs: 0 на запросе отключает таймаут даже при клиентском', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createClient(5000).get('/users/me', { timeoutMs: 0 })
+
+    const init = fetchMock.mock.calls[0]![1] as RequestInit
+    expect(init.signal).toBeUndefined()
+  })
+
   it('отмену вызывающим кодом не подменяет сетевой ошибкой', async () => {
     const controller = new AbortController()
     const abortError = new DOMException('Aborted', 'AbortError')

@@ -15,7 +15,7 @@
  */
   import { z } from 'zod'
   import { registerEmailFlow, registerPhoneFlow } from '@/processes/auth-flow'
-  import { ErrorCode, getErrorMessage, matchError } from '@/shared/api'
+  import { classifyFailure, ErrorCode, getErrorMessage, matchError } from '@/shared/api'
   import { emailSchema, passwordSchema } from '@/shared/model/credentials'
   import {
     Alert,
@@ -57,6 +57,17 @@
 
   const formRef = ref<{ setFieldError: (field: string, message: string) => void } | null>(null)
 
+  /**
+   * Таймаут регистрации — особый случай ([ADR-0016](../../../../docs/adr/0016-failure-classification-and-bootstrap-outcomes.md),
+   * ревизия 2): вызов неидемпотентный, бэкенд мог довести операцию после обрыва. Поэтому не предлагаем
+   * «повторить», а отправляем войти — ссылка «Войти» уже есть в футере формы.
+   */
+  function describeRegisterFailure (err: unknown): string {
+    return classifyFailure(err) === 'timeout'
+      ? 'Не дождались ответа от сервера. Аккаунт мог быть создан — попробуйте войти.'
+      : getErrorMessage(err)
+  }
+
   async function onSubmit (values: RegisterValues): Promise<void> {
     error.value = null
     loading.value = true
@@ -83,7 +94,7 @@
         return
       }
 
-      error.value = getErrorMessage(error_)
+      error.value = describeRegisterFailure(error_)
     } finally {
       loading.value = false
     }
@@ -108,7 +119,7 @@
     } catch (error_) {
       error.value = matchError(error_, ErrorCode.CONTACT_ALREADY_EXISTS)
         ? 'Номер уже зарегистрирован — войдите по телефону.'
-        : getErrorMessage(error_)
+        : describeRegisterFailure(error_)
     } finally {
       loading.value = false
     }

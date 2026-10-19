@@ -71,7 +71,13 @@ export interface SignUpPhoneInput {
  */
 export async function signUpPhone (input: SignUpPhoneInput): Promise<TokenPair> {
   const body = signUpPhoneBodyDtoSchema.parse(input)
-  const raw = await getHttpClient().post<unknown>('/auth/sign-up/phone', body, { auth: false })
+  const raw = await getHttpClient().post<unknown>('/auth/sign-up/phone', body, {
+    auth: false,
+    // Холодный путь CIBA-минта замерен >30 с (дефолт клиента — ровно 30 с), тёплый —
+    // ~6.5 с. Таймаут здесь не «повод повторить»: вызов неидемпотентный, а бэкенд
+    // может довести операцию после обрыва (ADR-0016, ревизия 2). Держим окно шире.
+    timeoutMs: 60_000,
+  })
 
   const parsed = signUpPhoneResponseDtoSchema.safeParse(raw)
   if (!parsed.success) {

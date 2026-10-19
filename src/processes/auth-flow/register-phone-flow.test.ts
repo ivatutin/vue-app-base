@@ -73,7 +73,8 @@ describe('registerPhoneFlow', () => {
       verificationToken: 'vt-1',
       acceptedTerms: true,
     })
-    expect(requestOptions).toEqual({ auth: false })
+    // `timeoutMs: 60 s` — окно под холодный CIBA-минт (ADR-0016 ред. 2).
+    expect(requestOptions).toMatchObject({ auth: false, timeoutMs: 60_000 })
 
     expect(auth.accessToken).toBe('access-1')
     expect(auth.isSessionActive).toBe(true)
@@ -94,6 +95,21 @@ describe('registerPhoneFlow', () => {
     } as unknown as HttpClient)
 
     await expect(registerPhoneFlow(VALID)).rejects.toBe(conflict)
+    expect(auth.accessToken).toBeNull()
+  })
+
+  it('таймаут не ретраится: sign-up/phone зовётся один раз, сессия не ставится', async () => {
+    // ADR-0016 ред. 2: вызов неидемпотентный, бэкенд мог довести операцию после обрыва.
+    const timeout = HttpError.timeout(30_000)
+    const post = vi.fn(async () => {
+      throw timeout
+    })
+    setHttpClient({ post, get: vi.fn() } as unknown as HttpClient)
+    const auth = useAuthStore()
+
+    await expect(registerPhoneFlow(VALID)).rejects.toBe(timeout)
+
+    expect(post).toHaveBeenCalledOnce()
     expect(auth.accessToken).toBeNull()
   })
 
