@@ -61,6 +61,16 @@ describe('registerEmailFlow', () => {
     expect(store.alreadyRegistered).toBe(false)
   })
 
+  it('передаёт необязательные имя/фамилию в sign-up/email', async () => {
+    // Эти поля заполняют shadow-БД на регистрации: иначе имя живёт только в Keycloak
+    // (реалм требует его у роли `user`), а `/users/me` отдаёт null.
+    const post = stubPost(async () => ({ verifyEmailSent: true }))
+
+    await registerEmailFlow({ ...VALID, firstName: 'Анна', lastName: 'Петрова' })
+
+    expect(firstCall(post).body).toMatchObject({ firstName: 'Анна', lastName: 'Петрова' })
+  })
+
   it('verifyEmailSent: false доходит до стора — экран покажет «письмо не ушло»', async () => {
     stubPost(async () => ({ user: { id: 'u1' }, verifyEmailSent: false }))
     const store = useRegistrationStore()

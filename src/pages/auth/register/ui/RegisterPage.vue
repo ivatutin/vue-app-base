@@ -51,6 +51,13 @@
     email: emailSchema,
     password: passwordSchema,
     acceptedTerms: z.literal(true),
+    /**
+     * Необязательные: контракт допускает `firstName`/`lastName` в `sign-up/email`.
+     * Нужны, потому что реалм требует имя/фамилию у роли `user` (иначе Keycloak
+     * доспрашивает их после подтверждения, а shadow-БД остаётся с `null`).
+     */
+    firstName: z.string().trim().max(100).optional(),
+    lastName: z.string().trim().max(100).optional(),
   })
 
   type RegisterValues = z.infer<typeof registerSchema>
@@ -73,7 +80,12 @@
     loading.value = true
 
     try {
-      await registerEmailFlow(values)
+      await registerEmailFlow({
+        ...values,
+        // Пустая строка → `undefined`: DTO не принимает `''` (`min(1)`).
+        firstName: values.firstName?.trim() || undefined,
+        lastName: values.lastName?.trim() || undefined,
+      })
       await router.push({ name: '/auth/verify-email' })
     } catch (error_) {
       if (matchError(error_, ErrorCode.CONTACT_ALREADY_EXISTS)) {
@@ -156,6 +168,22 @@
             required
             show-strength
           />
+          <div class="grid gap-4 sm:grid-cols-2">
+            <TextField
+              autocomplete="given-name"
+              :disabled="loading"
+              label="Имя (необязательно)"
+              maxlength="100"
+              name="firstName"
+            />
+            <TextField
+              autocomplete="family-name"
+              :disabled="loading"
+              label="Фамилия (необязательно)"
+              maxlength="100"
+              name="lastName"
+            />
+          </div>
           <Checkbox name="acceptedTerms">
             <span>Принимаю условия использования и обработку персональных данных</span>
           </Checkbox>
