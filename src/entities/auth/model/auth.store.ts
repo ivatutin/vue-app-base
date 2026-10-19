@@ -89,5 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
     refresh,
     logout,
     applyTokenPair,
+    /** Локальный сброс без сетевого вызова — для «выйти на всех устройствах». */
+    clearTokens,
   }
 })

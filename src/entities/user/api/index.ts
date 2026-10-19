@@ -1,3 +1,5 @@
 export { getCurrentUser } from './get-current-user'
+export { updateUserProfile } from './update-profile'
+export type { UpdateProfileInput } from './update-profile'
 export { useCurrentUserQuery } from './use-current-user-query'
 export type { CurrentUserQueryOptions } from './use-current-user-query'

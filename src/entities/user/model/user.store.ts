@@ -1,6 +1,7 @@
 import type { User } from '../index'
+import { peekQueryClient } from '@/shared/api'
 import { type PermissionCode, rolesToPermissions } from '@/shared/model/permission'
-import { getCurrentUser } from '../api'
+import { getCurrentUser, type UpdateProfileInput, updateUserProfile } from '../api'
 
 export const useUserStore = defineStore('user', () => {
   /**
@@ -48,6 +49,22 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  /**
+   * Обновить имя/фамилию. Ответ бэкенда — полный профиль, поэтому применяем его
+   * целиком (`roles`/`status` тоже актуальны). Дополнительно кладём его в Query-кэш
+   * `['users', 'me']`, если клиент существует: иначе фоновый refetch вернёт старое
+   * значение и UI «откатится» на прошлое имя.
+   */
+  async function updateProfile (input: UpdateProfileInput): Promise<void> {
+    const current = user.value
+    if (!current) {
+      throw new Error('No current user to update')
+    }
+    const updated = await updateUserProfile(current.id, input)
+    user.value = updated
+    peekQueryClient()?.setQueryData(['users', 'me'], updated)
+  }
+
   function reset () {
     user.value = null
   }
@@ -68,6 +85,7 @@ export const useUserStore = defineStore('user', () => {
 
     /** actions */
     fetchCurrentUser,
+    updateProfile,
     reset,
   }
 })

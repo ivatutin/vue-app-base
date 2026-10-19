@@ -23,10 +23,19 @@
     requireTerms?: boolean
     submitLabel?: string
     disabled?: boolean
+    /** Предзаполнить номер (set-password: номер из профиля). */
+    initialPhone?: string
+    /**
+     * Номер менять нельзя: токен обязан быть выдан на **собственный** контакт
+     * пользователя, иначе бэкенд отвергнет его (`InvalidToken`).
+     */
+    lockPhone?: boolean
   }>(), {
     requireTerms: false,
     submitLabel: 'Получить код',
     disabled: false,
+    initialPhone: '',
+    lockPhone: false,
   })
 
   const emit = defineEmits<{
@@ -36,7 +45,7 @@
   const otp = useOtpChallengeStore()
   const call = usePhoneCallStore()
 
-  const phone = ref('')
+  const phone = ref(props.initialPhone)
   const code = ref('')
   const acceptedTerms = ref(false)
   const delivery = ref<OtpDelivery>('otp')
@@ -186,7 +195,7 @@
     <template v-if="step === 'phone'">
       <PhoneInput
         v-model="phone"
-        :disabled="isBusy || disabled"
+        :disabled="isBusy || disabled || lockPhone"
         label="Телефон"
         required
       />
@@ -230,7 +239,7 @@
     <template v-else-if="step === 'otp'">
       <p class="text-sm text-muted-foreground">
         Код отправлен на <span class="font-medium">{{ otp.challenge?.target }}</span>.
-        <button class="text-brand underline" type="button" @click="changePhone">
+        <button v-if="!lockPhone" class="text-brand underline" type="button" @click="changePhone">
           Изменить номер
         </button>
       </p>

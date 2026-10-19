@@ -144,15 +144,15 @@
       </template>
 
       <List density="compact">
-        <!--
-          Страницы профиля пока нет. Пункт помечен disabled, а не оставлен
-          «живым»: кнопка, которая молча ничего не делает, хуже отсутствующей —
-          пользователь считает, что сломалось приложение.
-        -->
         <ListItem
-          disabled
           icon="mdi-account-edit-outline"
           title="Мой профиль"
+          :to="{ name: '/account/profile' }"
+        />
+        <ListItem
+          icon="mdi-shield-lock-outline"
+          title="Безопасность"
+          :to="{ name: '/account/security' }"
         />
         <Divider />
         <!--

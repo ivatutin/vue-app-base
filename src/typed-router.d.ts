@@ -20,6 +20,8 @@ declare module 'vue-router/auto-routes' {
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
     'not-found': RouteRecordInfo<'not-found', '/:path(.*)', { path: ParamValue<true> }, { path: ParamValue<false> }>,
+    '/account/profile': RouteRecordInfo<'/account/profile', '/account/profile', Record<never, never>, Record<never, never>>,
+    '/account/security': RouteRecordInfo<'/account/security', '/account/security', Record<never, never>, Record<never, never>>,
     '/auth/forgot-password': RouteRecordInfo<'/auth/forgot-password', '/auth/forgot-password', Record<never, never>, Record<never, never>>,
     '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
     '/auth/logout': RouteRecordInfo<'/auth/logout', '/auth/logout', Record<never, never>, Record<never, never>>,
@@ -54,6 +56,14 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/[...path].vue': {
       routes: 'not-found'
+      views: never
+    }
+    'src/pages/account/profile/ui/ProfilePage.vue': {
+      routes: '/account/profile'
+      views: never
+    }
+    'src/pages/account/security/ui/SecurityPage.vue': {
+      routes: '/account/security'
       views: never
     }
     'src/pages/auth/forgot-password/ui/ForgotPasswordPage.vue': {

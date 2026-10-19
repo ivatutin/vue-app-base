@@ -12,6 +12,13 @@ import {
   type TokenPairDto,
   tokenPairDtoSchema,
 } from './auth.dto'
+export {
+  changePassword,
+  logoutAll,
+  type ReauthChallenge,
+  requestReauth,
+  setPassword,
+} from './account'
 
 export type TokenPair = TokenPairDto
 
