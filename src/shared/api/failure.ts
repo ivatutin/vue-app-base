@@ -10,6 +10,10 @@ import { HttpError } from './http-error'
  *
  * `auth` стоит особняком: это не отказ, а «сессии больше нет» — нормальный
  * путь, который должен вести на login, а не на экран ошибки.
+ *
+ * `forbidden` — тоже не «сессия»: сервер знает пользователя, но роли не хватает
+ * (`403 Forbidden`, контракт v1.5). Ведём себя как с прикладным отказом: показываем
+ * «нет прав», сессию не трогаем и на login не отправляем.
  */
 export type FailureKind
   = | 'offline'
@@ -17,6 +21,7 @@ export type FailureKind
     | 'timeout'
     | 'server'
     | 'auth'
+    | 'forbidden'
     | 'contract'
     | 'unknown'
 
@@ -51,8 +56,15 @@ export function classifyFailure (e: unknown): FailureKind {
       return isOffline() ? 'offline' : 'network'
     }
 
-    if (e.status === 401 || e.status === 403) {
+    if (e.status === 401) {
       return 'auth'
+    }
+
+    // 403 — нехватка роли, а не истёкшая сессия: RolesGuard отвечает
+    // `{"error":"Forbidden"}` (контракт v1.5). Раньше 403 уходил в `auth`
+    // и отказ RBAC выглядел как «войдите заново».
+    if (e.status === 403) {
+      return 'forbidden'
     }
 
     if (e.status >= 500) {
@@ -81,6 +93,7 @@ export const FAILURE_MESSAGES: Record<FailureKind, string> = {
   timeout: 'Сервер не ответил вовремя',
   server: 'Сервис временно недоступен',
   auth: 'Сессия истекла — войдите заново',
+  forbidden: 'Недостаточно прав для этого действия',
   contract: 'Приложение получило неожиданный ответ сервера',
   unknown: 'Непредвиденная ошибка',
 }

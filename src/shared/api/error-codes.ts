@@ -16,6 +16,9 @@ export const ErrorCode = {
   INVALID_CREDENTIALS: 'InvalidCredentials',
   // Общий отказ токена: истёк / отозван / не тот клиент (контракт v1.1, ADR-0018)
   INVALID_TOKEN: 'InvalidToken',
+  // Нет прав: RolesGuard отказал по роли, `{"error":"Forbidden","message":"Required role: admin"}`
+  // (контракт v1.5, 19.10.2026). 403 больше не значит «сессия истекла».
+  FORBIDDEN: 'Forbidden',
 
   // Contacts (email / phone)
   CONTACT_ALREADY_EXISTS: 'ContactAlreadyExists',
@@ -75,6 +78,7 @@ export function matchError (err: unknown, code: ErrorCode): boolean {
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_CREDENTIALS]: 'Неверные учётные данные',
   [ErrorCode.INVALID_TOKEN]: 'Сессия истекла, войдите снова',
+  [ErrorCode.FORBIDDEN]: 'Недостаточно прав для этого действия',
 
   [ErrorCode.CONTACT_ALREADY_EXISTS]: 'Этот контакт уже зарегистрирован',
   [ErrorCode.CONTACT_NOT_FOUND]: 'Контакт не найден',

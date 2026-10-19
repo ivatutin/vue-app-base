@@ -29,9 +29,11 @@ describe('classifyFailure', () => {
     expect(classifyFailure(HttpError.timeout(30_000))).toBe('timeout')
   })
 
-  it('401 и 403 → auth (не отказ приложения, а истёкшая сессия)', () => {
+  it('401 → auth (сессии нет), 403 → forbidden (роли не хватает)', () => {
     expect(classifyFailure(new HttpError(401, 'Unauthorized', 'E', 'x'))).toBe('auth')
-    expect(classifyFailure(new HttpError(403, 'Forbidden', 'E', 'x'))).toBe('auth')
+    // Контракт v1.5: RolesGuard отдаёт `{"error":"Forbidden"}` — это прикладной отказ,
+    // а не истёкшая сессия: на login за отказ RBAC отправлять нельзя.
+    expect(classifyFailure(new HttpError(403, 'Forbidden', 'Forbidden', 'x'))).toBe('forbidden')
   })
 
   it('5xx → server', () => {
@@ -59,8 +61,8 @@ describe('isRetryableFailure', () => {
     }
   })
 
-  it('contract, auth и unknown не retryable — повтор бесполезен', () => {
-    for (const kind of ['contract', 'auth', 'unknown'] as const) {
+  it('contract, auth, forbidden и unknown не retryable — повтор бесполезен', () => {
+    for (const kind of ['contract', 'auth', 'forbidden', 'unknown'] as const) {
       expect(isRetryableFailure(kind)).toBe(false)
     }
   })

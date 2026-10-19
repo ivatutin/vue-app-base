@@ -200,7 +200,7 @@ interface ErrorResponseBody {
 
 ## Auth endpoints planned (Phase 1-5 auth/registration suite)
 
-> **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.4**. Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
+> **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.5** (19.10.2026: аддитивно добавлен код `Forbidden`; зеркало перекопировано, sha256 `035A7E9B…`). Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
 >
 > ✅ в таблицах = «эндпоинт есть и работает на бэкенде» (сверено по роутам контроллеров; конвенция согласована 16.10.2026). После живой приёмки с фронта в разделе появляется строка «проверено с фронта <дата>».
 >
@@ -467,7 +467,7 @@ Frontend `/account/security` показывает links на эти страни
 
 ### Error codes registry (полный)
 
-Перечень `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (реестр существует; сверен с контрактом [v1.4](auth-v1-contract.md) 16.10.2026).
+Перечень `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (реестр существует; сверен с контрактом [v1.5](auth-v1-contract.md) 19.10.2026).
 
 Backend dev **обязан** использовать ровно эти `errorName` строки для согласованности с frontend `ErrorCode` registry. Добавление нового error → PR в `src/shared/api/error-codes.ts` параллельно backend изменениям.
 
@@ -475,6 +475,7 @@ Backend dev **обязан** использовать ровно эти `errorNa
 |---|---|---|
 | `InvalidCredentials` | 401 | wrong password (login, reauth, phone sign-in при unknown phone) |
 | `InvalidToken` ⟵ *v1.1* | 401 | невалидный / просроченный / отозванный access или refresh |
+| `Forbidden` ⟵ *v1.5* | 403 | RolesGuard: роли не хватает (`{"error":"Forbidden","message":"Required role: admin"}`). Фронт трактует 403 как отказ прав, **не** как истёкшую сессию (`classifyFailure` → `forbidden`) |
 | `InvalidContacts` ⟵ *v1.1* | 422 | нарушен инвариант контактов: нет ни email, ни phone; прямая смена verified-контакта |
 | `UserNotFound` ⟵ *v1.1* | 404 | локальной записи пользователя нет (в основном админские операции) |
 | `ContactAlreadyExists` | 409 | email/phone уже зарегистрирован (sign-up, contact-change) |
