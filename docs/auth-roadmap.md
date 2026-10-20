@@ -269,10 +269,10 @@ Phase 0 (foundation)
 - ✅ По итогам приёмки исправлено: тексты 5xx без кода, утечка английского `HttpError.message`, поля имени на
   регистрации (Keycloak требует их у роли `user`), UX кодов (подписи/TTL/возврат к запросу при истечении),
   устаревшая стадия «готово»
-- ✅ Звонковый канал проверен живьём 20.10.2026: `phone/call` → 200, статус `pending` → `verified` за ~20 с,
-  `verificationToken` выдан. Схема проверки: host-приложение на 3001 + `CIBA_CHANNEL_URL=http://host.docker.internal:3001/...`
-  для Keycloak (иначе CIBA стучится в контейнер, где dev-провайдер отказывает) — см.
-  `docs/coordination/questions/2026-10-20-call-channel-verified.md`
+- ✅ Звонковый канал проверен в **UI** 20.10.2026 (шаг 8 чек-листа): «Обратный звонок» → `callTo` + таймер → `verified`
+  за ~15 с, вход без кода. Рецепт стенда (host из Docker недоступен): второй инстанс `app-dev` в сети compose
+  (`NODE_ENV=development`, порт 3101) + `CIBA_CHANNEL_URL=http://app-dev:3001/...` + `VITE_PROXY_TARGET=http://localhost:3101`
+  у фронта — см. `docs/coordination/questions/2026-10-20-step8-call-ui-done.md`
 - ✅ `503` на `contact-change/verify` проверен 20.10.2026 (гашение Keycloak): 503 за 1 с, сессия и `changeToken` живы,
   email не изменён, после подъёма Keycloak повтор проходит (422 `OtpExpired` — токен смены жив), `cancel` → 204.
   `Retry-After` в живом 503 отсутствует — это **дефект бэкенда** относительно их ADR-0017 (не наше расхождение с контрактом);

@@ -102,7 +102,10 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        // По умолчанию — контейнер `app-backend` (:3001). Для приёмки звонкового канала нужен
+        // инстанс в `NODE_ENV=development` (dev-провайдер звонка): запускаем его на :3101 и
+        // стартуем фронт с `VITE_PROXY_TARGET=http://localhost:3101`.
+        target: process.env.VITE_PROXY_TARGET ?? 'http://localhost:3001',
         changeOrigin: true,
       },
     },
