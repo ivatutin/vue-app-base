@@ -76,6 +76,12 @@
   }
 
   async function onSubmit (values: RegisterValues): Promise<void> {
+    // Повторный Enter во время запроса: sign-up неидемпотентен, двойная отправка
+    // вернула бы 409 про собственный же аккаунт.
+    if (loading.value) {
+      return
+    }
+
     error.value = null
     loading.value = true
 
@@ -122,6 +128,10 @@
     verificationToken: string
     acceptedTerms: boolean
   }): Promise<void> {
+    if (loading.value) {
+      return
+    }
+
     error.value = null
     loading.value = true
 

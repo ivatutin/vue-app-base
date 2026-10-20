@@ -89,6 +89,10 @@
    * статус меняется без нашего ведома — нужна ручная перепроверка.
    */
   async function recheck () {
+    if (checking.value) {
+      return
+    }
+
     checking.value = true
     error.value = null
     try {
@@ -104,6 +108,10 @@
   }
 
   async function leave () {
+    if (leaving.value) {
+      return
+    }
+
     leaving.value = true
     try {
       await logoutFlow()

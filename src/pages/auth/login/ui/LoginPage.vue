@@ -56,6 +56,12 @@
   })
 
   async function submit () {
+    // Enter в форме может сработать повторно, пока идёт запрос: `Button` блокируется по
+    // `loading`, но submit-событие приходит и от клавиатуры.
+    if (loading.value) {
+      return
+    }
+
     error.value = null
     loading.value = true
     try {
@@ -76,6 +82,10 @@
    * — показываем единый текст, как и для неверного кода.
    */
   async function onPhoneVerified (payload: { phone: string, verificationToken: string }): Promise<void> {
+    if (loading.value) {
+      return
+    }
+
     error.value = null
     loading.value = true
 

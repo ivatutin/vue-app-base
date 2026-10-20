@@ -41,6 +41,10 @@
     && (needsManualEmail.value ? emailSchema.safeParse(manualEmail.value).success : true))
 
   async function resend (): Promise<void> {
+    if (!canResend.value) {
+      return
+    }
+
     error.value = null
     resent.value = false
     loading.value = true
