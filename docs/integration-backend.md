@@ -452,6 +452,8 @@ Provider payloads:
   `changePasswordFlow`, `setPasswordFlow`, `logoutAllFlow`;
 - экраны: `/account/profile` и `/account/security` (пароль, «Контакт», «Выйти на всех устройствах»);
 - тесты: `src/entities/contact-change/**`, `src/processes/auth-flow/{change-contact,change-password,logout-all}-flow.test.ts`.
+- Поведение трио (отмена + повтор, `503`, `401` после успеха, условный `oldCode`, режимы стенда) сверено с материалом
+  координатора `handover/contact-change-behavior.md` (16.10.2026) и подтверждено живьём 19–20.10.2026.
 
 ### Account Console (для advanced ops)
 

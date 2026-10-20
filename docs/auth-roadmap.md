@@ -275,11 +275,19 @@ Phase 0 (foundation)
   `docs/coordination/questions/2026-10-20-call-channel-verified.md`
 - ✅ `503` на `contact-change/verify` проверен 20.10.2026 (гашение Keycloak): 503 за 1 с, сессия и `changeToken` живы,
   email не изменён, после подъёма Keycloak повтор проходит (422 `OtpExpired` — токен смены жив), `cancel` → 204.
-  Расхождение: заголовок `Retry-After` в живом 503 отсутствует (ставится только для `ContactChangeUnavailableError`) —
-  вопрос координатору в `docs/coordination/questions/2026-10-20-503-on-verify-verified.md`
-- ⬜ Открытые вопросы координатору: self-service `PATCH /users/me/profile` и синхронизация имён из Keycloak
-- ⬜ Отдельного ADR по смене контакта на фронте нет: правила зафиксированы в `docs/integration-backend.md`
-  § Account security (поведенческие следствия) и в JSDoc флоу
+  `Retry-After` в живом 503 отсутствует — это **дефект бэкенда** относительно их ADR-0017 (не наше расхождение с контрактом);
+  фронт заголовок пока не читает, добавим отсчёт, когда бэкенд начнёт его отдавать
+- ✅ Все вопросы приёмки закрыты координатором 20.10.2026 (`отвечено`): `FailureKind='forbidden'` согласован,
+  `changeToken` в `sessionStorage` согласован (зафиксировано в [ADR-0011](adr/0011-otp-verification-model.md) § Anti-patterns),
+  звонковый рецепт признан каноническим, `503`-семантика принята
+- ⬜ **Ждём контракт v1.6 и бэкенд** (задания уже ушли): self-service `PATCH /users/me/profile` (пишет в Keycloak **и** shadow)
+  + код `ServiceUnavailable` (503) в реестре + `Retry-After` на любом 503 из `verify`. После сдачи — три точечные правки
+  на фронте: `updateUserProfile` → `/users/me/profile` (и форма профиля снова всем), `ServiceUnavailable` в `ErrorCode`,
+  чтение `Retry-After`
+- ⬜ Живой клик по чек-листу `handover/manual-acceptance-auth-v1.md` (шаги 1–17): пройдены выборочно (регистрация, RBAC,
+  пароль, contact-change, logout-all, звонок); шаги 6–8 (телефон), 15 (два браузера) и 18 (уборка) — за владельцем
+- ⬜ Отдельного ADR по смене контакта на фронте нет (решение координатора): правила — `docs/integration-backend.md`
+  § Account security, поведение трио — `handover/contact-change-behavior.md`, детали — JSDoc флоу
 - ✅ Verified email/phone меняется через double OTP (старый + новый)
 - ✅ Unverified — только OTP на новый
 - ✅ Change password требует re-auth с current password

@@ -8,17 +8,27 @@
 ## 0. Подготовка стенда
 
 ```powershell
-# 1. инфраструктура (app-контейнер НЕ останавливаем: он нужен Keycloak для CIBA при телефонном входе)
+# 1. инфраструктура (почта Keycloak — в Mailpit; контейнер app пока не нужен)
 cd C:\WORK\v1m\njs-server
 docker compose up -d postgres redis keycloak mailpit
 
-# 2. приложение с хоста — иначе письма/коды смены контакта отвечают 503 (ConsoleEmailSender в prod отказывает)
-set APP_PORT=3101 && npm run start:dev
+# 2. приложение с хоста (dev-заглушки: письма/коды в логе) — тот же порт 3001
+docker compose stop app
+$env:APP_PORT='3001'; npm run start:dev
 
-# 3. фронт — прокси/API должны смотреть на 3101
+# 3. для ЗВОНКОВОГО канала — перенаправить CIBA на host-приложение
+$env:CIBA_CHANNEL_URL='http://host.docker.internal:3001/api/v1/internal/ciba/channel'
+docker compose up -d --force-recreate keycloak
+
+# 4. фронт (прокси /api → 3001 уже настроен)
 cd C:\WORK\v1m\vue-app-base
 npm run dev
 ```
+
+- **Без шага 3** телефонный вход/регистрация упадут с `503`: CIBA-канал по умолчанию смотрит в контейнер
+  (`docker-compose.yml:85`), а dev-провайдер звонка живёт только в host-приложении.
+- Шаги 2–3 проверены живьём 20.10 (звонок → `verified` через ~20 с, CIBA доходит до host).
+- Возврат в штатный режим: `docker compose up -d --force-recreate keycloak` (без переменной) + поднять `app`.
 
 - Mailpit (письма Keycloak): **http://localhost:8025**
 - Письма/коды **смены контакта** — в **логе бэкенда**: `[dev-email] … code=NNNNNN`, `[dev-sms] … code=NNNNNN`

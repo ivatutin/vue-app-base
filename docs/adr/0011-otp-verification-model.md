@@ -105,6 +105,12 @@ Pinia setup-store держит **одну активную challenge едино�
 - **Кнопка resend disabled по cooldown** — backend выдаёт `cooldownSeconds`, frontend FSM-store запоминает `cooldownUntil`, UI показывает таймер.
 - **Не auto-submit при вводе 6-й цифры** — даём пользователю проверить. Submit — explicit button или Enter (доступно).
 - **Не unlimited attempts** — backend lock'ает challenge после 5 неверных попыток (422 `OtpTooManyAttempts`), пользователь делает resend.
+- **Исключение — `changeToken` смены контакта (Phase 4, согласовано 20.10.2026).** Он **хранится в `sessionStorage`**
+  (`contact-change:pending`, одна вкладка, 15 минут), и это осознанное отступление от правила «токены не persist'ить»:
+  `verificationToken` — одноразовый credential, которым **получают** доступ, а `changeToken` доступа не даёт (без OTP-кодов
+  по нему ничего не сделать) и нужен обоим шагам — `verify` **и** `cancel`. Без него F5 посреди смены ломал и подтверждение,
+  и отмену, а повторный `request` упирался в `422 ContactChangeAlreadyPending` до истечения 15-минутного TTL.
+  `localStorage` не используется, запись чистится на `reset`/успешном `verify`/выходе.
 
 ## Consequences
 
