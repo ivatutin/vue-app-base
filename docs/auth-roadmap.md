@@ -273,7 +273,10 @@ Phase 0 (foundation)
   `verificationToken` выдан. Схема проверки: host-приложение на 3001 + `CIBA_CHANNEL_URL=http://host.docker.internal:3001/...`
   для Keycloak (иначе CIBA стучится в контейнер, где dev-провайдер отказывает) — см.
   `docs/coordination/questions/2026-10-20-call-channel-verified.md`
-- ⬜ Не проверено: `503` на `contact-change/verify` (гашение Keycloak во время подтверждения)
+- ✅ `503` на `contact-change/verify` проверен 20.10.2026 (гашение Keycloak): 503 за 1 с, сессия и `changeToken` живы,
+  email не изменён, после подъёма Keycloak повтор проходит (422 `OtpExpired` — токен смены жив), `cancel` → 204.
+  Расхождение: заголовок `Retry-After` в живом 503 отсутствует (ставится только для `ContactChangeUnavailableError`) —
+  вопрос координатору в `docs/coordination/questions/2026-10-20-503-on-verify-verified.md`
 - ⬜ Открытые вопросы координатору: self-service `PATCH /users/me/profile` и синхронизация имён из Keycloak
 - ⬜ Отдельного ADR по смене контакта на фронте нет: правила зафиксированы в `docs/integration-backend.md`
   § Account security (поведенческие следствия) и в JSDoc флоу
