@@ -24,6 +24,71 @@ export const useContactChangeStore = defineStore('contact-change', () => {
   const channel = ref<ContactChannel>('email')
   const newValue = ref('')
 
+  /**
+   * Переживание перезагрузки страницы: `changeToken` живёт 15 минут, а без него нельзя ни
+   * `verify`, ни `cancel` — и повторный `request` упирается в `422 ContactChangeAlreadyPending`
+   * (пользователь «застревал» до истечения TTL). Храним **только в sessionStorage** (на вкладку,
+   * умирает с ней): это не credential чужой сессии, а одноразовый токен смены на 15 минут.
+   */
+  const PERSIST_KEY = 'contact-change:pending'
+  const TOKEN_TTL_MS = 15 * 60 * 1000
+
+  function persist (requestedAt: number): void {
+    try {
+      if (!changeToken.value) {
+        return
+      }
+      sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
+        changeToken: changeToken.value,
+        requiresOldChallenge: requiresOldChallenge.value,
+        channel: channel.value,
+        newValue: newValue.value,
+        requestedAt,
+      }))
+    } catch {
+      // Приватный режим / запрет storage — смена продолжит работать в памяти.
+    }
+  }
+
+  function clearPersisted (): void {
+    try {
+      sessionStorage.removeItem(PERSIST_KEY)
+    } catch {
+      // см. persist
+    }
+  }
+
+  function restore (): void {
+    try {
+      const raw = sessionStorage.getItem(PERSIST_KEY)
+      if (!raw) {
+        return
+      }
+      const data = JSON.parse(raw) as {
+        changeToken?: unknown
+        requiresOldChallenge?: unknown
+        channel?: unknown
+        newValue?: unknown
+        requestedAt?: unknown
+      }
+      const fresh = typeof data.requestedAt === 'number'
+        && Date.now() - data.requestedAt < TOKEN_TTL_MS
+      if (!fresh || typeof data.changeToken !== 'string') {
+        clearPersisted()
+        return
+      }
+      changeToken.value = data.changeToken
+      requiresOldChallenge.value = data.requiresOldChallenge === true
+      channel.value = data.channel === 'phone' ? 'phone' : 'email'
+      newValue.value = typeof data.newValue === 'string' ? data.newValue : ''
+      stage.value = 'codes'
+    } catch {
+      clearPersisted()
+    }
+  }
+
+  restore()
+
   const isPending = computed(() => stage.value === 'codes')
   const isDone = computed(() => stage.value === 'done')
 
@@ -34,6 +99,7 @@ export const useContactChangeStore = defineStore('contact-change', () => {
     channel.value = challenge.channel
     newValue.value = challenge.newValue
     stage.value = 'codes'
+    persist(Date.now())
   }
 
   /** `200` на `verify`: доступ отозван, токен больше не нужен. */
@@ -41,6 +107,7 @@ export const useContactChangeStore = defineStore('contact-change', () => {
     changeToken.value = null
     requiresOldChallenge.value = false
     stage.value = 'done'
+    clearPersisted()
   }
 
   /** «Отменить» и повторный вход в сценарий с чистого листа. */
@@ -50,6 +117,7 @@ export const useContactChangeStore = defineStore('contact-change', () => {
     requiresOldChallenge.value = false
     channel.value = 'email'
     newValue.value = ''
+    clearPersisted()
   }
 
   return {

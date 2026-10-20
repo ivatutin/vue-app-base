@@ -15,6 +15,14 @@ import {
 
 const TOKENS = { accessToken: 'access-1', refreshToken: 'refresh-1', expiresIn: 300 }
 
+/**
+ * Store кэширует активную смену в `sessionStorage` (переживание F5) — чистим между тестами,
+ * иначе «pending» одного кейса восстанавливается в следующем.
+ */
+beforeEach(() => {
+  sessionStorage.clear()
+})
+
 const INPUT = {
   currentPassword: 'old-password',
   channel: 'email' as const,

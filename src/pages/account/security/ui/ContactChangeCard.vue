@@ -124,6 +124,39 @@
       // Доступ уже отозван — на экран «Вы вышли»: там же подтверждение и вход заново.
       await router.replace({ name: '/auth/logout' })
     } catch (error_) {
+      /**
+       * Челлендж мёртв (`OTP_EXPIRED` / код заблокирован после 5 попыток) — форма ввода кодов
+       * бесполезна, поэтому не оставляем её на экране: освобождаем смену (`cancel`, иначе новый
+       * `request` упрётся в `ContactChangeAlreadyPending`) и возвращаемся к форме запроса.
+       * Пароль придётся ввести заново — `reauth` одноразовый.
+       */
+      if (
+        matchError(error_, ErrorCode.OTP_EXPIRED)
+        || matchError(error_, ErrorCode.OTP_TOO_MANY_ATTEMPTS)
+      ) {
+        error.value = 'Срок действия кодов истёк — запросите новые. Пароль понадобится ввести заново.'
+        await cancelContactChangeFlow().catch(() => undefined)
+        oldCode.value = ''
+        newCode.value = ''
+        return
+      }
+
+      /** Истёк сам `changeToken` (15 мин) — смена уже не существует, начинаем с нуля. */
+      if (matchError(error_, ErrorCode.CHANGE_TOKEN_EXPIRED)) {
+        error.value = 'Сессия изменения контакта истекла — начните заново.'
+        await cancelContactChangeFlow().catch(() => undefined)
+        oldCode.value = ''
+        newCode.value = ''
+        return
+      }
+
+      /** Коды перепутаны местами или опечатка: форма остаётся, подсказываем, что именно сверить. */
+      if (matchError(error_, ErrorCode.OTP_INVALID)) {
+        error.value = 'Один из кодов неверный. Проверьте, какой код куда введён: '
+          + 'на новый контакт и на текущий приходят разные коды.'
+        return
+      }
+
       error.value = describeError(error_)
     } finally {
       submitting.value = false
@@ -165,21 +198,29 @@
     <!-- 2. Коды -->
     <div v-else-if="store.isPending" class="space-y-4">
       <p class="text-sm text-muted-foreground">
-        Код отправлен на <span class="font-medium">{{ store.newValue }}</span>.
+        Коды действуют <span class="font-medium">5 минут</span>. На новый и на текущий контакт приходят
+        <span class="font-medium">разные</span> коды — не перепутайте поля.
       </p>
 
-      <template v-if="store.requiresOldChallenge">
-        <p class="text-sm text-muted-foreground">
-          Подтвердите и текущий контакт: код придёт на
-          <span class="font-medium">{{ currentContact ?? 'прежний контакт' }}</span>.
+      <div class="space-y-2">
+        <p class="text-sm font-medium">
+          Код на новый контакт
+        </p>
+        <p class="text-xs text-muted-foreground">
+          {{ store.newValue }}
+        </p>
+        <OtpInput v-model="newCode" :disabled="submitting" />
+      </div>
+
+      <div v-if="store.requiresOldChallenge" class="space-y-2">
+        <p class="text-sm font-medium">
+          Код на текущий контакт
+        </p>
+        <p class="text-xs text-muted-foreground">
+          {{ currentContact ?? 'прежний контакт' }}
         </p>
         <OtpInput v-model="oldCode" :disabled="submitting" />
-      </template>
-
-      <p class="text-sm">
-        Код на новый контакт
-      </p>
-      <OtpInput v-model="newCode" :disabled="submitting" />
+      </div>
     </div>
 
     <!-- 1. Запрос -->
