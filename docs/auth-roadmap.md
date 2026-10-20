@@ -185,6 +185,11 @@ Phase 0 (foundation)
 ### M5 — Production Ready (после Phase 5)
 
 - Все docs синхронизированы (`/docs-check` clean)
+- ⬜ **Брендинг Keycloak** (обязательный пункт, срок — после утверждения брендбука): страницы `login` /
+  `login-verify-email` / `login-update-profile` / `login-reset-password` / `error` и письма (`email/`) приводятся
+  к брендбуку кастомной темой (`themes/<name>/{login,email}` с `parent=keycloak`), тема монтируется в контейнер
+  (`docker-compose.yml` volume), выбирается в realm (`loginTheme`), тексты — через localization (`messages_ru`).
+  Сейчас в `njs-server/docker/keycloak/` только `Dockerfile` — тем нет, страницы дефолтные Keycloak.
 - Integration tests покрывают critical paths
 - ROADMAP.md обновлён (фазы closed)
 - 4 ADR + backend implementation doc обновлены под фактическую реализацию
