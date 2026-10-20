@@ -7,6 +7,7 @@
     Button,
     Card,
     Form,
+    PasswordInput,
     Spacer,
     Tabs,
     TabsContent,
@@ -103,13 +104,12 @@
             required
             type="email"
           />
-          <TextField
+          <PasswordInput
             v-model="password"
             autocomplete="current-password"
             :disabled="loading"
             label="Пароль"
             required
-            type="password"
           />
         </TabsContent>
 
