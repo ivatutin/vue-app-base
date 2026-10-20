@@ -269,8 +269,11 @@ Phase 0 (foundation)
 - ✅ По итогам приёмки исправлено: тексты 5xx без кода, утечка английского `HttpError.message`, поля имени на
   регистрации (Keycloak требует их у роли `user`), UX кодов (подписи/TTL/возврат к запросу при истечении),
   устаревшая стадия «готово»
-- ⬜ Не проверено: звонковый канал в host-режиме (CIBA-канал Keycloak привязан к контейнеру) и `503` на `verify`
-  (гашение Keycloak во время подтверждения) — сценарии описаны в отчёте
+- ✅ Звонковый канал проверен живьём 20.10.2026: `phone/call` → 200, статус `pending` → `verified` за ~20 с,
+  `verificationToken` выдан. Схема проверки: host-приложение на 3001 + `CIBA_CHANNEL_URL=http://host.docker.internal:3001/...`
+  для Keycloak (иначе CIBA стучится в контейнер, где dev-провайдер отказывает) — см.
+  `docs/coordination/questions/2026-10-20-call-channel-verified.md`
+- ⬜ Не проверено: `503` на `contact-change/verify` (гашение Keycloak во время подтверждения)
 - ⬜ Открытые вопросы координатору: self-service `PATCH /users/me/profile` и синхронизация имён из Keycloak
 - ⬜ Отдельного ADR по смене контакта на фронте нет: правила зафиксированы в `docs/integration-backend.md`
   § Account security (поведенческие следствия) и в JSDoc флоу
