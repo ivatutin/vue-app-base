@@ -249,21 +249,29 @@ Phase 0 (foundation)
 
 ### Phase 4
 
-Статус на 19.10.2026: **реализовано на фронте, живая приёмка не выполнена** (стенд в сессии не поднят: порты 3000/3101 закрыты).
+Статус на 19.10.2026: **реализовано и проверено живьём** (приёмка с владельцем на стенде: 5/5 контейнеров healthy).
+Отчёт координатору — `docs/coordination/questions/2026-10-19-live-acceptance-phase4.md`.
 
 - ✅ `entities/contact-change` — `api` (`request` / `verify` / `cancel`, DTO — зеркало бэкенда) и FSM-store
-  (`idle` → `codes` → `done`); `changeToken` живёт в сторе (нужен и `verify`, и `cancel`), коды — только в полях формы
+  (`idle` → `codes`); `changeToken` живёт в сторе и переживает F5 через `sessionStorage` (нужен и `verify`, и `cancel`),
+  коды — только в полях формы. Стадии `done` нет: успех сразу сбрасывает состояние (иначе «войдите заново»
+  показывалось уже после входа)
 - ✅ `processes/auth-flow`: `requestContactChangeFlow` (reauth → request; `ContactChangeAlreadyPending` → `cancel` →
   **новый** reauth → request, потому что reauth одноразовый), `verifyContactChangeFlow` (`200` = доступ отозван →
   локальная сессия сбрасывается; `503` = ничего не применено → сессия и токен смены живы),
   `cancelContactChangeFlow` (`ChangeTokenExpired` = «смены уже нет»), `changePasswordFlow` (reauth + `X-Reauth-Token`),
   `setPasswordFlow` (OTP `purpose=set-password`), `logoutAllFlow` (v1.4 — отзыв на всех устройствах)
-- ✅ Экраны: `/account/profile` (имя/фамилия; контакты только для чтения) и `/account/security`
-  (пароль «сменить/задать», карточка «Контакт», «Выйти на всех устройствах»)
+- ✅ Экраны: `/account/profile` (имя/фамилия — редактирование только при праве `user.update`: `PATCH /users/:id/profile`
+  админский) и `/account/security` (пароль «сменить/задать», карточка «Контакт», «Выйти на всех устройствах»)
 - ✅ «Задать пароль»: у `PhoneVerificationForm` появились `initialPhone` / `lockPhone` — токен выдаётся только на свой номер
-- ✅ Тесты: 312 (43 файла), включая API и флоу `contact-change`, `changePasswordFlow`, `logoutAllFlow`
-- ⬜ Живая приёмка: double OTP (старый + новый), `409` при занятом контакте, `503` на `verify`, отзыв сессий после
-  `verify`, повтор `request` после `cancel`, `logout-all` — нужны стенд и тестовые аккаунты
+- ✅ Живая приёмка 19.10.2026: double OTP (старый + новый), `409` при занятом контакте, отзыв сессий после `verify`,
+  повтор `request` после `cancel`, `logout-all`, смена пароля (в т.ч. неверный текущий), RBAC-guard через `/roles`
+- ✅ По итогам приёмки исправлено: тексты 5xx без кода, утечка английского `HttpError.message`, поля имени на
+  регистрации (Keycloak требует их у роли `user`), UX кодов (подписи/TTL/возврат к запросу при истечении),
+  устаревшая стадия «готово»
+- ⬜ Не проверено: звонковый канал в host-режиме (CIBA-канал Keycloak привязан к контейнеру) и `503` на `verify`
+  (гашение Keycloak во время подтверждения) — сценарии описаны в отчёте
+- ⬜ Открытые вопросы координатору: self-service `PATCH /users/me/profile` и синхронизация имён из Keycloak
 - ⬜ Отдельного ADR по смене контакта на фронте нет: правила зафиксированы в `docs/integration-backend.md`
   § Account security (поведенческие следствия) и в JSDoc флоу
 - ✅ Verified email/phone меняется через double OTP (старый + новый)
