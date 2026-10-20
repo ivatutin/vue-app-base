@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { useNotificationStore } from '@/entities/notification'
   import { loginFlow, loginPhoneFlow } from '@/processes/auth-flow'
-  import { HttpError } from '@/shared/api'
+  import { getErrorMessage, HttpError } from '@/shared/api'
   import {
     Alert,
     Button,
@@ -54,7 +54,9 @@
       await loginFlow(email.value, password.value)
       await router.replace({ name: '/dashboard' })
     } catch (error_) {
-      error.value = error_ instanceof HttpError ? error_.message : 'Не удалось войти'
+      // Текст берём из реестра кодов, а не из `HttpError.message`: в сообщении сервера
+      // приходит английская строка (`Invalid credentials`), которую нельзя показывать.
+      error.value = getErrorMessage(error_)
     } finally {
       loading.value = false
     }

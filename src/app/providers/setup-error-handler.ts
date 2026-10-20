@@ -1,6 +1,6 @@
 import type { App } from 'vue'
 import { useNotificationStore } from '@/entities/notification'
-import { HttpError } from '@/shared/api'
+import { getErrorMessage, HttpError } from '@/shared/api'
 
 export function setupErrorHandler (app: App): void {
   app.config.errorHandler = (err, _instance, info) => {
@@ -27,13 +27,14 @@ function report (err: unknown, source: string): void {
 }
 
 export function humanize (err: unknown): string {
+  // `HttpError.message` — это `message` из тела ответа, а там английский текст
+  // (`Invalid credentials`, `Internal server error`). Пользователю — только реестр кодов
+  // и generic-тексты; исходная строка остаётся в `console.error` для отладки.
   if (err instanceof HttpError) {
-    return err.message
+    return getErrorMessage(err)
   }
-  if (err instanceof Error) {
-    return err.message
-  }
-  if (typeof err === 'string') {
+  if (typeof err === 'string' && err.length > 0 && !/^[A-Za-z]/.test(err)) {
+    // Строки-исключения (не английские технические) иногда бросают вручную.
     return err
   }
   return 'Что-то пошло не так'
