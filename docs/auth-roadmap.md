@@ -288,8 +288,10 @@ Phase 0 (foundation)
   имя на месте; 503 при остановленном Keycloak (shadow не изменён), `Retry-After` на `verify` = 3 с. Тесты: **326**.
 - ⬜ Стенд: образ контейнера `app` **устарел** (нет `/users/me/profile`), пересборка блокирована недоступностью
   `auth.docker.io` → приёмка шла в host-режиме; когда registry доступен — `docker compose build app && docker compose up -d app`
-- ⬜ Живой клик по чек-листу `handover/manual-acceptance-auth-v1.md` (шаги 1–17): пройдены выборочно (регистрация, RBAC,
-  пароль, contact-change, logout-all, звонок); шаги 6–8 (телефон), 15 (два браузера) и 18 (уборка) — за владельцем
+- ✅ **Ручная приёмка закрыта 20.10.2026**: чек-лист `handover/manual-acceptance-auth-v1.md` пройден целиком (1–17:
+  регистрация email/телефон, вход, сброс и смена/установка пароля, double OTP, `409`, `cancel`, `logout-all` в двух
+  браузерах, RBAC, обратный звонок) + п.18 — тестовые данные удалены (**Keycloak 3 / shadow 3**, только фикстуры).
+  Отчёт: `docs/coordination/questions/2026-10-20-auth-v1-acceptance-closed.md`
 - ⬜ Отдельного ADR по смене контакта на фронте нет (решение координатора): правила — `docs/integration-backend.md`
   § Account security, поведение трио — `handover/contact-change-behavior.md`, детали — JSDoc флоу
 - ✅ Verified email/phone меняется через double OTP (старый + новый)
