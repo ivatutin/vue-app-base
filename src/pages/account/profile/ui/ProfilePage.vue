@@ -9,10 +9,9 @@
  * «Сохранить» неактивна, пока значения совпадают с профилем — лишний `PATCH`
  * (и лишняя запись `updatedAt`) не нужен.
  *
- * **Права (сверено с бэкендом 19.10.2026):** `PATCH /users/:id/profile` закрыт
- * `@Roles('admin')` — самостоятельного эндпоинта (`/users/me/profile`) в контракте v1.5
- * нет. Поэтому форма редактируется только при праве `user.update`; остальным показываем
- * значения read-only и подсказку, а не 403 после нажатия «Сохранить».
+ * **Права (контракт v1.6, 20.10.2026):** `PATCH /users/me/profile` — self-service, доступен
+ * любому аутентифицированному, пишет в Keycloak **и** shadow-БД. Поэтому форма открыта всем;
+ * админский `PATCH /users/:id/profile` остаётся на бэкенде для чужих профилей.
  */
   import { useNotificationStore } from '@/entities/notification'
   import { useUserStore } from '@/entities/user'
@@ -42,14 +41,8 @@
 
   const canSave = computed(() => !saving.value && changed.value)
 
-  /**
-   * `PATCH /users/:id/profile` — админский эндпоинт (`@Roles('admin')`), self-service
-   * обновления профиля в контракте нет. Право `user.update` есть у `admin`/`manager`.
-   */
-  const canEdit = computed(() => userStore.hasPermission('user.update'))
-
   async function submit (): Promise<void> {
-    if (!canSave.value || !canEdit.value) {
+    if (!canSave.value) {
       return
     }
 
@@ -87,14 +80,14 @@
           <TextField
             v-model="firstName"
             autocomplete="given-name"
-            :disabled="saving || !canEdit"
+            :disabled="saving"
             label="Имя"
             maxlength="100"
           />
           <TextField
             v-model="lastName"
             autocomplete="family-name"
-            :disabled="saving || !canEdit"
+            :disabled="saving"
             label="Фамилия"
             maxlength="100"
           />
@@ -102,19 +95,12 @@
 
         <template #footer>
           <span class="text-xs text-muted-foreground">
-            <template v-if="canEdit">
-              Оба поля необязательные.
-            </template>
-            <template v-else>
-              Имя и фамилию меняет администратор — самостоятельное редактирование бэкенд пока не поддерживает.
-            </template>
+            Оба поля необязательные.
           </span>
-          <template v-if="canEdit">
-            <Spacer />
-            <Button :disabled="!canSave" :loading="saving" type="submit" variant="brand">
-              Сохранить
-            </Button>
-          </template>
+          <Spacer />
+          <Button :disabled="!canSave" :loading="saving" type="submit" variant="brand">
+            Сохранить
+          </Button>
         </template>
       </Card>
     </Form>

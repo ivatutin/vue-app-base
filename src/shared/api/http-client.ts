@@ -183,7 +183,15 @@ export class HttpClient {
       const body = (payload ?? {}) as ErrorResponseBody
       const errorName = body.error ?? response.statusText ?? 'HttpError'
       const message = body.message ?? `HTTP ${response.status} ${response.statusText}`
-      throw new HttpError(response.status, response.statusText, errorName, message, body.details)
+      throw new HttpError(
+        response.status,
+        response.statusText,
+        errorName,
+        message,
+        body.details,
+        undefined,
+        parseRetryAfter(response.headers.get('retry-after')),
+      )
     }
 
     return payload as T
@@ -222,4 +230,26 @@ export class HttpClient {
 
     return url.toString()
   }
+}
+
+/**
+ * `Retry-After` бывает двух форм: число секунд (`30`) и HTTP-дата (`Wed, 21 Oct 2026 07:28:00 GMT`).
+ * Бэкенд отдаёт секунды; дату тоже поддерживаем — на случай прокси/чужих 503.
+ */
+function parseRetryAfter (value: string | null): number | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  const seconds = Number(value)
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.ceil(seconds)
+  }
+
+  const date = Date.parse(value)
+  if (Number.isNaN(date)) {
+    return undefined
+  }
+
+  return Math.max(0, Math.ceil((date - Date.now()) / 1000))
 }

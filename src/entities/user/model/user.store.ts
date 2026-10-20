@@ -60,7 +60,7 @@ export const useUserStore = defineStore('user', () => {
     if (!current) {
       throw new Error('No current user to update')
     }
-    const updated = await updateUserProfile(current.id, input)
+    const updated = await updateUserProfile(input)
     user.value = updated
     peekQueryClient()?.setQueryData(['users', 'me'], updated)
   }

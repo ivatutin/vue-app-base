@@ -48,6 +48,19 @@ describe('getErrorMessage', () => {
     expect(matchError(err, ErrorCode.SERVICE_UNAVAILABLE)).toBe(true)
   })
 
+  it('503 с Retry-After подсказывает, через сколько повторить', () => {
+    const err = new HttpError(
+      503,
+      'Service Unavailable',
+      ErrorCode.SERVICE_UNAVAILABLE,
+      'Internal server error',
+      undefined,
+      undefined,
+      30,
+    )
+    expect(getErrorMessage(err)).toBe('Сервис временно недоступен — повторите через 30 с')
+  })
+
   it('чужой 5xx без кода по-прежнему получает generic-текст', () => {
     const err = new HttpError(502, 'Bad Gateway', 'BadGateway', 'upstream failed')
     expect(getErrorMessage(err)).toBe('Сервис временно недоступен')

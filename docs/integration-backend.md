@@ -419,6 +419,7 @@ Provider payloads:
 | `POST /users/me/contact-change/verify` | protected | `{ changeToken, oldCode?, newCode }` | 200 → `UserDto` (с новым контактом + verified) | ✅ |
 | `POST /users/me/contact-change/cancel` | protected | `{ changeToken }` | 204 | ✅ |
 | `POST /users/me/password` | protected + `X-Reauth-Token` | `{ newPassword }` | 204 | ✅ |
+| `PATCH /users/me/profile` ⟵ *v1.6* | protected | `{ firstName?, lastName? }` (1–100, хотя бы одно) | 200 → `UserDto` | ✅ |
 | `POST /users/me/set-password` | protected | `{ verificationToken (purpose='set-password'), newPassword }` | 204 | ✅ |
 | `POST /users/me/logout-all` ⟵ *v1.4* | protected | — (тела нет, **без** `X-Reauth-Token`) | 204 | ✅ |
 
@@ -454,6 +455,9 @@ Provider payloads:
 - тесты: `src/entities/contact-change/**`, `src/processes/auth-flow/{change-contact,change-password,logout-all}-flow.test.ts`.
 - Поведение трио (отмена + повтор, `503`, `401` после успеха, условный `oldCode`, режимы стенда) сверено с материалом
   координатора `handover/contact-change-behavior.md` (16.10.2026) и подтверждено живьём 19–20.10.2026.
+- `PATCH /users/me/profile` (v1.6) пишет **и в Keycloak, и в shadow-БД** — имя переживает синхронизацию на входе.
+  При недоступном Keycloak отвечает `503`; `Retry-After` бэкенд отдаёт на 503 `contact-change/verify` (живая проверка:
+  `Retry-After: 3`), на 503 профиля заголовка нет — фронт показывает generic-текст.
 
 ### Account Console (для advanced ops)
 

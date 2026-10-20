@@ -23,6 +23,32 @@ describe('HttpClient — транспортные ошибки', () => {
     vi.restoreAllMocks()
   })
 
+  it('читает Retry-After из 503 и кладёт в HttpError', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      Response.json(
+        { error: 'Service Unavailable', message: 'Internal server error' },
+        { status: 503, headers: { 'content-type': 'application/json', 'retry-after': '30' } },
+      ),
+    ))
+
+    const error = await createClient().post('/users/me/profile', {}).catch((error_: unknown) => error_)
+
+    expect(error).toBeInstanceOf(HttpError)
+    expect((error as HttpError).status).toBe(503)
+    expect((error as HttpError).errorName).toBe('Service Unavailable')
+    expect((error as HttpError).retryAfterSeconds).toBe(30)
+  })
+
+  it('без Retry-After поле остаётся undefined', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      Response.json({ error: 'Service Unavailable' }, { status: 503, headers: { 'content-type': 'application/json' } }),
+    ))
+
+    const error = await createClient().post('/users/me/profile', {}).catch((error_: unknown) => error_)
+
+    expect((error as HttpError).retryAfterSeconds).toBeUndefined()
+  })
+
   it('успешный JSON-ответ проходит насквозь', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ id: 1 })))
 

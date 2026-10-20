@@ -6,6 +6,9 @@ export class HttpError extends Error {
   /** Исходная ошибка (`TypeError` от fetch и т.п.). В lib ES2021 у Error поля нет. */
   public cause?: unknown
 
+  /** `Retry-After` из ответа в секундах (бэкенд отдаёт его на 503). */
+  public readonly retryAfterSeconds?: number
+
   constructor (
     status: number,
     statusText: string,
@@ -13,12 +16,16 @@ export class HttpError extends Error {
     message: string | string[],
     details?: unknown,
     cause?: unknown,
+    retryAfterSeconds?: number,
   ) {
     super(Array.isArray(message) ? message.join('; ') : message)
     // Присваиваем вручную, а не через `super(msg, { cause })`:
     // ErrorOptions требует lib ES2022, поднимать её ради одного поля не стоит.
     if (cause !== undefined) {
       this.cause = cause
+    }
+    if (retryAfterSeconds !== undefined) {
+      this.retryAfterSeconds = retryAfterSeconds
     }
     this.name = 'HttpError'
     this.status = status

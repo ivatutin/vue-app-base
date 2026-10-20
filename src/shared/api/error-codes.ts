@@ -119,14 +119,19 @@ const ERROR_CODE_VALUES = new Set<string>(Object.values(ErrorCode))
  * Получить пользовательское сообщение для ошибки.
  *
  * Порядок:
- * 1. Доменный код из реестра — его текст;
- * 2. `5xx` без доменного кода — «Сервис временно недоступен». Это важно для контрактных
- *    `503` («ничего не применено, повторите позже»): NestJS отдаёт там `Service Unavailable`,
- *    которого в реестре нет, и без этой ветки пользователь видел бы «Что-то пошло не так»;
- * 3. иначе — дефолт.
+ * 1. `Retry-After` на 5xx — «повторите через N с» (важно для контрактных `503`: бэкенд говорит,
+ *    сколько ждать, и повтор разрешён — «ничего не применено»);
+ * 2. Доменный код из реестра — его текст;
+ * 3. `5xx` без доменного кода — «Сервис временно недоступен». NestJS отдаёт там `Service Unavailable`,
+ *    которого до v1.6 не было в реестре, и без этой ветки пользователь видел бы «Что-то пошло не так»;
+ * 4. иначе — дефолт.
  */
 export function getErrorMessage (err: unknown): string {
   if (err instanceof HttpError) {
+    const retry = err.retryAfterSeconds
+    if (typeof retry === 'number' && retry > 0 && err.status >= 500) {
+      return `${FAILURE_MESSAGES.server} — повторите через ${retry} с`
+    }
     if (ERROR_CODE_VALUES.has(err.errorName)) {
       return ERROR_MESSAGES[err.errorName as ErrorCode]
     }

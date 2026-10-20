@@ -3,29 +3,26 @@ import { getHttpClient } from '@/shared/api'
 import { updateProfileBodyDtoSchema, userDtoSchema } from './user.dto'
 import { toUser } from './user.mapper'
 
-/** Тело `PATCH /users/:id/profile`: хотя бы одно поле; `null` очищает значение. */
+/** Тело `PATCH /users/me/profile`: хотя бы одно поле; `null` очищает значение. */
 export interface UpdateProfileInput {
   firstName?: string | null
   lastName?: string | null
 }
 
 /**
- * `PATCH /users/:id/profile` — имя и фамилия пользователя.
+ * `PATCH /users/me/profile` — имя и фамилия **своего** профиля (контракт v1.6, 20.10.2026).
  *
- * Бэкенд требует хотя бы одно поле и принимает `null` для очистки; ответ — полный
- * `UserDto`, поэтому применяем его тем же mapper'ом, что и `GET /users/me`
- * (не собираем профиль по кускам: `roles`/`status` в запросе не участвуют, но
- * в ответе приходят актуальными).
+ * Эндпоинт protected, без `@Roles`: бэкенд пишет в Keycloak (источник истины по имени) **и** в
+ * shadow-БД, поэтому значение переживает синхронизацию на следующем входе. Требует хотя бы одно
+ * поле, `null` очищает. Ответ — полный `UserDto`, применяем его тем же mapper'ом, что и
+ * `GET /users/me` (роли/статус в ответе актуальны).
+ *
+ * Админский `PATCH /users/:id/profile` остаётся на бэкенде, но фронту не нужен: здесь все
+ * действия — про собственный профиль.
  */
-export async function updateUserProfile (
-  userId: string,
-  input: UpdateProfileInput,
-): Promise<User> {
+export async function updateUserProfile (input: UpdateProfileInput): Promise<User> {
   const body = updateProfileBodyDtoSchema.parse(input)
-  const raw = await getHttpClient().patch<unknown>(
-    `/users/${encodeURIComponent(userId)}/profile`,
-    body,
-  )
+  const raw = await getHttpClient().patch<unknown>('/users/me/profile', body)
 
   const parsed = userDtoSchema.safeParse(raw)
   if (!parsed.success) {
