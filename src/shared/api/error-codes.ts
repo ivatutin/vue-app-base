@@ -135,6 +135,11 @@ export function getErrorMessage (err: unknown): string {
     if (ERROR_CODE_VALUES.has(err.errorName)) {
       return ERROR_MESSAGES[err.errorName as ErrorCode]
     }
+    // 400 = провалилась серверная валидация DTO (`ZodValidationException`) — например,
+    // телефон ввели в поле e-mail. Пользователю нужен человеческий текст, не «Что-то пошло не так».
+    if (err.status === 400) {
+      return 'Проверьте корректность введённых данных'
+    }
     if (err.status >= 500) {
       return FAILURE_MESSAGES.server
     }

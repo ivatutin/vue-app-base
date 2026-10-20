@@ -71,6 +71,12 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(err)).toBe('Что-то пошло не так')
   })
 
+  it('400 от серверной валидации — человеческий текст', () => {
+    // Форма отправила номер в поле e-mail → backend вернул ZodValidationException (400).
+    const err = new HttpError(400, 'Bad Request', 'ZodValidationException', 'Validation failed')
+    expect(getErrorMessage(err)).toBe('Проверьте корректность введённых данных')
+  })
+
   it('возвращает дефолт для обычной Error', () => {
     expect(getErrorMessage(new Error('boom'))).toBe('Что-то пошло не так')
   })

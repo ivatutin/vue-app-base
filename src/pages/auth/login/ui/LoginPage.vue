@@ -2,6 +2,7 @@
   import { useNotificationStore } from '@/entities/notification'
   import { loginFlow, loginPhoneFlow } from '@/processes/auth-flow'
   import { getErrorMessage, HttpError } from '@/shared/api'
+  import { emailSchema } from '@/shared/model/credentials'
   import {
     Alert,
     Button,
@@ -33,6 +34,13 @@
   const password = ref('')
   const error = ref<string | null>(null)
   const loading = ref(false)
+
+  /**
+   * Email проверяем локально: иначе номер, введённый не в ту вкладку (телефон в поле e-mail),
+   * уходил на бэкенд и возвращался `400 ZodValidationException` — а пользователь видел
+   * generic «Что-то пошло не так». Для входа по номеру — соседняя вкладка «Телефон».
+   */
+  const emailValid = computed(() => email.value === '' || emailSchema.safeParse(email.value).success)
 
   /**
    * Возврат после сброса пароля: подтверждаем тостом. Сегодня Keycloak показывает
@@ -102,6 +110,7 @@
             v-model="email"
             autocomplete="email"
             :disabled="loading"
+            :error="emailValid ? null : 'Некорректный e-mail. Для входа по номеру — вкладка «Телефон»'"
             label="E-mail"
             required
             type="email"
@@ -141,7 +150,7 @@
         <Spacer />
         <Button
           v-if="tab === 'email'"
-          :disabled="!email || !password"
+          :disabled="!email || !password || !emailValid"
           :loading="loading"
           type="submit"
           variant="brand"
