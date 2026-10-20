@@ -21,6 +21,11 @@ export const ErrorCode = {
   // (контракт v1.5, 19.10.2026). 403 больше не значит «сессия истекла».
   FORBIDDEN: 'Forbidden',
 
+  // Отказ инфраструктуры без доменного смысла: Keycloak/провайдер недоступен (контракт v1.6,
+  // 20.10.2026). NestJS отдаёт `{"error":"Service Unavailable"}`; до v1.6 такие ответы
+  // ловились по статусу 5xx — это остаётся fallback'ом для чужих 5xx.
+  SERVICE_UNAVAILABLE: 'Service Unavailable',
+
   // Contacts (email / phone)
   CONTACT_ALREADY_EXISTS: 'ContactAlreadyExists',
   CONTACT_NOT_FOUND: 'ContactNotFound',
@@ -80,6 +85,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_CREDENTIALS]: 'Неверные учётные данные',
   [ErrorCode.INVALID_TOKEN]: 'Сессия истекла, войдите снова',
   [ErrorCode.FORBIDDEN]: 'Недостаточно прав для этого действия',
+  [ErrorCode.SERVICE_UNAVAILABLE]: 'Сервис временно недоступен — повторите позже',
 
   [ErrorCode.CONTACT_ALREADY_EXISTS]: 'Этот контакт уже зарегистрирован',
   [ErrorCode.CONTACT_NOT_FOUND]: 'Контакт не найден',

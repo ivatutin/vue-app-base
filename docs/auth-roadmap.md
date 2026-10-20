@@ -280,6 +280,8 @@ Phase 0 (foundation)
 - ✅ Все вопросы приёмки закрыты координатором 20.10.2026 (`отвечено`): `FailureKind='forbidden'` согласован,
   `changeToken` в `sessionStorage` согласован (зафиксировано в [ADR-0011](adr/0011-otp-verification-model.md) § Anti-patterns),
   звонковый рецепт признан каноническим, `503`-семантика принята
+- ✅ Контракт **v1.6** применён (20.10.2026): в реестр добавлен `ServiceUnavailable` (503) — теперь 503 матчится по коду,
+  статусный fallback оставлен для чужих 5xx. `PATCH /users/me/profile` появится вместе со сдачей бэкенда.
 - ⬜ **Ждём контракт v1.6 и бэкенд** (задания уже ушли): self-service `PATCH /users/me/profile` (пишет в Keycloak **и** shadow)
   + код `ServiceUnavailable` (503) в реестре + `Retry-After` на любом 503 из `verify`. После сдачи — три точечные правки
   на фронте: `updateUserProfile` → `/users/me/profile` (и форма профиля снова всем), `ServiceUnavailable` в `ErrorCode`,

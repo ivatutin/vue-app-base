@@ -37,9 +37,19 @@ describe('getErrorMessage', () => {
   })
 
   it('5xx без доменного кода → «Сервис временно недоступен» (контрактный 503)', () => {
-    // NestJS отдаёт 503 как `Service Unavailable` — такого кода в реестре нет,
-    // но пользователю нельзя показывать «Что-то пошло не так» на «повторите позже».
+    // NestJS отдаёт 503 как `Service Unavailable`; с v1.6 это код реестра,
+    // но текст остаётся тем же — «повторите позже», а не «Что-то пошло не так».
     const err = new HttpError(503, 'Service Unavailable', 'Service Unavailable', 'Internal server error')
+    expect(getErrorMessage(err)).toBe(ERROR_MESSAGES[ErrorCode.SERVICE_UNAVAILABLE])
+  })
+
+  it('ServiceUnavailable матчится по коду (контракт v1.6)', () => {
+    const err = new HttpError(503, 'Service Unavailable', ErrorCode.SERVICE_UNAVAILABLE, 'x')
+    expect(matchError(err, ErrorCode.SERVICE_UNAVAILABLE)).toBe(true)
+  })
+
+  it('чужой 5xx без кода по-прежнему получает generic-текст', () => {
+    const err = new HttpError(502, 'Bad Gateway', 'BadGateway', 'upstream failed')
     expect(getErrorMessage(err)).toBe('Сервис временно недоступен')
   })
 

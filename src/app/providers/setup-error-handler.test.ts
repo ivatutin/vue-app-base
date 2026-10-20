@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HttpError } from '@/shared/api'
+import { ERROR_MESSAGES, ErrorCode, HttpError } from '@/shared/api'
 import { humanize } from './setup-error-handler'
 
 describe('humanize', () => {
@@ -10,7 +10,7 @@ describe('humanize', () => {
 
   it('5xx без доменного кода — «Сервис временно недоступен»', () => {
     const err = new HttpError(503, 'Service Unavailable', 'Service Unavailable', 'Internal server error')
-    expect(humanize(err)).toBe('Сервис временно недоступен')
+    expect(humanize(err)).toBe(ERROR_MESSAGES[ErrorCode.SERVICE_UNAVAILABLE])
   })
 
   it('обычная Error не показывает технический текст', () => {
