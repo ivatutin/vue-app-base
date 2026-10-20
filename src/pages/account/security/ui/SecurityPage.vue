@@ -237,6 +237,7 @@
           :disabled="!canSet"
           :initial-phone="phone"
           lock-phone
+          :pending="submitting"
           purpose="set-password"
           submit-label="Получить код"
           @verified="onPhoneVerified"

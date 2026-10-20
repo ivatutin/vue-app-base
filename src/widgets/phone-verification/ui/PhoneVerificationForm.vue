@@ -23,6 +23,12 @@
     requireTerms?: boolean
     submitLabel?: string
     disabled?: boolean
+    /**
+     * Внешняя операция в процессе (страница уже отправила `sign-in/phone` / `sign-up/phone` —
+     * это может занять до 30 с на холодном CIBA). В отличие от `disabled`, показывает лоадер
+     * на кнопке: пользователь должен видеть, что нажатие принято, и не жать повторно.
+     */
+    pending?: boolean
     /** Предзаполнить номер (set-password: номер из профиля). */
     initialPhone?: string
     /**
@@ -34,6 +40,7 @@
     requireTerms: false,
     submitLabel: 'Получить код',
     disabled: false,
+    pending: false,
     initialPhone: '',
     lockPhone: false,
   })
@@ -70,8 +77,8 @@
     return 'phone'
   })
 
-  const canSend = computed(() => phoneValid.value && termsOk.value && !isBusy.value && !props.disabled)
-  const canVerify = computed(() => code.value.length === 6 && !isBusy.value && !submitting.value)
+  const canSend = computed(() => phoneValid.value && termsOk.value && !isBusy.value && !props.disabled && !props.pending)
+  const canVerify = computed(() => code.value.length === 6 && !isBusy.value && !submitting.value && !props.pending)
   const isBusy = computed(() => otp.isBusy || call.isActive || submitting.value)
 
   /** `tel:`-ссылка из человекочитаемого номера: `+7 (800) 500-8275` → `tel:+78005008275`. */
@@ -227,7 +234,7 @@
 
       <Button
         :disabled="!canSend"
-        :loading="isBusy"
+        :loading="isBusy || pending"
         variant="brand"
         @click="delivery === 'call' ? startCall() : send()"
       >
@@ -265,14 +272,14 @@
       <div class="flex flex-wrap gap-2">
         <Button
           :disabled="!canVerify"
-          :loading="isBusy"
+          :loading="isBusy || pending"
           variant="brand"
           @click="submitCode"
         >
           Подтвердить
         </Button>
         <Button
-          :disabled="!otp.canResend || disabled"
+          :disabled="!otp.canResend || disabled || pending"
           variant="outlined"
           @click="resend"
         >

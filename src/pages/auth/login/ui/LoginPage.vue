@@ -127,6 +127,7 @@
         <TabsContent value="phone">
           <PhoneVerificationForm
             :disabled="loading"
+            :pending="loading"
             purpose="sign-in"
             @verified="onPhoneVerified"
           />

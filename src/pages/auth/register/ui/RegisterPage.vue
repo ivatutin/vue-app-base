@@ -192,6 +192,7 @@
         <TabsContent value="phone">
           <PhoneVerificationForm
             :disabled="loading"
+            :pending="loading"
             purpose="sign-up"
             require-terms
             submit-label="Создать аккаунт"
