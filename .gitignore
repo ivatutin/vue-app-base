@@ -30,3 +30,9 @@ storybook-static
 # agent: локальные конфиги и состояние прогонов (машинно-специфичное, не в историю)
 .claude/settings.local.json
 .claude/inbox-state.json
+
+# local dev logs (background host/fe processes during acceptance)
+.dev-fe.log
+.dev-fe.err.log
+.dev-host.log
+.dev-host.err.log

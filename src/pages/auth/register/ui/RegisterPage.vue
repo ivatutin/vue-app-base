@@ -148,7 +148,7 @@
       <Tabs v-model="tab">
         <TabsList class="mb-4">
           <TabsTrigger value="email">E-mail</TabsTrigger>
-          <TabsTrigger disabled value="phone">Телефон</TabsTrigger>
+          <TabsTrigger value="phone">Телефон</TabsTrigger>
         </TabsList>
 
         <TabsContent class="space-y-4" value="email">
