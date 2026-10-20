@@ -62,8 +62,28 @@
     ? emailSchema.safeParse(newValue.value).success
     : phoneSchema.safeParse(newValue.value).success))
 
+  /**
+   * Значение совпадает с текущим контактом — отправлять нечего (бэкенд вернёт
+   * `409 ContactAlreadyExists` про наш же контакт). Нормализуем: email без регистра,
+   * телефон — по цифрам.
+   */
+  const sameAsCurrent = computed(() => {
+    const current = currentContact.value
+    if (!current) {
+      return false
+    }
+    if (channel.value === 'email') {
+      return current.toLowerCase() === newValue.value.toLowerCase()
+    }
+    const digits = (value: string): string => value.replace(/\D/g, '')
+    return digits(current) === digits(newValue.value)
+  })
+
   const canRequest = computed(
-    () => !submitting.value && currentPassword.value.length > 0 && newValueValid.value,
+    () => !submitting.value
+      && currentPassword.value.length > 0
+      && newValueValid.value
+      && !sameAsCurrent.value,
   )
 
   const canVerify = computed(
@@ -245,6 +265,10 @@
         type="email"
       />
       <PhoneInput v-else v-model="phone" :disabled="submitting" label="Новый телефон" />
+
+      <p v-if="sameAsCurrent" class="text-xs text-muted-foreground">
+        Это ваш текущий контакт — менять нечего. Укажите другое значение.
+      </p>
 
       <Divider />
 
