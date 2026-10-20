@@ -177,10 +177,6 @@
       submitting.value = false
     }
   }
-
-  function goToLogin (): void {
-    void router.replace({ name: '/auth/logout' })
-  }
 </script>
 
 <template>
@@ -189,14 +185,8 @@
       {{ error }}
     </Alert>
 
-    <!-- 3. Готово: доступ отозван, остаётся войти заново -->
-    <p v-if="store.isDone" class="text-sm">
-      Контакт <span class="font-medium">{{ store.newValue }}</span> подтверждён и сохранён.
-      Все сессии завершены — войдите заново уже с новым контактом.
-    </p>
-
     <!-- 2. Коды -->
-    <div v-else-if="store.isPending" class="space-y-4">
+    <div v-if="store.isPending" class="space-y-4">
       <p class="text-sm text-muted-foreground">
         Коды действуют <span class="font-medium">5 минут</span>. На новый и на текущий контакт приходят
         <span class="font-medium">разные</span> коды — не перепутайте поля.
@@ -276,14 +266,7 @@
     </div>
 
     <template #footer>
-      <template v-if="store.isDone">
-        <Spacer />
-        <Button variant="brand" @click="goToLogin">
-          Войти заново
-        </Button>
-      </template>
-
-      <template v-else-if="store.isPending">
+      <template v-if="store.isPending">
         <span class="text-xs text-muted-foreground">Код действует ограниченное время.</span>
         <Spacer />
         <Button :disabled="submitting" variant="text" @click="cancel">

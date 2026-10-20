@@ -30,16 +30,14 @@ describe('contact-change store: переживание перезагрузки'
     expect(restored.newValue).toBe('new@example.test')
   })
 
-  it('reset и complete очищают сохранённую смену', () => {
+  it('reset очищает сохранённую смену', () => {
     const store = useContactChangeStore()
 
     store.startChallenge(CHALLENGE)
     store.reset()
-    expect(sessionStorage.getItem('contact-change:pending')).toBeNull()
 
-    store.startChallenge(CHALLENGE)
-    store.complete()
     expect(sessionStorage.getItem('contact-change:pending')).toBeNull()
+    expect(store.stage).toBe('idle')
   })
 
   it('устаревшая запись (старше 15 минут) не восстанавливается', () => {

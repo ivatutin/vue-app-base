@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/entities/auth'
+import { useContactChangeStore } from '@/entities/contact-change'
 import { useUserStore } from '@/entities/user'
 import { peekQueryClient } from '@/shared/api'
 
@@ -21,6 +22,8 @@ export async function logoutFlow (): Promise<void> {
     await useAuthStore().logout()
   } finally {
     useUserStore().reset()
+    // Незавершённая/завершённая смена контакта не должна переживать смену пользователя.
+    useContactChangeStore().reset()
     clearServerCache()
   }
 }

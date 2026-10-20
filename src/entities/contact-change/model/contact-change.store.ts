@@ -11,11 +11,16 @@ import type { ContactChangeChallenge, ContactChannel } from '../api'
  * Стадии намеренно три:
  * - `idle` — формы «новое значение + пароль»;
  * - `codes` — смена запрошена, вводим `newCode` (и `oldCode`, если требуется);
- * - `done` — контакт изменён, доступ отозван: сессия уже сброшена, остаётся уйти на вход.
+ * Стадии намеренно две:
+ * - `idle` — формы «новое значение + пароль»;
+ * - `codes` — смена запрошена, вводим `newCode` (и `oldCode`, если требуется).
+ *
+ * Стадии `done` нет: успешный `verify` отзывает доступ, и мы сразу сбрасываем состояние —
+ * иначе оно переживало бы выход/вход и карточка показывала бы устаревшее «войдите заново».
  *
  * `oldCode`/`newCode` в сторе **не** живут: это значения полей ввода (ADR-0011 § Anti-patterns).
  */
-export type ContactChangeStage = 'idle' | 'codes' | 'done'
+export type ContactChangeStage = 'idle' | 'codes'
 
 export const useContactChangeStore = defineStore('contact-change', () => {
   const stage = ref<ContactChangeStage>('idle')
@@ -90,7 +95,6 @@ export const useContactChangeStore = defineStore('contact-change', () => {
   restore()
 
   const isPending = computed(() => stage.value === 'codes')
-  const isDone = computed(() => stage.value === 'done')
 
   /** Смена запрошена: запоминаем токен и что именно меняем (для текстов на экране). */
   function startChallenge (challenge: ContactChangeChallenge): void {
@@ -102,15 +106,11 @@ export const useContactChangeStore = defineStore('contact-change', () => {
     persist(Date.now())
   }
 
-  /** `200` на `verify`: доступ отозван, токен больше не нужен. */
-  function complete (): void {
-    changeToken.value = null
-    requiresOldChallenge.value = false
-    stage.value = 'done'
-    clearPersisted()
-  }
-
-  /** «Отменить» и повторный вход в сценарий с чистого листа. */
+  /**
+   * «Отменить» и повторный вход в сценарий с чистого листа. Тем же вызовом завершается и успех:
+   * держать отдельную стадию `done` нельзя — стор переживает выход и вход, и при следующем
+   * визите карточка показывала бы «контакт подтверждён, войдите заново» уже после входа.
+   */
   function reset (): void {
     stage.value = 'idle'
     changeToken.value = null
@@ -130,11 +130,9 @@ export const useContactChangeStore = defineStore('contact-change', () => {
 
     /** getters */
     isPending,
-    isDone,
 
     /** actions */
     startChallenge,
-    complete,
     reset,
   }
 })

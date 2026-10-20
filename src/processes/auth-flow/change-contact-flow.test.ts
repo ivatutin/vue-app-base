@@ -168,7 +168,7 @@ describe('verifyContactChangeFlow', () => {
       changeToken: 'ct-1',
       newCode: '123456',
     })
-    expect(store.stage).toBe('done')
+    expect(store.stage).toBe('idle')
     expect(auth.accessToken).toBeNull()
     expect(user.user).toBeNull()
   })

@@ -81,7 +81,7 @@ export async function verifyContactChangeFlow (codes: {
     ...(codes.oldCode ? { oldCode: codes.oldCode } : {}),
   })
 
-  store.complete()
+  store.reset()
 
   useAuthStore().clearTokens()
   useUserStore().reset()
