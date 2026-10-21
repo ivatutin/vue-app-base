@@ -200,7 +200,7 @@ interface ErrorResponseBody {
 
 ## Auth endpoints planned (Phase 1-5 auth/registration suite)
 
-> **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.6** (20.10.2026: аддитивно добавлены код `ServiceUnavailable` (503) и self-service `PATCH /users/me/profile`, который появится вместе со сдачей бэкенда; зеркало перекопировано, sha256 `2D6069E8…`). Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
+> **Статус:** контракт заморожен — [auth-v1-contract.md](auth-v1-contract.md) **v1.7** (21.10.2026: аддитивно добавлен код `ProfileNameInvalid` (422) — отказ политики имени Keycloak больше не маскируется под `503`; зеркало перекопировано, sha256 `D8A4B7B3…`). Эндпоинты Phase 0-2 и Phase 4 **реализованы на backend** и проверены на живом стеке (в таблицах ниже — ✅); Phase 3 (соцвход) — **вне объёма Auth v1**, роутов на backend нет.
 >
 > ✅ в таблицах = «эндпоинт есть и работает на бэкенде» (сверено по роутам контроллеров; конвенция согласована 16.10.2026). После живой приёмки с фронта в разделе появляется строка «проверено с фронта <дата>».
 >
@@ -473,7 +473,7 @@ Frontend `/account/security` показывает links на эти страни
 
 ### Error codes registry (полный)
 
-Перечень `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (реестр существует; сверен с контрактом [v1.6](auth-v1-contract.md) 20.10.2026).
+Перечень `errorName` значений — см. [ADR-0012](adr/0012-error-coding-contract.md) и `src/shared/api/error-codes.ts` (реестр существует; сверен с контрактом [v1.7](auth-v1-contract.md) 21.10.2026).
 
 Backend dev **обязан** использовать ровно эти `errorName` строки для согласованности с frontend `ErrorCode` registry. Добавление нового error → PR в `src/shared/api/error-codes.ts` параллельно backend изменениям.
 
@@ -483,6 +483,7 @@ Backend dev **обязан** использовать ровно эти `errorNa
 | `InvalidToken` ⟵ *v1.1* | 401 | невалидный / просроченный / отозванный access или refresh |
 | `Forbidden` ⟵ *v1.5* | 403 | RolesGuard: роли не хватает (`{"error":"Forbidden","message":"Required role: admin"}`). Фронт трактует 403 как отказ прав, **не** как истёкшую сессию (`classifyFailure` → `forbidden`) |
 | `ServiceUnavailable` ⟵ *v1.6* | 503 | отказ инфраструктуры без доменного смысла (Keycloak/провайдер недоступен). NestJS отдаёт `{"error":"Service Unavailable"}`; до v1.6 фронт ловил такие ответы по статусу 5xx (fallback сохранён для чужих 5xx) |
+| `ProfileNameInvalid` ⟵ *v1.7* | 422 | имя не проходит политику Keycloak (`error-user-attribute-required`, `person-name-prohibited-characters`): пусто там, где реалм требует, или запрещённые символы. До v1.7 приходил как ложный `503`; повтор бессмысленен — пользователь правит значение |
 | `InvalidContacts` ⟵ *v1.1* | 422 | нарушен инвариант контактов: нет ни email, ни phone; прямая смена verified-контакта |
 | `UserNotFound` ⟵ *v1.1* | 404 | локальной записи пользователя нет (в основном админские операции) |
 | `ContactAlreadyExists` | 409 | email/phone уже зарегистрирован (sign-up, contact-change) |

@@ -293,7 +293,14 @@ Phase 0 (foundation)
   регистрация email/телефон, вход, сброс и смена/установка пароля, double OTP, `409`, `cancel`, `logout-all` в двух
   браузерах, RBAC, обратный звонок) + п.18 — тестовые данные удалены (**Keycloak 3 / shadow 3**, только фикстуры).
   Отчёт: `docs/coordination/questions/2026-10-20-auth-v1-acceptance-closed.md`
-- ⬜ Отдельного ADR по смене контакта на фронте нет (решение координатора): правила — `docs/integration-backend.md`
+- ✅ Контракт **v1.7** применён (21.10.2026): код `ProfileNameInvalid` (422) — отказ политики имени Keycloak больше не
+  маскируется под `503`; текст по коду, 422 не retryable, поле не очищается. Тесты: **328**. Живой чек после пересборки
+  образа: `PATCH {"firstName":"<bad>"}` → `422 ProfileNameInvalid`, возврат значения → 200
+- ✅ **Auth v1 закрыт 21.10.2026** (доска: DoD ✅): бэкенд — тег `auth-suite-v1.0` на `c2984af` (66 suite / 383 теста),
+  фронт — 45 файлов / 328 тестов, чек-лист 1–18 пройден, контракт v1.7
+- ⚠️ **Правило стенда:** после каждого бэкенд-коммита пересобирать образ (`docker compose build app && up -d app`) —
+  иначе контейнер остаётся на старом коде (дважды ловили на приёмке: batch-6 и `ProfileNameInvalid`)
+- ✅ Отдельного ADR по смене контакта на фронте нет (решение координатора): правила — `docs/integration-backend.md`
   § Account security, поведение трио — `handover/contact-change-behavior.md`, детали — JSDoc флоу
 - ✅ Verified email/phone меняется через double OTP (старый + новый)
 - ✅ Unverified — только OTP на новый

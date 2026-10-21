@@ -49,9 +49,9 @@
 - [../KNOWN-ISSUES.md](../KNOWN-ISSUES.md) — найденные баги и тех-долг
 - [../CLAUDE.md](../CLAUDE.md) — руководство для AI-агентов
 
-## Auth/Registration suite (контракт v1.6; backend готов, фронт Phase 0-2.5 и 4 реализован)
+## Auth/Registration suite (контракт v1.7; backend и фронт закрыты — Auth v1 закрыт 21.10.2026)
 
-- [auth-v1-contract.md](auth-v1-contract.md) — **зеркало замороженного контракта Auth v1 (v1.6)**: пути/DTO/коды ошибок и протокол расширения. Файл производный — правится только координатором, синхронизируется перекопированием (sha256 — `docs/auth/contract.sha256`)
+- [auth-v1-contract.md](auth-v1-contract.md) — **зеркало замороженного контракта Auth v1 (v1.7)**: пути/DTO/коды ошибок и протокол расширения. Файл производный — правится только координатором, синхронизируется перекопированием (sha256 — `docs/auth/contract.sha256`)
   > `docs/auth-v1-contract.md` — **внешняя копия** контракта (координация: `c:\vim\prj\video-service\docs\auth\`); относительные ссылки внутри копии указывают в координационный репозиторий и локально не работают.
 - [auth-roadmap.md](auth-roadmap.md) — дорожная карта фаз 0-5, milestones, parallelization, risk register
 - [backend-auth-implementation.md](backend-auth-implementation.md) — spec-level инструкция для backend dev (Keycloak realm setup + NestJS modules + per-endpoint спецификации)
