@@ -286,8 +286,9 @@ Phase 0 (foundation)
   read-only с формы профиля снят (self-service доступен роли `user`), `Retry-After` читается
   (`HttpError.retryAfterSeconds` → «повторите через N с»). Приёмка живьём: правка имени под `user` → 200 → выход/вход →
   имя на месте; 503 при остановленном Keycloak (shadow не изменён), `Retry-After` на `verify` = 3 с. Тесты: **326**.
-- ⬜ Стенд: образ контейнера `app` **устарел** (нет `/users/me/profile`), пересборка блокирована недоступностью
-  `auth.docker.io` → приёмка шла в host-режиме; когда registry доступен — `docker compose build app && docker compose up -d app`
+- ✅ Стенд: образ контейнера `app` **пересобран** 20.10.2026 (`docker compose build app` → 26.8 с, `njs-server-app:latest`);
+  контейнер пересоздан, `PATCH /users/me/profile` отвечает **200** под ролью `user` — self-service профиля работает
+  и в контейнерном режиме (host/app-dev больше не нужны)
 - ✅ **Ручная приёмка закрыта 20.10.2026**: чек-лист `handover/manual-acceptance-auth-v1.md` пройден целиком (1–17:
   регистрация email/телефон, вход, сброс и смена/установка пароля, double OTP, `409`, `cancel`, `logout-all` в двух
   браузерах, RBAC, обратный звонок) + п.18 — тестовые данные удалены (**Keycloak 3 / shadow 3**, только фикстуры).
