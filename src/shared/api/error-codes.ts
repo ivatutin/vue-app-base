@@ -26,6 +26,10 @@ export const ErrorCode = {
   // ловились по статусу 5xx — это остаётся fallback'ом для чужих 5xx.
   SERVICE_UNAVAILABLE: 'Service Unavailable',
 
+  // Профиль: имя не проходит политику Keycloak (контракт v1.7, 21.10.2026) — пусто там,
+  // где реалм требует, или запрещённые символы. Это 422: исправить значение, повтор бесполезен.
+  PROFILE_NAME_INVALID: 'ProfileNameInvalid',
+
   // Contacts (email / phone)
   CONTACT_ALREADY_EXISTS: 'ContactAlreadyExists',
   CONTACT_NOT_FOUND: 'ContactNotFound',
@@ -86,6 +90,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_TOKEN]: 'Сессия истекла, войдите снова',
   [ErrorCode.FORBIDDEN]: 'Недостаточно прав для этого действия',
   [ErrorCode.SERVICE_UNAVAILABLE]: 'Сервис временно недоступен — повторите позже',
+  [ErrorCode.PROFILE_NAME_INVALID]: 'Проверьте имя: оно не должно быть пустым и не может содержать запрещённые символы',
 
   [ErrorCode.CONTACT_ALREADY_EXISTS]: 'Этот контакт уже зарегистрирован',
   [ErrorCode.CONTACT_NOT_FOUND]: 'Контакт не найден',

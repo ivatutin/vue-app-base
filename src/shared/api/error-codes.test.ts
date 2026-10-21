@@ -6,6 +6,7 @@ import {
   getRetryAfter,
   matchError,
 } from './error-codes'
+import { classifyFailure, isRetryableFailure } from './failure'
 import { HttpError } from './http-error'
 
 describe('matchError', () => {
@@ -75,6 +76,13 @@ describe('getErrorMessage', () => {
     // Форма отправила номер в поле e-mail → backend вернул ZodValidationException (400).
     const err = new HttpError(400, 'Bad Request', 'ZodValidationException', 'Validation failed')
     expect(getErrorMessage(err)).toBe('Проверьте корректность введённых данных')
+  })
+
+  it('ProfileNameInvalid (422) — текст реестра и не retryable (контракт v1.7)', () => {
+    // Отказ политики имени в Keycloak: исправить значение, повтор бессмысленен.
+    const err = new HttpError(422, 'Unprocessable', ErrorCode.PROFILE_NAME_INVALID, 'name invalid')
+    expect(getErrorMessage(err)).toBe(ERROR_MESSAGES[ErrorCode.PROFILE_NAME_INVALID])
+    expect(isRetryableFailure(classifyFailure(err))).toBe(false)
   })
 
   it('возвращает дефолт для обычной Error', () => {
